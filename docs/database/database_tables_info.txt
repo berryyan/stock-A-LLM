@@ -1,0 +1,112 @@
+数据库表信息
+生成时间: 2025-06-08 09:34:00.011852
+数据库: Tushare
+总表数: 6
+============================================================
+
+
+表名: tu_anns_d
+记录数: 2,082,745
+字段数: 7
+字段列表:
+  - id: bigint
+  - ann_date: date
+  - ts_code: varchar(20)
+  - name: varchar(50)
+  - title: varchar(255)
+  - url: varchar(255)
+  - rec_time: datetime
+----------------------------------------
+
+表名: tu_daily_detail
+记录数: 15,589,471
+字段数: 13
+字段列表:
+  - id: bigint
+  - ts_code: varchar(255)
+  - trade_date: date
+  - open: decimal(10,2)
+  - high: decimal(10,2)
+  - low: decimal(10,2)
+  - close: decimal(10,2)
+  - pre_close: decimal(10,2)
+  - change: decimal(10,2)
+  - pct_chg: decimal(10,2)
+  - vol: bigint
+  - amount: decimal(18,2)
+  - vwap: double
+----------------------------------------
+
+表名: tu_irm_qa_sh
+记录数: 197,993
+字段数: 7
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - name: varchar(50)
+  - trade_date: date
+  - q: text
+  - a: text
+  - pub_time: datetime
+----------------------------------------
+
+表名: tu_irm_qa_sz
+记录数: 497,077
+字段数: 8
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - name: varchar(50)
+  - trade_date: date
+  - q: text
+  - a: text
+  - pub_time: datetime
+  - industry: varchar(255)
+----------------------------------------
+
+表名: tu_moneyflow_dc
+记录数: 2,353,605
+字段数: 16
+字段列表:
+  - id: bigint
+  - trade_date: date
+  - ts_code: varchar(10)
+  - name: varchar(50)
+  - pct_change: decimal(10,4)
+  - close: decimal(10,2)
+  - net_amount: decimal(15,2)
+  - net_amount_rate: decimal(10,4)
+  - buy_elg_amount: decimal(15,2)
+  - buy_elg_amount_rate: decimal(10,4)
+  - buy_lg_amount: decimal(15,2)
+  - buy_lg_amount_rate: decimal(10,4)
+  - buy_md_amount: decimal(15,2)
+  - buy_md_amount_rate: decimal(10,4)
+  - buy_sm_amount: decimal(15,2)
+  - buy_sm_amount_rate: decimal(10,4)
+----------------------------------------
+
+表名: tu_moneyflow_ind_dc
+记录数: 61,614
+字段数: 19
+字段列表:
+  - id: bigint
+  - trade_date: date
+  - content_type: varchar(20)
+  - ts_code: varchar(10)
+  - name: varchar(50)
+  - pct_change: decimal(10,4)
+  - close: decimal(10,2)
+  - net_amount: decimal(15,2)
+  - net_amount_rate: decimal(10,4)
+  - buy_elg_amount: decimal(15,2)
+  - buy_elg_amount_rate: decimal(10,4)
+  - buy_lg_amount: decimal(15,2)
+  - buy_lg_amount_rate: decimal(10,4)
+  - buy_md_amount: decimal(15,2)
+  - buy_md_amount_rate: decimal(10,4)
+  - buy_sm_amount: decimal(15,2)
+  - buy_sm_amount_rate: decimal(10,4)
+  - buy_sm_amount_stock: varchar(50)
+  - rank: int
+----------------------------------------
