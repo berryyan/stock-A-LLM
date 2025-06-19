@@ -1,0 +1,15 @@
+# 向量数据恢复脚本
+# 生成时间: 2025-06-16 03:02:28.772492
+# 缺失记录数: 6
+
+# 说明：这些PDF文件已经在本地缓存，只需要重新生成向量
+
+# 方法1 - 推荐：使用专用恢复脚本
+python -m scripts.maintenance.recovery_missing_vectors
+
+# 方法2 - 备选：手动恢复特定记录
+python -m scripts.maintenance.recovery_missing_vectors --ann-ids 1223266521
+python -m scripts.maintenance.recovery_missing_vectors --ann-ids 1223405933
+python -m scripts.maintenance.recovery_missing_vectors --ann-ids 1223750493,1223748251
+python -m scripts.maintenance.recovery_missing_vectors --ann-ids 1223766213
+python -m scripts.maintenance.recovery_missing_vectors --ann-ids 1223803549
