@@ -409,7 +409,7 @@ A: 在`database/`目录添加新的连接器，在`agents/`目录添加相应的
 ## 👥 作者与致谢
 
 ### 作者
-- [Your Name](https://github.com/yourusername)
+- [BerryYan](https://github.com/berryyan)
 
 ### 致谢
 - 🙏 [LangChain](https://github.com/langchain-ai/langchain) - 优秀的LLM应用框架
@@ -420,9 +420,9 @@ A: 在`database/`目录添加新的连接器，在`agents/`目录添加相应的
 
 ## 📞 联系方式
 
-- 📧 Email: your.email@example.com
-- 💬 Issues: [GitHub Issues](https://github.com/YOUR_USERNAME/stock-analysis-system/issues)
-- 📖 Wiki: [项目Wiki](https://github.com/YOUR_USERNAME/stock-analysis-system/wiki)
+- 📧 Email: berry.yan@gmail.com
+- 💬 Issues: [GitHub Issues](https://github.com/berryyan/stock-A-LLM/issues)
+- 📖 Wiki: [项目Wiki](https://github.com/berryyan/stock-A-LLM/wiki)
 
 ---
 
