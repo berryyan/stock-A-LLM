@@ -310,39 +310,61 @@ class HybridAgent:
         }
     
     def _handle_sql_only(self, question: str, routing: Dict) -> Dict[str, Any]:
-        """处理仅需SQL的查询"""
-        sql_result = self.sql_agent.query(question)
-        
-        # 修复：正确处理字符串返回值
-        if isinstance(sql_result, str):
-            # SQL Agent 返回字符串
-            return {
-                'success': True,
-                'question': question,
-                'answer': sql_result,
-                'query_type': QueryType.SQL_ONLY.value,
-                'routing': routing,
-                'sources': {'sql': {'success': True, 'result': sql_result}}
-            }
-        elif isinstance(sql_result, dict) and sql_result.get('success'):
-            # SQL Agent 返回字典格式
-            return {
-                'success': True,
-                'question': question,
-                'answer': sql_result.get('result', str(sql_result)),
-                'query_type': QueryType.SQL_ONLY.value,
-                'routing': routing,
-                'sources': {'sql': sql_result}
-            }
-        else:
-            # 处理失败情况
+        """处理仅需SQL的查询，增加类型安全检查"""
+        try:
+            sql_result = self.sql_agent.query(question)
+            
+            # 类型安全检查和转换
+            if isinstance(sql_result, str):
+                # 如果SQL Agent返回字符串，转换为标准格式
+                self.logger.warning("SQL Agent返回了字符串，进行格式转换")
+                sql_result = {
+                    'success': True,
+                    'result': sql_result,
+                    'sql': None,
+                    'error': None
+                }
+            elif not isinstance(sql_result, dict):
+                # 其他非预期类型
+                self.logger.error(f"SQL Agent返回了非预期类型: {type(sql_result)}")
+                sql_result = {
+                    'success': False,
+                    'result': None,
+                    'error': f"SQL Agent返回了非预期类型: {type(sql_result)}"
+                }
+            
+            # 确保字典包含必要的键
+            if 'success' not in sql_result:
+                sql_result['success'] = bool(sql_result.get('result'))
+            
+            # 检查是否成功
+            if sql_result.get('success', False):
+                return {
+                    'success': True,
+                    'question': question,
+                    'answer': sql_result.get('result', ''),
+                    'query_type': QueryType.SQL_ONLY.value,
+                    'routing': routing,
+                    'sources': {'sql': sql_result}
+                }
+            else:
+                return {
+                    'success': False,
+                    'question': question,
+                    'error': sql_result.get('error', 'SQL查询失败'),
+                    'query_type': QueryType.SQL_ONLY.value,
+                    'routing': routing
+                }
+                
+        except Exception as e:
+            self.logger.error(f"处理SQL查询时出错: {e}")
             return {
                 'success': False,
                 'question': question,
-                'error': sql_result.get('error', str(sql_result)) if isinstance(sql_result, dict) else str(sql_result),
-                'query_type': QueryType.SQL_ONLY.value
+                'error': str(e),
+                'query_type': QueryType.SQL_ONLY.value,
+                'routing': routing
             }
-    
     def _handle_rag_only(self, question: str, routing: Dict) -> Dict[str, Any]:
         """处理仅需RAG的查询"""
         # 构建过滤条件
@@ -721,6 +743,26 @@ class HybridAgent:
         
         integrated = self.router_llm.predict(integration_prompt)
         return integrated
+
+    def _safe_extract_result(self, result: Any, source_type: str) -> str:
+        """安全地提取结果内容"""
+        try:
+            if isinstance(result, dict):
+                # 优先级：result > data > answer > 其他
+                for key in ['result', 'data', 'answer', 'content']:
+                    if key in result and result[key]:
+                        return str(result[key])
+                # 如果没有找到，返回整个字典的字符串表示
+                return json.dumps(result, ensure_ascii=False, indent=2)
+            elif isinstance(result, str):
+                return result
+            elif result is None:
+                return f"无{source_type}数据"
+            else:
+                return str(result)
+        except Exception as e:
+            self.logger.error(f"提取{source_type}结果时出错: {e}")
+            return f"{source_type}数据提取失败"
 
 
 # 测试代码

@@ -184,7 +184,7 @@ class SQLAgent:
             early_stopping_method="force"
         )
     
-    def query(self, question: str) -> str:
+    def query(self, question: str) -> Dict[str, Any]:
         """
         执行自然语言查询 - 返回字符串结果
         
@@ -201,7 +201,12 @@ class SQLAgent:
             cache_key = self._get_cache_key(question)
             if cache_key in self._query_cache:
                 self.logger.info("使用缓存结果")
-                return self._query_cache[cache_key]
+                return {
+                'success': True,
+                'result': self._query_cache[cache_key],
+                'sql': None,
+                'cached': True
+            }
             
             # 预处理问题
             processed_question = self._preprocess_question(question)
@@ -231,12 +236,22 @@ class SQLAgent:
                 {"output": final_result}
             )
             
-            return final_result
+            return {
+                'success': True,
+                'result': final_result,
+                'sql': None,
+                'cached': False
+            }
             
         except Exception as e:
             self.logger.error(f"查询执行失败: {e}")
             error_msg = f"查询执行失败: {str(e)}"
-            return error_msg
+            return {
+                'success': False,
+                'result': None,
+                'error': error_msg,
+                'cached': False
+            }
     
     def _get_cache_key(self, question: str) -> str:
         """生成缓存键"""
