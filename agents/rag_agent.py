@@ -7,6 +7,7 @@ RAG Agent - 增强的文档查询代理
 import sys
 import os
 from typing import List, Dict, Any, Optional, Tuple
+import time
 import json
 from datetime import datetime
 
@@ -15,6 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from langchain.schema.runnable import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferWindowMemory
 
@@ -128,6 +130,7 @@ class RAGAgent:
             查询结果
         """
         try:
+            start_time = time.time()
             self.logger.info(f"RAG查询: {question}")
             
             # 1. 生成查询向量
@@ -157,11 +160,37 @@ class RAGAgent:
             context = self._format_context(documents)
             chat_history = self._get_chat_history()
             
-            answer = self.qa_chain.run(
-                context=context,
-                question=question,
-                chat_history=chat_history
-            )
+            # 调用QA Chain并智能提取答案
+            try:
+                result = self.qa_chain.invoke({
+                    "context": context,
+                    "question": question,
+                    "chat_history": chat_history
+                })
+                
+                # 智能提取答案
+                if hasattr(result, 'content'):
+                    # ChatOpenAI 直接返回的情况
+                    answer = result.content
+                elif isinstance(result, dict):
+                    # LLMChain 返回字典的情况
+                    answer = result.get('text', '') or result.get('output', '') or result.get('answer', '') or str(result)
+                elif isinstance(result, str):
+                    # 直接返回字符串的情况
+                    answer = result
+                else:
+                    # 其他情况，转换为字符串
+                    self.logger.warning(f"未知的返回类型: {type(result)}")
+                    answer = str(result)
+                
+                # 确保答案不为空
+                if not answer or answer.strip() == '':
+                    self.logger.warning("答案为空，使用默认回复")
+                    answer = "抱歉，我无法从提供的文档中找到相关信息来回答您的问题。"
+                    
+            except Exception as e:
+                self.logger.error(f"QA Chain调用失败: {e}", exc_info=True)
+                answer = f"生成答案时出错: {str(e)}"
             
             # 6. 保存到记忆
             self.memory.save_context(
@@ -175,7 +204,8 @@ class RAGAgent:
                 'answer': answer,
                 'sources': self._format_sources(documents),
                 'document_count': len(documents),
-                'type': 'rag_query'
+                'type': 'rag_query',
+                'processing_time': time.time() - start_time
             }
             
         except Exception as e:
@@ -184,7 +214,8 @@ class RAGAgent:
                 'success': False,
                 'question': question,
                 'error': str(e),
-                'type': 'rag_query'
+                'type': 'rag_query',
+                'processing_time': time.time() - start_time
             }
     
     def analyze_documents(self,
