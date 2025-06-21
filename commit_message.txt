@@ -1,6 +1,6 @@
-fix: 修复RAG Agent的Milvus Hit对象访问兼容性问题
+chore: 恢复到v1.3.7稳定版本
 
-- 修复_extract_documents方法中的属性访问方式
-- 使用getattr替代.get()方法访问Hit.entity属性
-- 解决'Hit.get() takes 2 positional arguments but 3 were given'错误
-- 所有RAG查询功能恢复正常
+- 恢复到commit 6ba45c6 (fix: 修复RAG系统答案生成问题并优化性能)
+- 保留所有测试脚本供后续使用
+- 核心功能测试通过：SQL查询✓ RAG查询✓ 混合查询✓
+- 清理了临时文件和调试脚本
