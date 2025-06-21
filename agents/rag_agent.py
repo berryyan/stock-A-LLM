@@ -367,19 +367,19 @@ class RAGAgent:
         documents = []
         
         for hit in search_results:
+            # 使用属性访问而不是get方法
             doc = {
-                'text': hit.entity.get('text', ''),
-                'ts_code': hit.entity.get('ts_code', ''),
-                'title': hit.entity.get('title', ''),
-                'ann_date': hit.entity.get('ann_date', ''),
-                'chunk_id': hit.entity.get('chunk_id', 0),
+                'text': getattr(hit.entity, 'text', ''),
+                'ts_code': getattr(hit.entity, 'ts_code', ''),
+                'title': getattr(hit.entity, 'title', ''),
+                'ann_date': getattr(hit.entity, 'ann_date', ''),
+                'chunk_id': getattr(hit.entity, 'chunk_id', 0),
                 'score': hit.distance,
-                'metadata': hit.entity.get('metadata', {})
+                'metadata': getattr(hit.entity, 'metadata', {})
             }
             documents.append(doc)
         
         return documents
-    
     def _format_context(self, documents: List[Dict[str, Any]]) -> str:
         """格式化文档内容作为上下文"""
         context_parts = []
