@@ -1,61 +1,6 @@
-feat: 统一Agent接口规范，提升系统稳定性 V1.3.5
+fix: 修复RAG Agent的Milvus Hit对象访问兼容性问题
 
-主要改进：
-1. Agent接口标准化：
-   - SQL Agent返回格式统一为字典结构
-   - 修复了字符串返回导致的类型不匹配问题
-   - 返回格式：{'success': bool, 'result': str, 'sql': str, 'error': str}
-   - 保持向后兼容性，支持旧格式
-
-2. Hybrid Agent兼容性增强：
-   - 添加类型安全检查机制
-   - 自动处理SQL Agent的新旧格式返回值
-   - 优化_handle_sql_only方法
-   - 改进错误处理和日志记录
-
-3. 测试体系完善：
-   - 新增test_real_queries.py综合测试工具
-   - 支持SQL/RAG/Hybrid三种查询模式测试
-   - 添加快速测试选项（选项5）
-   - 所有查询模式测试通过
-
-4. 代码质量提升：
-   - 修复方法签名声明（str -> Dict[str, Any]）
-   - 清理一次性修复脚本（10个fix脚本）
-   - 完善类型注解和文档字符串
-   - 增强异常处理
-
-技术细节：
-- SQL Agent query方法重构，确保始终返回字典
-- Hybrid Agent添加_safe_extract_result辅助方法
-- 类型检查使用isinstance确保安全性
-- 保留原有功能，无Breaking Changes
-
-兼容性：
-- ✅ 向后兼容所有现有API调用
-- ✅ 支持处理旧格式返回值
-- ✅ 所有测试用例通过
-- ✅ 生产环境稳定运行
-
-测试结果：
-- SQL查询：贵州茅台股价查询成功
-- RAG查询：财报内容检索正常
-- 混合查询：综合分析功能完善
-- API端点：所有接口响应正常
-
-版本更新：
-- 版本号：v1.3.4 → v1.3.5
-- 更新日期：2025-06-21
-
-相关文件：
-- modified: agents/sql_agent.py (返回格式统一)
-- modified: agents/hybrid_agent.py (兼容性增强)
-- new: test_real_queries.py (功能测试工具)
-- modified: CURRENT_STATUS.md (状态更新)
-- deleted: fix_*.py (清理临时修复脚本)
-
-后续计划：
-- 完成GitHub仓库初始化
-- 实现Redis缓存层
-- 开发前端界面
-- 添加更多查询模板
+- 修复_extract_documents方法中的属性访问方式
+- 使用getattr替代.get()方法访问Hit.entity属性
+- 解决'Hit.get() takes 2 positional arguments but 3 were given'错误
+- 所有RAG查询功能恢复正常
