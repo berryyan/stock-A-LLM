@@ -23,18 +23,32 @@ class DateIntelligenceModule:
         self._cache_timestamp = {}
         self._cache_ttl = 3600  # 缓存1小时
         
-        # 时间关键词模式
+        # 时间关键词模式 (增强版)
         self.time_patterns = {
-            '最新': ['最新', '最近', '最新的', '最近的', '现在的', '当前的'],
-            '最近N日': ['最近(\d+)天', '最近(\d+)日', '近(\d+)天', '近(\d+)日'],
+            # 基于最近交易日的当前时间
+            '最新': ['最新', '最近', '最新的', '最近的', '现在的', '当前的', '现在', '当前', '今天'],
+            # 相对于最近交易日的历史时间
+            '上一个': ['上一个交易日', '上个交易日', '昨天', '前一天', '上一天'],
+            '前N个': ['前(\d+)个交易日', '前(\d+)天', '(\d+)天前', '(\d+)个交易日前'],
+            # 时间段（基于最近交易日倒推）
+            '最近N日': ['最近(\d+)天', '最近(\d+)日', '近(\d+)天', '近(\d+)日', '最近(\d+)个交易日'],
+            '最近一周': ['最近一周', '最近1周', '近一周', '近1周', '最近7天', '最近5个交易日'],
+            '最近N周': ['最近(\d+)周', '近(\d+)周', '最近(\d+)个星期'],
+            '最近一月': ['最近一月', '最近1月', '近一月', '近1月', '最近一个月', '最近20个交易日'],
             '最近N月': ['最近(\d+)个月', '近(\d+)个月', '最近(\d+)月', '近(\d+)月'],
+            '最近一季': ['最近一季', '最近1季', '近一季', '近1季', '最近一个季度', '最近3个月'],
+            '最近N季': ['最近(\d+)季', '近(\d+)季', '最近(\d+)个季度'],
+            '最近半年': ['最近半年', '近半年', '最近6个月'],
+            '最近一年': ['最近一年', '最近1年', '近一年', '近1年', '最近12个月'],
             '最近N年': ['最近(\d+)年', '近(\d+)年'],
-            '年报': ['年报', '年度报告', '年度业绩'],
-            '季报': ['季报', '季度报告', '一季报', '二季报', '三季报', '四季报'],
-            '半年报': ['半年报', '中报', '半年度报告'],
-            '股价数据': ['股价', '价格', '收盘价', '开盘价', '最高价', '最低价', '成交量', '成交额', '涨跌幅'],
-            '财务数据': ['营收', '利润', '净利润', '资产', '负债', '现金流', 'ROE', 'ROA', '毛利率', '财务数据', '财务', '业绩'],
-            '公告': ['公告', '披露', '发布', '通知', '声明']
+            # 报告期类型
+            '年报': ['年报', '年度报告', '年度业绩', '年度财报'],
+            '季报': ['季报', '季度报告', '一季报', '二季报', '三季报', '四季报', '季度业绩', '季度财报'],
+            '半年报': ['半年报', '中报', '半年度报告', '半年度业绩'],
+            # 数据类型识别
+            '股价数据': ['股价', '价格', '收盘价', '开盘价', '最高价', '最低价', '成交量', '成交额', '涨跌幅', '市值', '换手率'],
+            '财务数据': ['营收', '利润', '净利润', '资产', '负债', '现金流', 'ROE', 'ROA', '毛利率', '财务数据', '财务', '业绩', '盈利'],
+            '公告': ['公告', '披露', '发布', '通知', '声明', '公布', '宣布']
         }
     
     def _is_cache_valid(self, cache_key: str) -> bool:
@@ -220,6 +234,145 @@ class DateIntelligenceModule:
             logger.error(f"获取最新公告日期失败: {e}")
             return None
     
+    def get_previous_trading_day(self, before_date: Optional[str] = None) -> Optional[str]:
+        """
+        获取上一个交易日
+        
+        Args:
+            before_date: 基准日期，默认为最近交易日
+            
+        Returns:
+            上一个交易日，格式YYYY-MM-DD
+        """
+        if before_date is None:
+            before_date = self.get_latest_trading_day()
+            
+        if before_date is None:
+            return None
+            
+        cache_key = f"previous_trading_day_{before_date}"
+        cached_result = self._get_cache(cache_key)
+        if cached_result:
+            return cached_result
+        
+        try:
+            query = """
+            SELECT trade_date 
+            FROM tu_daily_detail 
+            WHERE trade_date < :before_date
+            ORDER BY trade_date DESC 
+            LIMIT 1
+            """
+            
+            result = self.mysql.execute_query(query, {'before_date': before_date})
+            
+            if result and len(result) > 0:
+                previous_date = result[0]['trade_date'].strftime('%Y-%m-%d')
+                self._set_cache(cache_key, previous_date)
+                return previous_date
+                
+            return None
+            
+        except Exception as e:
+            logger.error(f"获取上一个交易日失败: {e}")
+            return None
+    
+    def get_trading_days_before(self, days: int, before_date: Optional[str] = None) -> List[str]:
+        """
+        获取指定天数之前的交易日列表
+        
+        Args:
+            days: 天数
+            before_date: 基准日期，默认为最近交易日
+            
+        Returns:
+            交易日列表，按时间倒序排列
+        """
+        if before_date is None:
+            before_date = self.get_latest_trading_day()
+            
+        if before_date is None:
+            return []
+            
+        cache_key = f"trading_days_before_{days}_{before_date}"
+        cached_result = self._get_cache(cache_key)
+        if cached_result:
+            return cached_result
+        
+        try:
+            query = f"""
+            SELECT trade_date 
+            FROM tu_daily_detail 
+            WHERE trade_date <= :before_date
+            ORDER BY trade_date DESC 
+            LIMIT {days}
+            """
+            
+            result = self.mysql.execute_query(query, {'before_date': before_date})
+            
+            if result:
+                trading_days = [row['trade_date'].strftime('%Y-%m-%d') for row in result]
+                self._set_cache(cache_key, trading_days)
+                return trading_days
+                
+            return []
+            
+        except Exception as e:
+            logger.error(f"获取前{days}个交易日失败: {e}")
+            return []
+    
+    def get_date_range_by_period(self, period_type: str, period_value: int = 1, 
+                                end_date: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+        """
+        根据时间段类型获取日期范围
+        
+        Args:
+            period_type: 时间段类型 ('week', 'month', 'quarter', 'year')
+            period_value: 时间段数量
+            end_date: 结束日期，默认为最近交易日
+            
+        Returns:
+            (开始日期, 结束日期) 元组
+        """
+        if end_date is None:
+            end_date = self.get_latest_trading_day()
+            
+        if end_date is None:
+            return None, None
+            
+        cache_key = f"date_range_{period_type}_{period_value}_{end_date}"
+        cached_result = self._get_cache(cache_key)
+        if cached_result:
+            return cached_result
+        
+        try:
+            # 根据时间段类型计算交易日数量
+            if period_type == 'week':
+                trading_days_needed = period_value * 5  # 1周约5个交易日
+            elif period_type == 'month':
+                trading_days_needed = period_value * 20  # 1月约20个交易日
+            elif period_type == 'quarter':
+                trading_days_needed = period_value * 60  # 1季度约60个交易日
+            elif period_type == 'year':
+                trading_days_needed = period_value * 240  # 1年约240个交易日
+            else:
+                return None, None
+            
+            # 获取指定数量的交易日
+            trading_days = self.get_trading_days_before(trading_days_needed, end_date)
+            
+            if trading_days:
+                start_date = trading_days[-1]  # 最早的日期
+                result = (start_date, end_date)
+                self._set_cache(cache_key, result)
+                return result
+                
+            return None, None
+            
+        except Exception as e:
+            logger.error(f"获取{period_type}期间日期范围失败: {e}")
+            return None, None
+    
     def detect_time_context(self, question: str) -> Dict[str, Any]:
         """
         检测问题中的时间上下文
@@ -232,16 +385,17 @@ class DateIntelligenceModule:
         """
         context = {
             'has_time_reference': False,
-            'time_type': None,  # 'latest', 'recent_n', 'specific'
+            'time_type': None,  # 'latest', 'previous', 'recent_n', 'recent_period', 'specific'
             'data_type': None,  # 'stock_price', 'financial', 'announcement'
             'report_type': None,  # 'annual', 'quarterly', 'interim'
             'time_value': None,
+            'period_type': None,  # 'day', 'week', 'month', 'quarter', 'year'
             'keywords': []
         }
         
         question_lower = question.lower()
         
-        # 检测时间关键词
+        # 检测时间关键词 (增强版)
         for pattern_type, patterns in self.time_patterns.items():
             for pattern in patterns:
                 if pattern_type == '最新':
@@ -250,12 +404,64 @@ class DateIntelligenceModule:
                         context['time_type'] = 'latest'
                         context['keywords'].append(pattern)
                 
+                elif pattern_type == '上一个':
+                    if pattern in question:
+                        context['has_time_reference'] = True
+                        context['time_type'] = 'previous'
+                        context['keywords'].append(pattern)
+                
+                elif pattern_type == '前N个':
+                    match = re.search(pattern, question)
+                    if match:
+                        context['has_time_reference'] = True
+                        context['time_type'] = 'previous_n'
+                        context['time_value'] = int(match.group(1))
+                        context['period_type'] = 'day'
+                        context['keywords'].append(match.group(0))
+                
                 elif pattern_type.startswith('最近N'):
                     match = re.search(pattern, question)
                     if match:
                         context['has_time_reference'] = True
                         context['time_type'] = 'recent_n'
                         context['time_value'] = int(match.group(1))
+                        if '日' in pattern or '天' in pattern:
+                            context['period_type'] = 'day'
+                        elif '周' in pattern:
+                            context['period_type'] = 'week'
+                        elif '月' in pattern:
+                            context['period_type'] = 'month'
+                        elif '季' in pattern:
+                            context['period_type'] = 'quarter'
+                        elif '年' in pattern:
+                            context['period_type'] = 'year'
+                        context['keywords'].append(match.group(0))
+                
+                elif pattern_type in ['最近一周', '最近一月', '最近一季', '最近半年', '最近一年']:
+                    if pattern in question:
+                        context['has_time_reference'] = True
+                        context['time_type'] = 'recent_period'
+                        context['keywords'].append(pattern)
+                        if '周' in pattern:
+                            context['period_type'] = 'week'
+                            context['time_value'] = 1
+                        elif '月' in pattern:
+                            context['period_type'] = 'month'
+                            context['time_value'] = 1 if '一月' in pattern else 6 if '半年' in pattern else 1
+                        elif '季' in pattern:
+                            context['period_type'] = 'quarter'
+                            context['time_value'] = 1
+                        elif '年' in pattern:
+                            context['period_type'] = 'year'
+                            context['time_value'] = 1
+                
+                elif pattern_type == '最近N周':
+                    match = re.search(pattern, question)
+                    if match:
+                        context['has_time_reference'] = True
+                        context['time_type'] = 'recent_n'
+                        context['time_value'] = int(match.group(1))
+                        context['period_type'] = 'week'
                         context['keywords'].append(match.group(0))
         
         # 检测数据类型
@@ -408,6 +614,59 @@ class DateIntelligenceModule:
                     for keyword in context['keywords']:
                         modified = modified.replace(keyword, latest_ann_date)
                     result['modified_question'] = modified
+        
+        elif context['time_type'] == 'previous':
+            # 上一个交易日
+            if context['data_type'] == 'stock_price':
+                previous_date = self.get_previous_trading_day()
+                if previous_date:
+                    result['parsed_date'] = previous_date
+                    result['date_type'] = 'trading_day'
+                    result['suggestion'] = f"将'上一个交易日'解析为: {previous_date}"
+                    
+                    modified = question
+                    for keyword in context['keywords']:
+                        modified = modified.replace(keyword, previous_date)
+                    result['modified_question'] = modified
+        
+        elif context['time_type'] == 'previous_n':
+            # 前N个交易日
+            if context['data_type'] == 'stock_price' and context['time_value']:
+                trading_days = self.get_trading_days_before(context['time_value'])
+                if trading_days:
+                    target_date = trading_days[-1]  # 第N个交易日
+                    result['parsed_date'] = target_date
+                    result['date_type'] = 'trading_day'
+                    result['suggestion'] = f"将'前{context['time_value']}个交易日'解析为: {target_date}"
+                    
+                    modified = question
+                    for keyword in context['keywords']:
+                        modified = modified.replace(keyword, target_date)
+                    result['modified_question'] = modified
+        
+        elif context['time_type'] in ['recent_n', 'recent_period']:
+            # 最近N天/周/月等时间段
+            if context['data_type'] == 'stock_price':
+                if context['time_type'] == 'recent_period':
+                    # 固定时间段（一周/一月/一季/半年/一年）
+                    period_type = context['period_type']
+                    period_value = context['time_value']
+                else:
+                    # 数值时间段（最近N天/周/月）
+                    period_type = context['period_type']
+                    period_value = context['time_value']
+                
+                if period_type and period_value:
+                    start_date, end_date = self.get_date_range_by_period(period_type, period_value)
+                    if start_date and end_date:
+                        result['parsed_date'] = f"{start_date}至{end_date}"
+                        result['date_type'] = 'date_range'
+                        result['suggestion'] = f"将'{context['keywords'][0]}'解析为时间范围: {start_date}至{end_date}"
+                        
+                        modified = question
+                        for keyword in context['keywords']:
+                            modified = modified.replace(keyword, f"{start_date}至{end_date}期间")
+                        result['modified_question'] = modified
         
         return result
     
