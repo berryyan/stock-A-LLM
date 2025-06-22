@@ -58,6 +58,10 @@ class RAGAgent:
         # 创建分析链
         self.analysis_chain = self._create_analysis_chain()
         
+        # 初始化统计信息
+        self.query_count = 0
+        self.success_count = 0
+        
         self.logger.info("RAG Agent初始化完成")
     
     def _create_qa_chain(self):
@@ -123,6 +127,9 @@ class RAGAgent:
         Returns:
             查询结果
         """
+        # 更新查询统计（包括无效查询）
+        self.query_count += 1
+        
         # 输入验证
         if not question or not question.strip():
             return {
@@ -184,6 +191,9 @@ class RAGAgent:
                 {"input": question},
                 {"output": answer}
             )
+            
+            # 更新成功统计
+            self.success_count += 1
             
             return {
                 'success': True,
@@ -469,6 +479,14 @@ class RAGAgent:
         self.memory.clear()
         self.logger.info("对话记忆已清除")
     
+    def get_stats(self) -> Dict[str, Any]:
+        """获取查询统计信息"""
+        return {
+            'query_count': self.query_count,
+            'success_count': self.success_count,
+            'success_rate': self.success_count / self.query_count if self.query_count > 0 else 0.0
+        }
+
     def get_similar_questions(self, question: str, top_k: int = 5) -> List[str]:
         """获取相似的问题建议"""
         # 这里可以基于历史查询或预定义的问题模板
