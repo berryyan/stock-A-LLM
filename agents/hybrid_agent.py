@@ -17,6 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.sql_agent import SQLAgent
 from agents.rag_agent import RAGAgent
+from agents.financial_agent import FinancialAnalysisAgent
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
@@ -30,6 +31,7 @@ class QueryType(str, Enum):
     """查询类型枚举"""
     SQL_ONLY = "sql"          # 仅需SQL查询
     RAG_ONLY = "rag"          # 仅需RAG查询
+    FINANCIAL = "financial"   # 财务分析查询
     SQL_FIRST = "hybrid"      # 先SQL后RAG
     RAG_FIRST = "hybrid"      # 先RAG后SQL
     PARALLEL = "hybrid"       # 并行查询
@@ -38,6 +40,7 @@ class QueryType(str, Enum):
     # 添加小写别名以便兼容
     sql = "sql"
     rag = "rag"
+    financial = "financial"
     hybrid = "hybrid"
     
     @classmethod
@@ -53,8 +56,10 @@ class QueryType(str, Enum):
         mappings = {
             'sql_only': cls.SQL_ONLY,
             'rag_only': cls.RAG_ONLY,
+            'financial': cls.FINANCIAL,
             'sql': cls.sql,
             'rag': cls.rag,
+            'financial': cls.financial,
             'hybrid': cls.hybrid,
             'complex': cls.COMPLEX,
             'sql_first': cls.SQL_FIRST,
@@ -74,6 +79,7 @@ class HybridAgent:
         # 初始化子代理
         self.sql_agent = SQLAgent()
         self.rag_agent = RAGAgent()
+        self.financial_agent = FinancialAnalysisAgent()
         
         # 初始化路由LLM
         self.router_llm = ChatOpenAI(
@@ -107,18 +113,30 @@ class HybridAgent:
                 ]
             },
             'rag_patterns': {
-                'keywords': ['公告', '报告', '说明', '解释', '原因', '计划', '战略', '风险', '优势', '分析'],
+                'keywords': ['公告', '报告', '说明', '解释', '原因', '计划', '战略', '风险', '优势'],
                 'patterns': [
                     r'.*报告.*内容',
                     r'.*公告.*说',
-                    r'分析.*表现',
                     r'.*未来.*计划'
+                ]
+            },
+            'financial_patterns': {
+                'keywords': ['财务健康', '财务状况', '经营状况', '财务评级', '健康度', '盈利能力', 'ROE', 'ROA', '杜邦分析', '现金流质量', '偿债能力', '多期对比', '增长率', '财务分析'],
+                'patterns': [
+                    r'.*财务.*分析',
+                    r'.*杜邦.*分析',
+                    r'.*现金流.*质量',
+                    r'.*财务.*健康',
+                    r'.*财务.*评级',
+                    r'.*盈利.*能力',
+                    r'.*偿债.*能力',
+                    r'.*多期.*对比',
+                    r'ROE.*分解'
                 ]
             },
             'hybrid_patterns': {
                 'keywords': ['综合分析', '全面评估', '详细了解', '深入研究'],
                 'patterns': [
-                    r'.*财务.*分析',
                     r'.*业绩.*原因',
                     r'.*比较.*分析'
                 ]
@@ -134,6 +152,7 @@ class HybridAgent:
 查询模式说明：
 - SQL_ONLY: 查询结构化数据（股价、财务指标、排名等）
 - RAG_ONLY: 查询文档内容（公告详情、管理层分析等）
+- FINANCIAL: 专业财务分析（财务健康度、杜邦分析、现金流质量等）
 - SQL_FIRST: 先获取数据，再查找相关解释
 - RAG_FIRST: 先查找文档，可能需要补充数据
 - PARALLEL: 同时需要数据和文档
@@ -220,6 +239,9 @@ class HybridAgent:
             elif query_type == QueryType.RAG_ONLY:
                 return self._handle_rag_only(question, routing_decision)
             
+            elif query_type == QueryType.FINANCIAL:
+                return self._handle_financial_analysis(question, routing_decision)
+            
             elif query_type == QueryType.SQL_FIRST:
                 return self._handle_sql_first(question, routing_decision)
             
@@ -280,6 +302,7 @@ class HybridAgent:
         """基于规则的路由（降级方案）"""
         sql_score = 0
         rag_score = 0
+        financial_score = 0
         
         # 关键词匹配
         for keyword in self.query_patterns['sql_patterns']['keywords']:
@@ -290,8 +313,19 @@ class HybridAgent:
             if keyword in question:
                 rag_score += 1
         
+        for keyword in self.query_patterns['financial_patterns']['keywords']:
+            if keyword in question:
+                financial_score += 2  # 财务分析关键词权重更高
+        
+        # 模式匹配
+        for pattern in self.query_patterns['financial_patterns']['patterns']:
+            if re.search(pattern, question):
+                financial_score += 3
+        
         # 决定查询类型
-        if sql_score > 0 and rag_score == 0:
+        if financial_score > 0:
+            query_type = QueryType.FINANCIAL.value
+        elif sql_score > 0 and rag_score == 0:
             query_type = QueryType.SQL_ONLY.value
         elif rag_score > 0 and sql_score == 0:
             query_type = QueryType.RAG_ONLY.value
@@ -386,6 +420,45 @@ class HybridAgent:
             }
         else:
             return rag_result
+    
+    def _handle_financial_analysis(self, question: str, routing: Dict) -> Dict[str, Any]:
+        """处理财务分析查询"""
+        try:
+            self.logger.info(f"执行财务分析查询: {question}")
+            
+            # 直接调用财务分析代理
+            financial_result = self.financial_agent.query(question)
+            
+            if financial_result.get('success', False):
+                return {
+                    'success': True,
+                    'question': question,
+                    'answer': financial_result.get('analysis_report', '财务分析完成'),
+                    'query_type': QueryType.FINANCIAL.value,
+                    'routing': routing,
+                    'sources': {
+                        'financial': financial_result
+                    },
+                    'financial_data': financial_result  # 保留完整的财务分析数据
+                }
+            else:
+                return {
+                    'success': False,
+                    'question': question,
+                    'error': financial_result.get('error', '财务分析失败'),
+                    'query_type': QueryType.FINANCIAL.value,
+                    'routing': routing
+                }
+                
+        except Exception as e:
+            self.logger.error(f"财务分析处理失败: {e}")
+            return {
+                'success': False,
+                'question': question,
+                'error': str(e),
+                'query_type': QueryType.FINANCIAL.value,
+                'routing': routing
+            }
     
     def _handle_sql_first(self, question: str, routing: Dict) -> Dict[str, Any]:
         """先SQL后RAG的查询"""

@@ -29,8 +29,8 @@ from utils.logger import setup_logger
 # 创建FastAPI应用
 app = FastAPI(
     title="股票分析智能查询系统",
-    description="基于LangChain + RAG的智能股票分析API",
-    version="1.0.0"
+    description="基于LangChain + RAG + 深度财务分析的智能股票分析API (v1.4.0)",
+    version="1.4.0"
 )
 
 # 配置CORS
@@ -95,6 +95,32 @@ class CompareRequest(BaseModel):
                 "period": "2024Q1"
             }
         }
+
+
+class FinancialAnalysisRequest(BaseModel):
+    """财务分析请求模型"""
+    ts_code: str = Field(..., description="股票代码")
+    analysis_type: str = Field("financial_health", description="分析类型")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "ts_code": "600519.SH",
+                "analysis_type": "financial_health"
+            }
+        }
+
+
+class FinancialAnalysisResponse(BaseModel):
+    """财务分析响应模型"""
+    success: bool
+    ts_code: str
+    analysis_type: str
+    analysis_report: Optional[str] = None
+    financial_data: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+    processing_time: Optional[float] = None
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
 
 
 class SystemStatus(BaseModel):
@@ -183,7 +209,17 @@ async def root():
     """API根路径"""
     return {
         "message": "股票分析智能查询系统 API",
-        "version": "1.0.0",
+        "version": "1.4.0",
+        "features": [
+            "智能查询路由",
+            "SQL数据查询",
+            "RAG文档检索", 
+            "专业财务分析",
+            "四表联合分析",
+            "财务健康度评分",
+            "杜邦分析",
+            "现金流质量分析"
+        ],
         "docs": "/docs",
         "redoc": "/redoc"
     }
@@ -347,6 +383,59 @@ async def get_query_suggestions(q: str = Query(..., description="用户输入"))
     except Exception as e:
         logger.error(f"生成建议失败: {e}")
         return {"suggestions": []}
+
+
+@app.post("/financial-analysis", response_model=FinancialAnalysisResponse, tags=["财务分析"])
+async def financial_analysis(request: FinancialAnalysisRequest):
+    """专业财务分析"""
+    import time
+    
+    try:
+        if not hybrid_agent:
+            raise HTTPException(status_code=503, detail="系统未初始化")
+        
+        # 构建财务分析查询
+        analysis_queries = {
+            "financial_health": f"分析{request.ts_code}的财务健康状况",
+            "dupont_analysis": f"对{request.ts_code}进行杜邦分析",
+            "cash_flow_quality": f"分析{request.ts_code}的现金流质量",
+            "multi_period_comparison": f"{request.ts_code}的多期财务对比分析"
+        }
+        
+        query_text = analysis_queries.get(request.analysis_type, 
+                                         f"分析{request.ts_code}的财务状况")
+        
+        # 执行财务分析
+        start_time = time.time()
+        result = hybrid_agent.query(query_text)
+        processing_time = time.time() - start_time
+        
+        if result.get('success', False):
+            return FinancialAnalysisResponse(
+                success=True,
+                ts_code=request.ts_code,
+                analysis_type=request.analysis_type,
+                analysis_report=result.get('answer'),
+                financial_data=result.get('financial_data'),
+                processing_time=processing_time
+            )
+        else:
+            return FinancialAnalysisResponse(
+                success=False,
+                ts_code=request.ts_code,
+                analysis_type=request.analysis_type,
+                error=result.get('error', '财务分析失败'),
+                processing_time=processing_time
+            )
+        
+    except Exception as e:
+        logger.error(f"财务分析API失败: {e}")
+        return FinancialAnalysisResponse(
+            success=False,
+            ts_code=request.ts_code,
+            analysis_type=request.analysis_type,
+            error=str(e)
+        )
 
 
 @app.get("/companies", tags=["数据"])
