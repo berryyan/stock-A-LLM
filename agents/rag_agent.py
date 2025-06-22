@@ -25,6 +25,7 @@ from database.milvus_connector import MilvusConnector
 from models.embedding_model import EmbeddingModel
 from config.settings import settings
 from utils.logger import setup_logger
+from utils.date_intelligence import date_intelligence
 
 
 class RAGAgent:
@@ -140,8 +141,18 @@ class RAGAgent:
             start_time = time.time()
             self.logger.info(f"RAG查询: {question}")
             
-            # 1. 生成查询向量
-            query_vector = self.embedding_model.encode([question])[0].tolist()
+            # 0. 使用智能日期解析预处理问题
+            processed_question, parsing_result = date_intelligence.preprocess_question(question)
+            
+            # 如果解析出了股票代码和特定数据类型，可以优化过滤条件
+            if parsing_result.get('stock_code') and parsing_result.get('date_type') == 'announcement_date':
+                if not filters:
+                    filters = {}
+                if 'ts_code' not in filters:
+                    filters['ts_code'] = parsing_result['stock_code']
+            
+            # 1. 生成查询向量 (使用处理后的问题)
+            query_vector = self.embedding_model.encode([processed_question])[0].tolist()
             
             # 2. 构建过滤表达式
             filter_expr = self._build_filter_expr(filters)
@@ -184,16 +195,18 @@ class RAGAgent:
                 self.logger.error(f"QA Chain调用失败: {e}", exc_info=True)
                 answer = f"生成答案时出错: {str(e)}"
             
-            # 6. 保存到记忆
-            self.memory.save_context(
-                {"input": question},
-                {"output": answer}
-            )
+            # 6. 保存到记忆 (已现代化，暂时跳过内存保存)
+            # TODO: 实现现代化的内存管理
+            # if self.memory:
+            #     self.memory.save_context(
+            #         {"input": question},
+            #         {"output": answer}
+            #     )
             
             # 更新成功统计
             self.success_count += 1
             
-            return {
+            result = {
                 'success': True,
                 'question': question,
                 'answer': answer,
@@ -202,6 +215,16 @@ class RAGAgent:
                 'type': 'rag_query',
                 'processing_time': time.time() - start_time
             }
+            
+            # 如果有日期解析结果，添加到返回信息中
+            if parsing_result.get('suggestion'):
+                result['date_parsing'] = {
+                    'suggestion': parsing_result['suggestion'],
+                    'modified_question': parsing_result.get('modified_question'),
+                    'parsed_date': parsing_result.get('parsed_date')
+                }
+            
+            return result
             
         except Exception as e:
             self.logger.error(f"RAG查询失败: {e}")
@@ -461,16 +484,21 @@ class RAGAgent:
     
     def _get_chat_history(self) -> str:
         """获取格式化的对话历史"""
-        messages = self.memory.chat_memory.messages
-        history_parts = []
-        
-        for i in range(0, len(messages), 2):
-            if i + 1 < len(messages):
-                user_msg = messages[i].content
-                assistant_msg = messages[i + 1].content
-                history_parts.append(f"用户: {user_msg}\n助手: {assistant_msg}")
-        
-        return "\n\n".join(history_parts) if history_parts else "无历史对话"
+        # 由于内存管理已现代化，暂时返回空字符串
+        # TODO: 实现现代化的内存管理
+        if self.memory and hasattr(self.memory, 'chat_memory'):
+            messages = self.memory.chat_memory.messages
+            history_parts = []
+            
+            for i in range(0, len(messages), 2):
+                if i + 1 < len(messages):
+                    user_msg = messages[i].content
+                    assistant_msg = messages[i + 1].content
+                    history_parts.append(f"用户: {user_msg}\n助手: {assistant_msg}")
+            
+            return "\n\n".join(history_parts) if history_parts else "无历史对话"
+        else:
+            return "无历史对话"
     
     def clear_memory(self):
         """清除对话记忆"""

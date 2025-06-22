@@ -28,6 +28,7 @@ import pandas as pd
 from config.settings import settings
 from database.mysql_connector import MySQLConnector
 from utils.logger import setup_logger
+from utils.date_intelligence import date_intelligence
 
 
 class SQLAgent:
@@ -215,8 +216,12 @@ class SQLAgent:
                 'cached': True
             }
             
-            # 预处理问题
-            processed_question = self._preprocess_question(question)
+            # 使用智能日期解析预处理问题
+            processed_question, parsing_result = date_intelligence.preprocess_question(question)
+            
+            # 如果没有日期解析结果，使用传统预处理
+            if not parsing_result['modified_question']:
+                processed_question = self._preprocess_question(question)
             
             # 使用agent执行查询
             result = self.agent.invoke({"input": processed_question})
@@ -242,11 +247,13 @@ class SQLAgent:
             # 缓存结果
             self._query_cache[cache_key] = final_result
             
-            # 记录到内存
-            self.memory.save_context(
-                {"input": question},
-                {"output": final_result}
-            )
+            # 记录到内存 (已现代化，暂时跳过内存保存)
+            # TODO: 实现现代化的内存管理
+            # if self.memory:
+            #     self.memory.save_context(
+            #         {"input": question},
+            #         {"output": final_result}
+            #     )
             
             return {
                 'success': True,

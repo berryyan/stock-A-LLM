@@ -29,8 +29,8 @@ from utils.logger import setup_logger
 # 创建FastAPI应用
 app = FastAPI(
     title="股票分析智能查询系统",
-    description="基于LangChain + RAG + 深度财务分析的智能股票分析API (v1.4.0)",
-    version="1.4.0"
+    description="基于LangChain + RAG + 深度财务分析 + 智能日期解析的智能股票分析API (v1.4.1)",
+    version="1.4.1"
 )
 
 # 配置CORS
@@ -209,7 +209,7 @@ async def root():
     """API根路径"""
     return {
         "message": "股票分析智能查询系统 API",
-        "version": "1.4.0",
+        "version": "1.4.1",
         "features": [
             "智能查询路由",
             "SQL数据查询",
@@ -218,7 +218,8 @@ async def root():
             "四表联合分析",
             "财务健康度评分",
             "杜邦分析",
-            "现金流质量分析"
+            "现金流质量分析",
+            "智能日期解析"
         ],
         "docs": "/docs",
         "redoc": "/redoc"

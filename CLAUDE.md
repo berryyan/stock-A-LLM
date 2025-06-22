@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v1.4.0)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v1.4.1)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ All systems operational, Phase 1 深度财务分析系统开发完成, 新增专业财务分析功能.
+**Current Status**: ✅ All systems operational, Phase 1 深度财务分析系统开发完成, 新增专业财务分析功能, 新增智能日期解析功能.
 
 ## Development Commands
 
@@ -52,6 +52,10 @@ python comprehensive_verification.py
 # Test financial analysis features (v1.4.0 new)
 python test_financial_agent.py
 python test_advanced_financial_features.py
+
+# Test intelligent date parsing features (v1.4.1 new)
+python test_date_intelligence.py
+python test_date_intelligence_integration.py
 
 # Archived test scripts (in scripts/tests/)
 python scripts/tests/test_optimized_rag.py
@@ -205,6 +209,33 @@ The system supports three main query types:
 - 平安银行杜邦分析: 净利率41.82%，但资产周转率低(0.006次)，高杠杆(11.42倍)
 - 现金流质量分析: 准确识别茅台现金流波动问题，万科现金流质量评级
 - 查询响应时间: 25-30秒，包含完整的LLM分析报告生成
+
+#### v1.4.1 - 智能日期解析系统 (2025-06-23)
+
+**智能日期解析核心功能** ✅:
+- **自然语言时间识别**: 自动识别"最新"、"最近"、"现在"等时间表达
+- **数据类型智能分类**: 区分股价数据、财务数据、公告数据的时间需求
+- **最近交易日查询**: 智能获取最近可用的交易日（避免非交易日查询错误）
+- **最新报告期识别**: 自动查找最新的年报、季报、半年报期间
+- **最新公告日期**: 动态获取特定股票的最新公告发布日期
+
+**系统集成** ✅:
+- **SQL Agent集成**: 预处理"茅台最新股价"→"茅台2025-06-20股价"
+- **RAG Agent集成**: 预处理"贵州茅台最新公告"→"贵州茅台2025-06-20公告"
+- **Hybrid Agent支持**: 复合查询中的智能时间解析
+- **缓存机制**: 1小时TTL缓存，避免重复数据库查询
+
+**解析示例** ✅:
+- "茅台最新股价" → 查询2025-06-20交易日数据
+- "贵州茅台最新财务数据" → 查询20250331期最新报告
+- "600519.SH最新公告" → 查询2025-06-20最新公告
+- "比亚迪现在的股价如何" → 自动转换为最近交易日查询
+
+**技术实现** ✅:
+- 新增 `utils/date_intelligence.py` 智能日期解析模块
+- 正则表达式模式匹配 + 股票代码识别
+- SQLAlchemy参数化查询，防止SQL注入
+- 统一错误处理和日志记录
 
 #### v1.3.8 - LangChain现代化 (2025-06-22)
 
