@@ -1,8 +1,8 @@
 # 股票分析系统项目状态文档
 
-**版本**: v1.3.8  
+**版本**: v1.3.7  
 **更新日期**: 2025-06-22  
-**状态**: ✅ 系统功能正常 | 所有模块正常运行 | LangChain现代化完成  
+**状态**: ✅ 系统功能正常 | 所有模块正常运行  
 **项目名称**: Stock Analysis System (基于LangChain的智能股票分析系统)
 
 ## 📋 目录
@@ -33,55 +33,6 @@ Stock Analysis System 是一个基于 LangChain 框架的智能股票分析系�
 - 🚀 **高性能**: GPU加速向量计算，智能缓存机制，并行查询处理
 
 ## 最新更新
-
-### 2025-06-22 更新 (v1.3.8)
-
-#### 1. LangChain现代化改造 ✅
-- **升级内容**：
-  - 将所有`LLMChain`更新为现代`RunnableSequence`模式
-  - 使用管道操作符`|`构建链式调用
-  - 移除所有弃用的`Chain.run()`调用，改用`invoke()`
-  - 解决了`StdOutCallbackHandler`警告问题
-  
-- **受影响的文件**：
-  - `agents/rag_agent.py`: 更新QA Chain和Analysis Chain
-  - `agents/sql_agent.py`: 更新SQL生成链
-  - `agents/hybrid_agent.py`: 更新路由链，移除LLMChain类型提示
-
-#### 2. 输入验证增强 ✅
-- **新增功能**：
-  - 所有Agent都添加了空查询验证
-  - 统一的错误返回格式
-  - 防止空字符串或纯空白输入
-  
-- **验证逻辑**：
-  ```python
-  if not question or not question.strip():
-      return {
-          'success': False,
-          'error': '查询内容不能为空',
-          'type': 'xxx_query'
-      }
-  ```
-
-#### 3. RAG Agent统计功能 ✅
-- **新增统计**：
-  - `query_count`: 总查询次数
-  - `success_count`: 成功查询次数
-  - `get_stats()`: 获取统计信息方法
-  - 支持成功率计算
-
-#### 4. 测试完善 ✅
-- **测试覆盖**：
-  - 所有功能测试通过（6/6）
-  - baseline_test.py: 基础功能验证
-  - comprehensive_verification.py: 全面功能测试
-  - test_optimized_rag.py: RAG优化测试
-  
-- **测试脚本整理**：
-  - 保留在根目录：重要测试脚本
-  - 归档到scripts/tests/：有价值的历史脚本
-  - 删除：临时调试脚本
 
 ### 2025-06-22 更新 (v1.3.7)
 
@@ -341,12 +292,11 @@ Stock Analysis System 是一个基于 LangChain 框架的智能股票分析系�
 - v1.3.5 (2025-06-21): Agent接口统一化
 - v1.3.6 (2025-06-21): Milvus兼容性部分修复
 - v1.3.7 (2025-06-22): RAG系统完全修复，答案生成优化
-- v1.3.8 (2025-06-22): LangChain现代化完成，输入验证增强，测试脚本整理
 
 ---
 
 **项目维护者**: AI Development Team  
-**最后更新**: 2025-06-22 02:30  
+**最后更新**: 2025-06-22 01:18  
 **下一次评审**: 2025-06-28  
 
 ## 联系方式
