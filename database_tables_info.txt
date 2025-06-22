@@ -1,0 +1,625 @@
+数据库表信息
+生成时间: 2025-06-22 23:16:31.594784
+数据库: Tushare
+总表数: 14
+============================================================
+
+
+表名: tu_anns_d
+记录数: 2,097,794
+字段数: 7
+字段列表:
+  - id: bigint
+  - ann_date: date
+  - ts_code: varchar(20)
+  - name: varchar(50)
+  - title: varchar(255)
+  - url: varchar(255)
+  - rec_time: datetime
+----------------------------------------
+
+表名: tu_balancesheet
+记录数: 126,652
+字段数: 161
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - ann_date: varchar(8)
+  - f_ann_date: varchar(8)
+  - end_date: varchar(8)
+  - report_type: varchar(2)
+  - comp_type: varchar(1)
+  - end_type: varchar(10)
+  - total_share: float
+  - cap_rese: float
+  - undistr_porfit: float
+  - surplus_rese: float
+  - special_rese: float
+  - money_cap: float
+  - trad_asset: float
+  - notes_receiv: float
+  - accounts_receiv: float
+  - oth_receiv: float
+  - prepayment: float
+  - div_receiv: float
+  - int_receiv: float
+  - inventories: float
+  - amor_exp: float
+  - nca_within_1y: float
+  - sett_rsrv: float
+  - loanto_oth_bank_fi: float
+  - premium_receiv: float
+  - reinsur_receiv: float
+  - reinsur_res_receiv: float
+  - pur_resale_fa: float
+  - oth_cur_assets: float
+  - total_cur_assets: float
+  - fa_avail_for_sale: float
+  - htm_invest: float
+  - lt_eqt_invest: float
+  - invest_real_estate: float
+  - time_deposits: float
+  - oth_assets: float
+  - lt_rec: float
+  - fix_assets: float
+  - cip: float
+  - const_materials: float
+  - fixed_assets_disp: float
+  - produc_bio_assets: float
+  - oil_and_gas_assets: float
+  - intan_assets: float
+  - r_and_d: float
+  - goodwill: float
+  - lt_amor_exp: float
+  - defer_tax_assets: float
+  - decr_in_disbur: float
+  - oth_nca: float
+  - total_nca: float
+  - cash_reser_cb: float
+  - depos_in_oth_bfi: float
+  - prec_metals: float
+  - deriv_assets: float
+  - rr_reins_une_prem: float
+  - rr_reins_outstd_cla: float
+  - rr_reins_lins_liab: float
+  - rr_reins_lthins_liab: float
+  - refund_depos: float
+  - ph_pledge_loans: float
+  - refund_cap_depos: float
+  - indep_acct_assets: float
+  - client_depos: float
+  - client_prov: float
+  - transac_seat_fee: float
+  - invest_as_receiv: float
+  - total_assets: float
+  - lt_borr: float
+  - st_borr: float
+  - cb_borr: float
+  - depos_ib_deposits: float
+  - loan_oth_bank: float
+  - trading_fl: float
+  - notes_payable: float
+  - acct_payable: float
+  - adv_receipts: float
+  - sold_for_repur_fa: float
+  - comm_payable: float
+  - payroll_payable: float
+  - taxes_payable: float
+  - int_payable: float
+  - div_payable: float
+  - oth_payable: float
+  - acc_exp: float
+  - deferred_inc: float
+  - st_bonds_payable: float
+  - payable_to_reinsurer: float
+  - rsrv_insur_cont: float
+  - acting_trading_sec: float
+  - acting_uw_sec: float
+  - non_cur_liab_due_1y: float
+  - oth_cur_liab: float
+  - total_cur_liab: float
+  - bond_payable: float
+  - lt_payable: float
+  - specific_payables: float
+  - estimated_liab: float
+  - defer_tax_liab: float
+  - defer_inc_non_cur_liab: float
+  - oth_ncl: float
+  - total_ncl: float
+  - depos_oth_bfi: float
+  - deriv_liab: float
+  - depos: float
+  - agency_bus_liab: float
+  - oth_liab: float
+  - prem_receiv_adva: float
+  - depos_received: float
+  - ph_invest: float
+  - reser_une_prem: float
+  - reser_outstd_claims: float
+  - reser_lins_liab: float
+  - reser_lthins_liab: float
+  - indept_acc_liab: float
+  - pledge_borr: float
+  - indem_payable: float
+  - policy_div_payable: float
+  - total_liab: float
+  - treasury_share: float
+  - ordin_risk_reser: float
+  - forex_differ: float
+  - invest_loss_unconf: float
+  - minority_int: float
+  - total_hldr_eqy_exc_min_int: float
+  - total_hldr_eqy_inc_min_int: float
+  - total_liab_hldr_eqy: float
+  - lt_payroll_payable: float
+  - oth_comp_income: float
+  - oth_eqt_tools: float
+  - oth_eqt_tools_p_shr: float
+  - lending_funds: float
+  - acc_receivable: float
+  - st_fin_payable: float
+  - payables: float
+  - hfs_assets: float
+  - hfs_sales: float
+  - cost_fin_assets: float
+  - fair_value_fin_assets: float
+  - cip_total: float
+  - oth_pay_total: float
+  - long_pay_total: float
+  - debt_invest: float
+  - oth_debt_invest: float
+  - oth_eq_invest: float
+  - oth_illiq_fin_assets: float
+  - oth_eq_ppbond: float
+  - receiv_financing: float
+  - use_right_assets: float
+  - lease_liab: float
+  - contract_assets: float
+  - contract_liab: float
+  - accounts_receiv_bill: float
+  - accounts_pay: float
+  - oth_rcv_total: float
+  - fix_assets_total: float
+  - update_flag: varchar(1)
+  - create_time: timestamp
+  - update_time: timestamp
+----------------------------------------
+
+表名: tu_cashflow
+记录数: 121,840
+字段数: 100
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - ann_date: varchar(8)
+  - f_ann_date: varchar(8)
+  - end_date: varchar(8)
+  - comp_type: varchar(1)
+  - report_type: varchar(2)
+  - end_type: varchar(10)
+  - net_profit: float
+  - finan_exp: float
+  - c_fr_sale_sg: float
+  - recp_tax_rends: float
+  - n_depos_incr_fi: float
+  - n_incr_loans_cb: float
+  - n_inc_borr_oth_fi: float
+  - prem_fr_orig_contr: float
+  - n_incr_insured_dep: float
+  - n_reinsur_prem: float
+  - n_incr_disp_tfa: float
+  - ifc_cash_incr: float
+  - n_incr_disp_faas: float
+  - n_incr_loans_oth_bank: float
+  - n_cap_incr_repur: float
+  - c_fr_oth_operate_a: float
+  - c_inf_fr_operate_a: float
+  - c_paid_goods_s: float
+  - c_paid_to_for_empl: float
+  - c_paid_for_taxes: float
+  - n_incr_clt_loan_adv: float
+  - n_incr_dep_cbob: float
+  - c_pay_claims_orig_inco: float
+  - pay_handling_chrg: float
+  - pay_comm_insur_plcy: float
+  - oth_cash_pay_oper_act: float
+  - st_cash_out_act: float
+  - n_cashflow_act: float
+  - oth_recp_ral_inv_act: float
+  - c_disp_withdrwl_invest: float
+  - c_recp_return_invest: float
+  - n_recp_disp_fiolta: float
+  - n_recp_disp_sobu: float
+  - stot_inflows_inv_act: float
+  - c_pay_acq_const_fiolta: float
+  - c_paid_invest: float
+  - n_disp_subs_oth_biz: float
+  - oth_pay_ral_inv_act: float
+  - n_incr_pledge_loan: float
+  - stot_out_inv_act: float
+  - n_cashflow_inv_act: float
+  - c_recp_borrow: float
+  - proc_issue_bonds: float
+  - oth_cash_recp_ral_fnc_act: float
+  - stot_cash_in_fnc_act: float
+  - free_cashflow: float
+  - c_prepay_amt_borr: float
+  - c_pay_dist_dpcp_int_exp: float
+  - incl_dvd_profit_paid_sc_ms: float
+  - oth_cashpay_ral_fnc_act: float
+  - stot_cashout_fnc_act: float
+  - n_cash_flows_fnc_act: float
+  - eff_fx_flu_cash: float
+  - n_incr_cash_cash_equ: float
+  - c_cash_equ_beg_period: float
+  - c_cash_equ_end_period: float
+  - c_recp_cap_contrib: float
+  - incl_cash_rec_saims: float
+  - uncon_invest_loss: float
+  - prov_depr_assets: float
+  - depr_fa_coga_dpba: float
+  - amort_intang_assets: float
+  - lt_amort_deferred_exp: float
+  - decr_deferred_exp: float
+  - incr_acc_exp: float
+  - loss_disp_fiolta: float
+  - loss_scr_fa: float
+  - loss_fv_chg: float
+  - invest_loss: float
+  - decr_def_inc_tax_assets: float
+  - incr_def_inc_tax_liab: float
+  - decr_inventories: float
+  - decr_oper_payable: float
+  - incr_oper_payable: float
+  - others: float
+  - im_net_cashflow_oper_act: float
+  - conv_debt_into_cap: float
+  - conv_copbonds_due_within_1y: float
+  - fa_fnc_leases: float
+  - im_n_incr_cash_equ: float
+  - net_dism_capital_add: float
+  - net_cash_rece_sec: float
+  - credit_impa_loss: float
+  - use_right_asset_dep: float
+  - oth_loss_asset: float
+  - end_bal_cash: float
+  - beg_bal_cash: float
+  - end_bal_cash_equ: float
+  - beg_bal_cash_equ: float
+  - update_flag: varchar(1)
+  - create_time: timestamp
+  - update_time: timestamp
+----------------------------------------
+
+表名: tu_daily_basic
+记录数: 6,308,521
+字段数: 20
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - trade_date: varchar(8)
+  - close: float
+  - turnover_rate: float
+  - turnover_rate_f: float
+  - volume_ratio: float
+  - pe: float
+  - pe_ttm: float
+  - pb: float
+  - ps: float
+  - ps_ttm: float
+  - dv_ratio: float
+  - dv_ttm: float
+  - total_share: float
+  - float_share: float
+  - free_share: float
+  - total_mv: float
+  - circ_mv: float
+  - update_time: timestamp
+----------------------------------------
+
+表名: tu_daily_detail
+记录数: 15,643,471
+字段数: 13
+字段列表:
+  - id: bigint
+  - ts_code: varchar(255)
+  - trade_date: date
+  - open: decimal(10,2)
+  - high: decimal(10,2)
+  - low: decimal(10,2)
+  - close: decimal(10,2)
+  - pre_close: decimal(10,2)
+  - change: decimal(10,2)
+  - pct_chg: decimal(10,2)
+  - vol: bigint
+  - amount: decimal(18,2)
+  - vwap: double
+----------------------------------------
+
+表名: tu_fina_indicator
+记录数: 137,888
+字段数: 59
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - ann_date: varchar(8)
+  - end_date: varchar(8)
+  - eps: float
+  - dt_eps: float
+  - bps: float
+  - ocfps: float
+  - cfps: float
+  - roe: float
+  - roe_waa: float
+  - roe_dt: float
+  - roa: float
+  - roic: float
+  - grossprofit_margin: float
+  - netprofit_margin: float
+  - gross_margin: float
+  - profit_to_gr: float
+  - op_of_gr: float
+  - basic_eps_yoy: float
+  - netprofit_yoy: float
+  - dt_netprofit_yoy: float
+  - or_yoy: float
+  - op_yoy: float
+  - assets_yoy: float
+  - equity_yoy: float
+  - assets_turn: float
+  - ca_turn: float
+  - fa_turn: float
+  - inv_turn: float
+  - ar_turn: float
+  - invturn_days: float
+  - arturn_days: float
+  - turn_days: float
+  - debt_to_assets: float
+  - current_ratio: float
+  - quick_ratio: float
+  - cash_ratio: float
+  - ocf_to_shortdebt: float
+  - debt_to_eqt: float
+  - fcff: float
+  - fcfe: float
+  - ocf_to_or: float
+  - assets_to_eqt: float
+  - dp_assets_to_eqt: float
+  - roa_dp: float
+  - q_eps: float
+  - q_roe: float
+  - q_dt_roe: float
+  - q_sales_yoy: float
+  - q_op_qoq: float
+  - q_netprofit_yoy: float
+  - rd_exp: float
+  - profit_dedt: float
+  - ebit: float
+  - ebitda: float
+  - update_flag: varchar(1)
+  - create_time: timestamp
+  - update_time: timestamp
+----------------------------------------
+
+表名: tu_forecast
+记录数: 37,349
+字段数: 15
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - ann_date: varchar(8)
+  - end_date: varchar(8)
+  - type: varchar(20)
+  - p_change_min: float
+  - p_change_max: float
+  - net_profit_min: float
+  - net_profit_max: float
+  - last_parent_net: float
+  - first_ann_date: varchar(8)
+  - summary: text
+  - change_reason: text
+  - create_time: timestamp
+  - update_time: timestamp
+----------------------------------------
+
+表名: tu_income
+记录数: 128,932
+字段数: 83
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - ann_date: varchar(8)
+  - f_ann_date: varchar(8)
+  - end_date: varchar(8)
+  - report_type: varchar(2)
+  - comp_type: varchar(1)
+  - end_type: varchar(10)
+  - basic_eps: float
+  - diluted_eps: float
+  - total_revenue: float
+  - revenue: float
+  - int_income: float
+  - prem_earned: float
+  - comm_income: float
+  - n_commis_income: float
+  - n_oth_income: float
+  - n_oth_b_income: float
+  - prem_income: float
+  - out_prem: float
+  - une_prem_reser: float
+  - reins_income: float
+  - n_sec_tb_income: float
+  - n_sec_uw_income: float
+  - n_asset_mg_income: float
+  - oth_b_income: float
+  - fv_value_chg_gain: float
+  - invest_income: float
+  - ass_invest_income: float
+  - forex_gain: float
+  - total_cogs: float
+  - oper_cost: float
+  - int_exp: float
+  - comm_exp: float
+  - biz_tax_surchg: float
+  - sell_exp: float
+  - admin_exp: float
+  - fin_exp: float
+  - assets_impair_loss: float
+  - prem_refund: float
+  - compens_payout: float
+  - reser_insur_liab: float
+  - div_payt: float
+  - reins_exp: float
+  - oper_exp: float
+  - compens_payout_refu: float
+  - insur_reser_refu: float
+  - reins_cost_refund: float
+  - other_bus_cost: float
+  - operate_profit: float
+  - non_oper_income: float
+  - non_oper_exp: float
+  - nca_disploss: float
+  - total_profit: float
+  - income_tax: float
+  - n_income: float
+  - n_income_attr_p: float
+  - minority_gain: float
+  - oth_compr_income: float
+  - t_compr_income: float
+  - compr_inc_attr_p: float
+  - compr_inc_attr_m_s: float
+  - ebit: float
+  - ebitda: float
+  - insurance_exp: float
+  - undist_profit: float
+  - distable_profit: float
+  - rd_exp: float
+  - fin_exp_int_exp: float
+  - fin_exp_int_inc: float
+  - distr_profit_shrhder: float
+  - credit_impa_loss: float
+  - net_expo_hedging_benefits: float
+  - oth_impair_loss_assets: float
+  - total_opcost: float
+  - amodcost_fin_assets: float
+  - oth_income: float
+  - asset_disp_income: float
+  - continued_net_profit: float
+  - end_net_profit: float
+  - update_flag: varchar(1)
+  - create_time: timestamp
+  - update_time: timestamp
+----------------------------------------
+
+表名: tu_irm_qa_sh
+记录数: 200,261
+字段数: 7
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - name: varchar(50)
+  - trade_date: date
+  - q: text
+  - a: text
+  - pub_time: datetime
+----------------------------------------
+
+表名: tu_irm_qa_sz
+记录数: 497,656
+字段数: 8
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - name: varchar(50)
+  - trade_date: date
+  - q: text
+  - a: text
+  - pub_time: datetime
+  - industry: varchar(255)
+----------------------------------------
+
+表名: tu_moneyflow_dc
+记录数: 2,411,419
+字段数: 16
+字段列表:
+  - id: bigint
+  - trade_date: date
+  - ts_code: varchar(10)
+  - name: varchar(50)
+  - pct_change: decimal(10,4)
+  - close: decimal(10,2)
+  - net_amount: decimal(15,2)
+  - net_amount_rate: decimal(10,4)
+  - buy_elg_amount: decimal(15,2)
+  - buy_elg_amount_rate: decimal(10,4)
+  - buy_lg_amount: decimal(15,2)
+  - buy_lg_amount_rate: decimal(10,4)
+  - buy_md_amount: decimal(15,2)
+  - buy_md_amount_rate: decimal(10,4)
+  - buy_sm_amount: decimal(15,2)
+  - buy_sm_amount_rate: decimal(10,4)
+----------------------------------------
+
+表名: tu_moneyflow_ind_dc
+记录数: 67,134
+字段数: 19
+字段列表:
+  - id: bigint
+  - trade_date: date
+  - content_type: varchar(20)
+  - ts_code: varchar(10)
+  - name: varchar(50)
+  - pct_change: decimal(10,4)
+  - close: decimal(10,2)
+  - net_amount: decimal(15,2)
+  - net_amount_rate: decimal(10,4)
+  - buy_elg_amount: decimal(15,2)
+  - buy_elg_amount_rate: decimal(10,4)
+  - buy_lg_amount: decimal(15,2)
+  - buy_lg_amount_rate: decimal(10,4)
+  - buy_md_amount: decimal(15,2)
+  - buy_md_amount_rate: decimal(10,4)
+  - buy_sm_amount: decimal(15,2)
+  - buy_sm_amount_rate: decimal(10,4)
+  - buy_sm_amount_stock: varchar(50)
+  - rank: int
+----------------------------------------
+
+表名: tu_stock_basic
+记录数: 5,418
+字段数: 20
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - symbol: varchar(10)
+  - name: varchar(50)
+  - area: varchar(50)
+  - industry: varchar(50)
+  - fullname: varchar(100)
+  - enname: varchar(200)
+  - cnspell: varchar(50)
+  - market: varchar(20)
+  - exchange: varchar(10)
+  - curr_type: varchar(10)
+  - list_status: varchar(5)
+  - list_date: varchar(8)
+  - delist_date: varchar(8)
+  - is_hs: varchar(5)
+  - act_name: varchar(100)
+  - act_ent_type: varchar(50)
+  - create_time: timestamp
+  - update_time: timestamp
+----------------------------------------
+
+表名: tu_suspend_d
+记录数: 5,878
+字段数: 7
+字段列表:
+  - id: bigint
+  - ts_code: varchar(10)
+  - trade_date: varchar(8)
+  - suspend_timing: varchar(50)
+  - suspend_type: varchar(5)
+  - create_time: timestamp
+  - update_time: timestamp
+----------------------------------------

@@ -1,0 +1,5849 @@
+{
+  "analysis_time": "2025-06-22 23:08:20",
+  "database": "Tushare",
+  "total_tables": 14,
+  "tables": {
+    "tu_anns_d": {
+      "structure": {
+        "table_name": "tu_anns_d",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "主键ID",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ann_date",
+            "type": "DATE",
+            "default": null,
+            "comment": "公告日期",
+            "nullable": false
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(20)",
+            "default": null,
+            "comment": "股票代码",
+            "nullable": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": "股票名称",
+            "nullable": true
+          },
+          {
+            "name": "title",
+            "type": "VARCHAR(255)",
+            "default": null,
+            "comment": "标题",
+            "nullable": true
+          },
+          {
+            "name": "url",
+            "type": "VARCHAR(255)",
+            "default": null,
+            "comment": "URL，原文下载链接",
+            "nullable": true
+          },
+          {
+            "name": "rec_time",
+            "type": "DATETIME",
+            "default": null,
+            "comment": "发布时间",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_ann_date",
+            "column_names": [
+              "ann_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_tu_anns_d_ann_date",
+            "column_names": [
+              "ann_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_tu_anns_d_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 7
+      },
+      "data": {
+        "record_count": 2097794,
+        "date_ranges": {
+          "ann_date": {
+            "min": "2023-01-01",
+            "max": "2025-06-21"
+          },
+          "rec_time": {
+            "min": "2023-01-01 11:28:35",
+            "max": "2025-06-21 19:38:53"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ann_date",
+          "ts_code",
+          "name",
+          "title",
+          "url",
+          "rec_time"
+        ],
+        "extra_info": {}
+      }
+    },
+    "tu_balancesheet": {
+      "structure": {
+        "table_name": "tu_balancesheet",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "自增主键",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "TS股票代码",
+            "nullable": false
+          },
+          {
+            "name": "ann_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "公告日期",
+            "nullable": true
+          },
+          {
+            "name": "f_ann_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "实际公告日期",
+            "nullable": true
+          },
+          {
+            "name": "end_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "报告期",
+            "nullable": false
+          },
+          {
+            "name": "report_type",
+            "type": "VARCHAR(2)",
+            "default": null,
+            "comment": "报表类型",
+            "nullable": true
+          },
+          {
+            "name": "comp_type",
+            "type": "VARCHAR(1)",
+            "default": null,
+            "comment": "公司类型(1一般工商业2银行3保险4证券)",
+            "nullable": true
+          },
+          {
+            "name": "end_type",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "报告期类型",
+            "nullable": true
+          },
+          {
+            "name": "total_share",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "期末总股本",
+            "nullable": true
+          },
+          {
+            "name": "cap_rese",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "资本公积金",
+            "nullable": true
+          },
+          {
+            "name": "undistr_porfit",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "未分配利润",
+            "nullable": true
+          },
+          {
+            "name": "surplus_rese",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "盈余公积金",
+            "nullable": true
+          },
+          {
+            "name": "special_rese",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "专项储备",
+            "nullable": true
+          },
+          {
+            "name": "money_cap",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "货币资金",
+            "nullable": true
+          },
+          {
+            "name": "trad_asset",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "交易性金融资产",
+            "nullable": true
+          },
+          {
+            "name": "notes_receiv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收票据",
+            "nullable": true
+          },
+          {
+            "name": "accounts_receiv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收账款",
+            "nullable": true
+          },
+          {
+            "name": "oth_receiv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他应收款",
+            "nullable": true
+          },
+          {
+            "name": "prepayment",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "预付款项",
+            "nullable": true
+          },
+          {
+            "name": "div_receiv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收股利",
+            "nullable": true
+          },
+          {
+            "name": "int_receiv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收利息",
+            "nullable": true
+          },
+          {
+            "name": "inventories",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "存货",
+            "nullable": true
+          },
+          {
+            "name": "amor_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "待摊费用",
+            "nullable": true
+          },
+          {
+            "name": "nca_within_1y",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "一年内到期的非流动资产",
+            "nullable": true
+          },
+          {
+            "name": "sett_rsrv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "结算备付金",
+            "nullable": true
+          },
+          {
+            "name": "loanto_oth_bank_fi",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "拆出资金",
+            "nullable": true
+          },
+          {
+            "name": "premium_receiv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收保费",
+            "nullable": true
+          },
+          {
+            "name": "reinsur_receiv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收分保账款",
+            "nullable": true
+          },
+          {
+            "name": "reinsur_res_receiv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收分保合同准备金",
+            "nullable": true
+          },
+          {
+            "name": "pur_resale_fa",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "买入返售金融资产",
+            "nullable": true
+          },
+          {
+            "name": "oth_cur_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他流动资产",
+            "nullable": true
+          },
+          {
+            "name": "total_cur_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "流动资产合计",
+            "nullable": true
+          },
+          {
+            "name": "fa_avail_for_sale",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "可供出售金融资产",
+            "nullable": true
+          },
+          {
+            "name": "htm_invest",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "持有至到期投资",
+            "nullable": true
+          },
+          {
+            "name": "lt_eqt_invest",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "长期股权投资",
+            "nullable": true
+          },
+          {
+            "name": "invest_real_estate",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "投资性房地产",
+            "nullable": true
+          },
+          {
+            "name": "time_deposits",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "定期存款",
+            "nullable": true
+          },
+          {
+            "name": "oth_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他资产",
+            "nullable": true
+          },
+          {
+            "name": "lt_rec",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "长期应收款",
+            "nullable": true
+          },
+          {
+            "name": "fix_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "固定资产",
+            "nullable": true
+          },
+          {
+            "name": "cip",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "在建工程",
+            "nullable": true
+          },
+          {
+            "name": "const_materials",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "工程物资",
+            "nullable": true
+          },
+          {
+            "name": "fixed_assets_disp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "固定资产清理",
+            "nullable": true
+          },
+          {
+            "name": "produc_bio_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "生产性生物资产",
+            "nullable": true
+          },
+          {
+            "name": "oil_and_gas_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "油气资产",
+            "nullable": true
+          },
+          {
+            "name": "intan_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "无形资产",
+            "nullable": true
+          },
+          {
+            "name": "r_and_d",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "研发支出",
+            "nullable": true
+          },
+          {
+            "name": "goodwill",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "商誉",
+            "nullable": true
+          },
+          {
+            "name": "lt_amor_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "长期待摊费用",
+            "nullable": true
+          },
+          {
+            "name": "defer_tax_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "递延所得税资产",
+            "nullable": true
+          },
+          {
+            "name": "decr_in_disbur",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "发放贷款及垫款",
+            "nullable": true
+          },
+          {
+            "name": "oth_nca",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他非流动资产",
+            "nullable": true
+          },
+          {
+            "name": "total_nca",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "非流动资产合计",
+            "nullable": true
+          },
+          {
+            "name": "cash_reser_cb",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "现金及存放中央银行款项",
+            "nullable": true
+          },
+          {
+            "name": "depos_in_oth_bfi",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "存放同业和其它金融机构款项",
+            "nullable": true
+          },
+          {
+            "name": "prec_metals",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "贵金属",
+            "nullable": true
+          },
+          {
+            "name": "deriv_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "衍生金融资产",
+            "nullable": true
+          },
+          {
+            "name": "rr_reins_une_prem",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收分保未到期责任准备金",
+            "nullable": true
+          },
+          {
+            "name": "rr_reins_outstd_cla",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收分保未决赔款准备金",
+            "nullable": true
+          },
+          {
+            "name": "rr_reins_lins_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收分保寿险责任准备金",
+            "nullable": true
+          },
+          {
+            "name": "rr_reins_lthins_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收分保长期健康险责任准备金",
+            "nullable": true
+          },
+          {
+            "name": "refund_depos",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "存出保证金",
+            "nullable": true
+          },
+          {
+            "name": "ph_pledge_loans",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "保户质押贷款",
+            "nullable": true
+          },
+          {
+            "name": "refund_cap_depos",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "存出资本保证金",
+            "nullable": true
+          },
+          {
+            "name": "indep_acct_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "独立账户资产",
+            "nullable": true
+          },
+          {
+            "name": "client_depos",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其中：客户资金存款",
+            "nullable": true
+          },
+          {
+            "name": "client_prov",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其中：客户备付金",
+            "nullable": true
+          },
+          {
+            "name": "transac_seat_fee",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其中:交易席位费",
+            "nullable": true
+          },
+          {
+            "name": "invest_as_receiv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收款项类投资",
+            "nullable": true
+          },
+          {
+            "name": "total_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "资产总计",
+            "nullable": true
+          },
+          {
+            "name": "lt_borr",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "长期借款",
+            "nullable": true
+          },
+          {
+            "name": "st_borr",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "短期借款",
+            "nullable": true
+          },
+          {
+            "name": "cb_borr",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "向中央银行借款",
+            "nullable": true
+          },
+          {
+            "name": "depos_ib_deposits",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "吸收存款及同业存放",
+            "nullable": true
+          },
+          {
+            "name": "loan_oth_bank",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "拆入资金",
+            "nullable": true
+          },
+          {
+            "name": "trading_fl",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "交易性金融负债",
+            "nullable": true
+          },
+          {
+            "name": "notes_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付票据",
+            "nullable": true
+          },
+          {
+            "name": "acct_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付账款",
+            "nullable": true
+          },
+          {
+            "name": "adv_receipts",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "预收款项",
+            "nullable": true
+          },
+          {
+            "name": "sold_for_repur_fa",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "卖出回购金融资产款",
+            "nullable": true
+          },
+          {
+            "name": "comm_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付手续费及佣金",
+            "nullable": true
+          },
+          {
+            "name": "payroll_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付职工薪酬",
+            "nullable": true
+          },
+          {
+            "name": "taxes_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应交税费",
+            "nullable": true
+          },
+          {
+            "name": "int_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付利息",
+            "nullable": true
+          },
+          {
+            "name": "div_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付股利",
+            "nullable": true
+          },
+          {
+            "name": "oth_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他应付款",
+            "nullable": true
+          },
+          {
+            "name": "acc_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "预提费用",
+            "nullable": true
+          },
+          {
+            "name": "deferred_inc",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "递延收益",
+            "nullable": true
+          },
+          {
+            "name": "st_bonds_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付短期债券",
+            "nullable": true
+          },
+          {
+            "name": "payable_to_reinsurer",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付分保账款",
+            "nullable": true
+          },
+          {
+            "name": "rsrv_insur_cont",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "保险合同准备金",
+            "nullable": true
+          },
+          {
+            "name": "acting_trading_sec",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "代理买卖证券款",
+            "nullable": true
+          },
+          {
+            "name": "acting_uw_sec",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "代理承销证券款",
+            "nullable": true
+          },
+          {
+            "name": "non_cur_liab_due_1y",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "一年内到期的非流动负债",
+            "nullable": true
+          },
+          {
+            "name": "oth_cur_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他流动负债",
+            "nullable": true
+          },
+          {
+            "name": "total_cur_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "流动负债合计",
+            "nullable": true
+          },
+          {
+            "name": "bond_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付债券",
+            "nullable": true
+          },
+          {
+            "name": "lt_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "长期应付款",
+            "nullable": true
+          },
+          {
+            "name": "specific_payables",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "专项应付款",
+            "nullable": true
+          },
+          {
+            "name": "estimated_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "预计负债",
+            "nullable": true
+          },
+          {
+            "name": "defer_tax_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "递延所得税负债",
+            "nullable": true
+          },
+          {
+            "name": "defer_inc_non_cur_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "递延收益-非流动负债",
+            "nullable": true
+          },
+          {
+            "name": "oth_ncl",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他非流动负债",
+            "nullable": true
+          },
+          {
+            "name": "total_ncl",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "非流动负债合计",
+            "nullable": true
+          },
+          {
+            "name": "depos_oth_bfi",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "同业和其它金融机构存放款项",
+            "nullable": true
+          },
+          {
+            "name": "deriv_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "衍生金融负债",
+            "nullable": true
+          },
+          {
+            "name": "depos",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "吸收存款",
+            "nullable": true
+          },
+          {
+            "name": "agency_bus_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "代理业务负债",
+            "nullable": true
+          },
+          {
+            "name": "oth_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他负债",
+            "nullable": true
+          },
+          {
+            "name": "prem_receiv_adva",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "预收保费",
+            "nullable": true
+          },
+          {
+            "name": "depos_received",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "存入保证金",
+            "nullable": true
+          },
+          {
+            "name": "ph_invest",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "保户储金及投资款",
+            "nullable": true
+          },
+          {
+            "name": "reser_une_prem",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "未到期责任准备金",
+            "nullable": true
+          },
+          {
+            "name": "reser_outstd_claims",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "未决赔款准备金",
+            "nullable": true
+          },
+          {
+            "name": "reser_lins_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "寿险责任准备金",
+            "nullable": true
+          },
+          {
+            "name": "reser_lthins_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "长期健康险责任准备金",
+            "nullable": true
+          },
+          {
+            "name": "indept_acc_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "独立账户负债",
+            "nullable": true
+          },
+          {
+            "name": "pledge_borr",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其中:质押借款",
+            "nullable": true
+          },
+          {
+            "name": "indem_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付赔付款",
+            "nullable": true
+          },
+          {
+            "name": "policy_div_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付保单红利",
+            "nullable": true
+          },
+          {
+            "name": "total_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "负债合计",
+            "nullable": true
+          },
+          {
+            "name": "treasury_share",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:库存股",
+            "nullable": true
+          },
+          {
+            "name": "ordin_risk_reser",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "一般风险准备",
+            "nullable": true
+          },
+          {
+            "name": "forex_differ",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "外币报表折算差额",
+            "nullable": true
+          },
+          {
+            "name": "invest_loss_unconf",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "未确认的投资损失",
+            "nullable": true
+          },
+          {
+            "name": "minority_int",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "少数股东权益",
+            "nullable": true
+          },
+          {
+            "name": "total_hldr_eqy_exc_min_int",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "股东权益合计(不含少数股东权益)",
+            "nullable": true
+          },
+          {
+            "name": "total_hldr_eqy_inc_min_int",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "股东权益合计(含少数股东权益)",
+            "nullable": true
+          },
+          {
+            "name": "total_liab_hldr_eqy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "负债及股东权益总计",
+            "nullable": true
+          },
+          {
+            "name": "lt_payroll_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "长期应付职工薪酬",
+            "nullable": true
+          },
+          {
+            "name": "oth_comp_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他综合收益",
+            "nullable": true
+          },
+          {
+            "name": "oth_eqt_tools",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他权益工具",
+            "nullable": true
+          },
+          {
+            "name": "oth_eqt_tools_p_shr",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他权益工具(优先股)",
+            "nullable": true
+          },
+          {
+            "name": "lending_funds",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "融出资金",
+            "nullable": true
+          },
+          {
+            "name": "acc_receivable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收款项",
+            "nullable": true
+          },
+          {
+            "name": "st_fin_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付短期融资款",
+            "nullable": true
+          },
+          {
+            "name": "payables",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付款项",
+            "nullable": true
+          },
+          {
+            "name": "hfs_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "持有待售的资产",
+            "nullable": true
+          },
+          {
+            "name": "hfs_sales",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "持有待售的负债",
+            "nullable": true
+          },
+          {
+            "name": "cost_fin_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "以摊余成本计量的金融资产",
+            "nullable": true
+          },
+          {
+            "name": "fair_value_fin_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "以公允价值计量且其变动计入其他综合收益的金融资产",
+            "nullable": true
+          },
+          {
+            "name": "cip_total",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "在建工程(合计)(元)",
+            "nullable": true
+          },
+          {
+            "name": "oth_pay_total",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他应付款(合计)(元)",
+            "nullable": true
+          },
+          {
+            "name": "long_pay_total",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "长期应付款(合计)(元)",
+            "nullable": true
+          },
+          {
+            "name": "debt_invest",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "债权投资(元)",
+            "nullable": true
+          },
+          {
+            "name": "oth_debt_invest",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他债权投资(元)",
+            "nullable": true
+          },
+          {
+            "name": "oth_eq_invest",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他权益工具投资(元)",
+            "nullable": true
+          },
+          {
+            "name": "oth_illiq_fin_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他非流动金融资产(元)",
+            "nullable": true
+          },
+          {
+            "name": "oth_eq_ppbond",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他权益工具:永续债(元)",
+            "nullable": true
+          },
+          {
+            "name": "receiv_financing",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收款项融资",
+            "nullable": true
+          },
+          {
+            "name": "use_right_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "使用权资产",
+            "nullable": true
+          },
+          {
+            "name": "lease_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "租赁负债",
+            "nullable": true
+          },
+          {
+            "name": "contract_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "合同资产",
+            "nullable": true
+          },
+          {
+            "name": "contract_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "合同负债",
+            "nullable": true
+          },
+          {
+            "name": "accounts_receiv_bill",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收票据及应收账款",
+            "nullable": true
+          },
+          {
+            "name": "accounts_pay",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应付票据及应付账款",
+            "nullable": true
+          },
+          {
+            "name": "oth_rcv_total",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他应收款(合计)（元）",
+            "nullable": true
+          },
+          {
+            "name": "fix_assets_total",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "固定资产(合计)(元)",
+            "nullable": true
+          },
+          {
+            "name": "update_flag",
+            "type": "VARCHAR(1)",
+            "default": null,
+            "comment": "更新标识",
+            "nullable": true
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间",
+            "nullable": true
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "comment": "更新时间",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_ann_date",
+            "column_names": [
+              "ann_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_end_date",
+            "column_names": [
+              "end_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_report_type",
+            "column_names": [
+              "report_type"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_total_assets",
+            "column_names": [
+              "total_assets"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_total_liab",
+            "column_names": [
+              "total_liab"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          },
+          {
+            "name": "uk_balancesheet",
+            "column_names": [
+              "ts_code",
+              "end_date",
+              "report_type"
+            ],
+            "unique": true,
+            "type": "UNIQUE"
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 161
+      },
+      "data": {
+        "record_count": 126652,
+        "date_ranges": {
+          "ann_date": {
+            "min": "20190408",
+            "max": "20250523"
+          },
+          "f_ann_date": {
+            "min": "20190408",
+            "max": "20250524"
+          },
+          "end_date": {
+            "min": "20190331",
+            "max": "20250331"
+          },
+          "time_deposits": {
+            "min": "80487400.0",
+            "max": "556572000000.0"
+          },
+          "update_flag": {
+            "min": "0",
+            "max": "1"
+          },
+          "create_time": {
+            "min": "2025-06-12 12:38:17",
+            "max": "2025-06-12 12:40:16"
+          },
+          "update_time": {
+            "min": "2025-06-12 12:38:17",
+            "max": "2025-06-12 12:40:16"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "ann_date",
+          "f_ann_date",
+          "end_date",
+          "report_type",
+          "comp_type",
+          "end_type",
+          "total_share",
+          "cap_rese",
+          "undistr_porfit",
+          "surplus_rese",
+          "special_rese",
+          "money_cap",
+          "trad_asset",
+          "notes_receiv",
+          "accounts_receiv",
+          "oth_receiv",
+          "prepayment",
+          "div_receiv",
+          "int_receiv",
+          "inventories",
+          "amor_exp",
+          "nca_within_1y",
+          "sett_rsrv",
+          "loanto_oth_bank_fi",
+          "premium_receiv",
+          "reinsur_receiv",
+          "reinsur_res_receiv",
+          "pur_resale_fa",
+          "oth_cur_assets",
+          "total_cur_assets",
+          "fa_avail_for_sale",
+          "htm_invest",
+          "lt_eqt_invest",
+          "invest_real_estate",
+          "time_deposits",
+          "oth_assets",
+          "lt_rec",
+          "fix_assets",
+          "cip",
+          "const_materials",
+          "fixed_assets_disp",
+          "produc_bio_assets",
+          "oil_and_gas_assets",
+          "intan_assets",
+          "r_and_d",
+          "goodwill",
+          "lt_amor_exp",
+          "defer_tax_assets",
+          "decr_in_disbur",
+          "oth_nca",
+          "total_nca",
+          "cash_reser_cb",
+          "depos_in_oth_bfi",
+          "prec_metals",
+          "deriv_assets",
+          "rr_reins_une_prem",
+          "rr_reins_outstd_cla",
+          "rr_reins_lins_liab",
+          "rr_reins_lthins_liab",
+          "refund_depos",
+          "ph_pledge_loans",
+          "refund_cap_depos",
+          "indep_acct_assets",
+          "client_depos",
+          "client_prov",
+          "transac_seat_fee",
+          "invest_as_receiv",
+          "total_assets",
+          "lt_borr",
+          "st_borr",
+          "cb_borr",
+          "depos_ib_deposits",
+          "loan_oth_bank",
+          "trading_fl",
+          "notes_payable",
+          "acct_payable",
+          "adv_receipts",
+          "sold_for_repur_fa",
+          "comm_payable",
+          "payroll_payable",
+          "taxes_payable",
+          "int_payable",
+          "div_payable",
+          "oth_payable",
+          "acc_exp",
+          "deferred_inc",
+          "st_bonds_payable",
+          "payable_to_reinsurer",
+          "rsrv_insur_cont",
+          "acting_trading_sec",
+          "acting_uw_sec",
+          "non_cur_liab_due_1y",
+          "oth_cur_liab",
+          "total_cur_liab",
+          "bond_payable",
+          "lt_payable",
+          "specific_payables",
+          "estimated_liab",
+          "defer_tax_liab",
+          "defer_inc_non_cur_liab",
+          "oth_ncl",
+          "total_ncl",
+          "depos_oth_bfi",
+          "deriv_liab",
+          "depos",
+          "agency_bus_liab",
+          "oth_liab",
+          "prem_receiv_adva",
+          "depos_received",
+          "ph_invest",
+          "reser_une_prem",
+          "reser_outstd_claims",
+          "reser_lins_liab",
+          "reser_lthins_liab",
+          "indept_acc_liab",
+          "pledge_borr",
+          "indem_payable",
+          "policy_div_payable",
+          "total_liab",
+          "treasury_share",
+          "ordin_risk_reser",
+          "forex_differ",
+          "invest_loss_unconf",
+          "minority_int",
+          "total_hldr_eqy_exc_min_int",
+          "total_hldr_eqy_inc_min_int",
+          "total_liab_hldr_eqy",
+          "lt_payroll_payable",
+          "oth_comp_income",
+          "oth_eqt_tools",
+          "oth_eqt_tools_p_shr",
+          "lending_funds",
+          "acc_receivable",
+          "st_fin_payable",
+          "payables",
+          "hfs_assets",
+          "hfs_sales",
+          "cost_fin_assets",
+          "fair_value_fin_assets",
+          "cip_total",
+          "oth_pay_total",
+          "long_pay_total",
+          "debt_invest",
+          "oth_debt_invest",
+          "oth_eq_invest",
+          "oth_illiq_fin_assets",
+          "oth_eq_ppbond",
+          "receiv_financing",
+          "use_right_assets",
+          "lease_liab",
+          "contract_assets",
+          "contract_liab",
+          "accounts_receiv_bill",
+          "accounts_pay",
+          "oth_rcv_total",
+          "fix_assets_total",
+          "update_flag",
+          "create_time",
+          "update_time"
+        ],
+        "extra_info": {
+          "recent_periods": [
+            {
+              "end_date": "20250331",
+              "company_count": 5475
+            },
+            {
+              "end_date": "20241231",
+              "company_count": 5752
+            },
+            {
+              "end_date": "20240930",
+              "company_count": 5529
+            },
+            {
+              "end_date": "20240630",
+              "company_count": 5696
+            },
+            {
+              "end_date": "20240331",
+              "company_count": 5410
+            }
+          ]
+        }
+      }
+    },
+    "tu_cashflow": {
+      "structure": {
+        "table_name": "tu_cashflow",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "自增主键",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "TS股票代码",
+            "nullable": false
+          },
+          {
+            "name": "ann_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "公告日期",
+            "nullable": true
+          },
+          {
+            "name": "f_ann_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "实际公告日期",
+            "nullable": true
+          },
+          {
+            "name": "end_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "报告期",
+            "nullable": false
+          },
+          {
+            "name": "comp_type",
+            "type": "VARCHAR(1)",
+            "default": null,
+            "comment": "公司类型",
+            "nullable": true
+          },
+          {
+            "name": "report_type",
+            "type": "VARCHAR(2)",
+            "default": null,
+            "comment": "报表类型",
+            "nullable": true
+          },
+          {
+            "name": "end_type",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "报告期类型",
+            "nullable": true
+          },
+          {
+            "name": "net_profit",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "净利润",
+            "nullable": true
+          },
+          {
+            "name": "finan_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "财务费用",
+            "nullable": true
+          },
+          {
+            "name": "c_fr_sale_sg",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "销售商品、提供劳务收到的现金",
+            "nullable": true
+          },
+          {
+            "name": "recp_tax_rends",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "收到的税费返还",
+            "nullable": true
+          },
+          {
+            "name": "n_depos_incr_fi",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "客户存款和同业存放款项净增加额",
+            "nullable": true
+          },
+          {
+            "name": "n_incr_loans_cb",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "向中央银行借款净增加额",
+            "nullable": true
+          },
+          {
+            "name": "n_inc_borr_oth_fi",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "向其他金融机构拆入资金净增加额",
+            "nullable": true
+          },
+          {
+            "name": "prem_fr_orig_contr",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "收到原保险合同保费取得的现金",
+            "nullable": true
+          },
+          {
+            "name": "n_incr_insured_dep",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "保户储金净增加额",
+            "nullable": true
+          },
+          {
+            "name": "n_reinsur_prem",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "收到再保业务现金净额",
+            "nullable": true
+          },
+          {
+            "name": "n_incr_disp_tfa",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "处置交易性金融资产净增加额",
+            "nullable": true
+          },
+          {
+            "name": "ifc_cash_incr",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "收取利息和手续费净增加额",
+            "nullable": true
+          },
+          {
+            "name": "n_incr_disp_faas",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "处置可供出售金融资产净增加额",
+            "nullable": true
+          },
+          {
+            "name": "n_incr_loans_oth_bank",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "拆入资金净增加额",
+            "nullable": true
+          },
+          {
+            "name": "n_cap_incr_repur",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "回购业务资金净增加额",
+            "nullable": true
+          },
+          {
+            "name": "c_fr_oth_operate_a",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "收到其他与经营活动有关的现金",
+            "nullable": true
+          },
+          {
+            "name": "c_inf_fr_operate_a",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "经营活动现金流入小计",
+            "nullable": true
+          },
+          {
+            "name": "c_paid_goods_s",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "购买商品、接受劳务支付的现金",
+            "nullable": true
+          },
+          {
+            "name": "c_paid_to_for_empl",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "支付给职工以及为职工支付的现金",
+            "nullable": true
+          },
+          {
+            "name": "c_paid_for_taxes",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "支付的各项税费",
+            "nullable": true
+          },
+          {
+            "name": "n_incr_clt_loan_adv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "客户贷款及垫款净增加额",
+            "nullable": true
+          },
+          {
+            "name": "n_incr_dep_cbob",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "存放央行和同业款项净增加额",
+            "nullable": true
+          },
+          {
+            "name": "c_pay_claims_orig_inco",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "支付原保险合同赔付款项的现金",
+            "nullable": true
+          },
+          {
+            "name": "pay_handling_chrg",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "支付手续费的现金",
+            "nullable": true
+          },
+          {
+            "name": "pay_comm_insur_plcy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "支付保单红利的现金",
+            "nullable": true
+          },
+          {
+            "name": "oth_cash_pay_oper_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "支付其他与经营活动有关的现金",
+            "nullable": true
+          },
+          {
+            "name": "st_cash_out_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "经营活动现金流出小计",
+            "nullable": true
+          },
+          {
+            "name": "n_cashflow_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "经营活动产生的现金流量净额",
+            "nullable": true
+          },
+          {
+            "name": "oth_recp_ral_inv_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "收到其他与投资活动有关的现金",
+            "nullable": true
+          },
+          {
+            "name": "c_disp_withdrwl_invest",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "收回投资收到的现金",
+            "nullable": true
+          },
+          {
+            "name": "c_recp_return_invest",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "取得投资收益收到的现金",
+            "nullable": true
+          },
+          {
+            "name": "n_recp_disp_fiolta",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "处置固定资产、无形资产和其他长期资产收回的现金净额",
+            "nullable": true
+          },
+          {
+            "name": "n_recp_disp_sobu",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "处置子公司及其他营业单位收到的现金净额",
+            "nullable": true
+          },
+          {
+            "name": "stot_inflows_inv_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "投资活动现金流入小计",
+            "nullable": true
+          },
+          {
+            "name": "c_pay_acq_const_fiolta",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "购建固定资产、无形资产和其他长期资产支付的现金",
+            "nullable": true
+          },
+          {
+            "name": "c_paid_invest",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "投资支付的现金",
+            "nullable": true
+          },
+          {
+            "name": "n_disp_subs_oth_biz",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "取得子公司及其他营业单位支付的现金净额",
+            "nullable": true
+          },
+          {
+            "name": "oth_pay_ral_inv_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "支付其他与投资活动有关的现金",
+            "nullable": true
+          },
+          {
+            "name": "n_incr_pledge_loan",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "质押贷款净增加额",
+            "nullable": true
+          },
+          {
+            "name": "stot_out_inv_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "投资活动现金流出小计",
+            "nullable": true
+          },
+          {
+            "name": "n_cashflow_inv_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "投资活动产生的现金流量净额",
+            "nullable": true
+          },
+          {
+            "name": "c_recp_borrow",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "取得借款收到的现金",
+            "nullable": true
+          },
+          {
+            "name": "proc_issue_bonds",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "发行债券收到的现金",
+            "nullable": true
+          },
+          {
+            "name": "oth_cash_recp_ral_fnc_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "收到其他与筹资活动有关的现金",
+            "nullable": true
+          },
+          {
+            "name": "stot_cash_in_fnc_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "筹资活动现金流入小计",
+            "nullable": true
+          },
+          {
+            "name": "free_cashflow",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "企业自由现金流量",
+            "nullable": true
+          },
+          {
+            "name": "c_prepay_amt_borr",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "偿还债务支付的现金",
+            "nullable": true
+          },
+          {
+            "name": "c_pay_dist_dpcp_int_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "分配股利、利润或偿付利息支付的现金",
+            "nullable": true
+          },
+          {
+            "name": "incl_dvd_profit_paid_sc_ms",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其中:子公司支付给少数股东的股利、利润",
+            "nullable": true
+          },
+          {
+            "name": "oth_cashpay_ral_fnc_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "支付其他与筹资活动有关的现金",
+            "nullable": true
+          },
+          {
+            "name": "stot_cashout_fnc_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "筹资活动现金流出小计",
+            "nullable": true
+          },
+          {
+            "name": "n_cash_flows_fnc_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "筹资活动产生的现金流量净额",
+            "nullable": true
+          },
+          {
+            "name": "eff_fx_flu_cash",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "汇率变动对现金的影响",
+            "nullable": true
+          },
+          {
+            "name": "n_incr_cash_cash_equ",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "现金及现金等价物净增加额",
+            "nullable": true
+          },
+          {
+            "name": "c_cash_equ_beg_period",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "期初现金及现金等价物余额",
+            "nullable": true
+          },
+          {
+            "name": "c_cash_equ_end_period",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "期末现金及现金等价物余额",
+            "nullable": true
+          },
+          {
+            "name": "c_recp_cap_contrib",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "吸收投资收到的现金",
+            "nullable": true
+          },
+          {
+            "name": "incl_cash_rec_saims",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其中:子公司吸收少数股东投资收到的现金",
+            "nullable": true
+          },
+          {
+            "name": "uncon_invest_loss",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "未确认投资损失",
+            "nullable": true
+          },
+          {
+            "name": "prov_depr_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "加:资产减值准备",
+            "nullable": true
+          },
+          {
+            "name": "depr_fa_coga_dpba",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "固定资产折旧、油气资产折耗、生产性生物资产折旧",
+            "nullable": true
+          },
+          {
+            "name": "amort_intang_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "无形资产摊销",
+            "nullable": true
+          },
+          {
+            "name": "lt_amort_deferred_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "长期待摊费用摊销",
+            "nullable": true
+          },
+          {
+            "name": "decr_deferred_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "待摊费用减少",
+            "nullable": true
+          },
+          {
+            "name": "incr_acc_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "预提费用增加",
+            "nullable": true
+          },
+          {
+            "name": "loss_disp_fiolta",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "处置固定、无形资产和其他长期资产的损失",
+            "nullable": true
+          },
+          {
+            "name": "loss_scr_fa",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "固定资产报废损失",
+            "nullable": true
+          },
+          {
+            "name": "loss_fv_chg",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "公允价值变动损失",
+            "nullable": true
+          },
+          {
+            "name": "invest_loss",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "投资损失",
+            "nullable": true
+          },
+          {
+            "name": "decr_def_inc_tax_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "递延所得税资产减少",
+            "nullable": true
+          },
+          {
+            "name": "incr_def_inc_tax_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "递延所得税负债增加",
+            "nullable": true
+          },
+          {
+            "name": "decr_inventories",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "存货的减少",
+            "nullable": true
+          },
+          {
+            "name": "decr_oper_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "经营性应收项目的减少",
+            "nullable": true
+          },
+          {
+            "name": "incr_oper_payable",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "经营性应付项目的增加",
+            "nullable": true
+          },
+          {
+            "name": "others",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他",
+            "nullable": true
+          },
+          {
+            "name": "im_net_cashflow_oper_act",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "经营活动产生的现金流量净额(间接法)",
+            "nullable": true
+          },
+          {
+            "name": "conv_debt_into_cap",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "债务转为资本",
+            "nullable": true
+          },
+          {
+            "name": "conv_copbonds_due_within_1y",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "一年内到期的可转换公司债券",
+            "nullable": true
+          },
+          {
+            "name": "fa_fnc_leases",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "融资租入固定资产",
+            "nullable": true
+          },
+          {
+            "name": "im_n_incr_cash_equ",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "现金及现金等价物净增加额(间接法)",
+            "nullable": true
+          },
+          {
+            "name": "net_dism_capital_add",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "拆出资金及应收款项净增加额",
+            "nullable": true
+          },
+          {
+            "name": "net_cash_rece_sec",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "代理买卖证券收到的现金净额(元)",
+            "nullable": true
+          },
+          {
+            "name": "credit_impa_loss",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "信用减值损失",
+            "nullable": true
+          },
+          {
+            "name": "use_right_asset_dep",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "使用权资产折旧",
+            "nullable": true
+          },
+          {
+            "name": "oth_loss_asset",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他资产减值损失",
+            "nullable": true
+          },
+          {
+            "name": "end_bal_cash",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "现金的期末余额",
+            "nullable": true
+          },
+          {
+            "name": "beg_bal_cash",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:现金的期初余额",
+            "nullable": true
+          },
+          {
+            "name": "end_bal_cash_equ",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "加:现金等价物的期末余额",
+            "nullable": true
+          },
+          {
+            "name": "beg_bal_cash_equ",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:现金等价物的期初余额",
+            "nullable": true
+          },
+          {
+            "name": "update_flag",
+            "type": "VARCHAR(1)",
+            "default": null,
+            "comment": "更新标识",
+            "nullable": true
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间",
+            "nullable": true
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "comment": "更新时间",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_ann_date",
+            "column_names": [
+              "ann_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_end_date",
+            "column_names": [
+              "end_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_fcf",
+            "column_names": [
+              "free_cashflow"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ocf",
+            "column_names": [
+              "n_cashflow_act"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_report_type",
+            "column_names": [
+              "report_type"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          },
+          {
+            "name": "uk_cashflow",
+            "column_names": [
+              "ts_code",
+              "end_date",
+              "report_type"
+            ],
+            "unique": true,
+            "type": "UNIQUE"
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 100
+      },
+      "data": {
+        "record_count": 121840,
+        "date_ranges": {
+          "ann_date": {
+            "min": "20190408",
+            "max": "20250430"
+          },
+          "f_ann_date": {
+            "min": "20190408",
+            "max": "20250521"
+          },
+          "end_date": {
+            "min": "20190331",
+            "max": "20250331"
+          },
+          "update_flag": {
+            "min": "0",
+            "max": "1"
+          },
+          "create_time": {
+            "min": "2025-06-12 12:55:36",
+            "max": "2025-06-12 13:06:44"
+          },
+          "update_time": {
+            "min": "2025-06-12 12:55:36",
+            "max": "2025-06-12 13:06:44"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "ann_date",
+          "f_ann_date",
+          "end_date",
+          "comp_type",
+          "report_type",
+          "end_type",
+          "net_profit",
+          "finan_exp",
+          "c_fr_sale_sg",
+          "recp_tax_rends",
+          "n_depos_incr_fi",
+          "n_incr_loans_cb",
+          "n_inc_borr_oth_fi",
+          "prem_fr_orig_contr",
+          "n_incr_insured_dep",
+          "n_reinsur_prem",
+          "n_incr_disp_tfa",
+          "ifc_cash_incr",
+          "n_incr_disp_faas",
+          "n_incr_loans_oth_bank",
+          "n_cap_incr_repur",
+          "c_fr_oth_operate_a",
+          "c_inf_fr_operate_a",
+          "c_paid_goods_s",
+          "c_paid_to_for_empl",
+          "c_paid_for_taxes",
+          "n_incr_clt_loan_adv",
+          "n_incr_dep_cbob",
+          "c_pay_claims_orig_inco",
+          "pay_handling_chrg",
+          "pay_comm_insur_plcy",
+          "oth_cash_pay_oper_act",
+          "st_cash_out_act",
+          "n_cashflow_act",
+          "oth_recp_ral_inv_act",
+          "c_disp_withdrwl_invest",
+          "c_recp_return_invest",
+          "n_recp_disp_fiolta",
+          "n_recp_disp_sobu",
+          "stot_inflows_inv_act",
+          "c_pay_acq_const_fiolta",
+          "c_paid_invest",
+          "n_disp_subs_oth_biz",
+          "oth_pay_ral_inv_act",
+          "n_incr_pledge_loan",
+          "stot_out_inv_act",
+          "n_cashflow_inv_act",
+          "c_recp_borrow",
+          "proc_issue_bonds",
+          "oth_cash_recp_ral_fnc_act",
+          "stot_cash_in_fnc_act",
+          "free_cashflow",
+          "c_prepay_amt_borr",
+          "c_pay_dist_dpcp_int_exp",
+          "incl_dvd_profit_paid_sc_ms",
+          "oth_cashpay_ral_fnc_act",
+          "stot_cashout_fnc_act",
+          "n_cash_flows_fnc_act",
+          "eff_fx_flu_cash",
+          "n_incr_cash_cash_equ",
+          "c_cash_equ_beg_period",
+          "c_cash_equ_end_period",
+          "c_recp_cap_contrib",
+          "incl_cash_rec_saims",
+          "uncon_invest_loss",
+          "prov_depr_assets",
+          "depr_fa_coga_dpba",
+          "amort_intang_assets",
+          "lt_amort_deferred_exp",
+          "decr_deferred_exp",
+          "incr_acc_exp",
+          "loss_disp_fiolta",
+          "loss_scr_fa",
+          "loss_fv_chg",
+          "invest_loss",
+          "decr_def_inc_tax_assets",
+          "incr_def_inc_tax_liab",
+          "decr_inventories",
+          "decr_oper_payable",
+          "incr_oper_payable",
+          "others",
+          "im_net_cashflow_oper_act",
+          "conv_debt_into_cap",
+          "conv_copbonds_due_within_1y",
+          "fa_fnc_leases",
+          "im_n_incr_cash_equ",
+          "net_dism_capital_add",
+          "net_cash_rece_sec",
+          "credit_impa_loss",
+          "use_right_asset_dep",
+          "oth_loss_asset",
+          "end_bal_cash",
+          "beg_bal_cash",
+          "end_bal_cash_equ",
+          "beg_bal_cash_equ",
+          "update_flag",
+          "create_time",
+          "update_time"
+        ],
+        "extra_info": {
+          "recent_periods": [
+            {
+              "end_date": "20250331",
+              "company_count": 5421
+            },
+            {
+              "end_date": "20241231",
+              "company_count": 4857
+            },
+            {
+              "end_date": "20240930",
+              "company_count": 3953
+            },
+            {
+              "end_date": "20240630",
+              "company_count": 4732
+            },
+            {
+              "end_date": "20240331",
+              "company_count": 5390
+            }
+          ]
+        }
+      }
+    },
+    "tu_daily_basic": {
+      "structure": {
+        "table_name": "tu_daily_basic",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "自增主键",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "TS股票代码",
+            "nullable": false
+          },
+          {
+            "name": "trade_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "交易日期",
+            "nullable": false
+          },
+          {
+            "name": "close",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "当日收盘价",
+            "nullable": true
+          },
+          {
+            "name": "turnover_rate",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "换手率（%）",
+            "nullable": true
+          },
+          {
+            "name": "turnover_rate_f",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "换手率（自由流通股）",
+            "nullable": true
+          },
+          {
+            "name": "volume_ratio",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "量比",
+            "nullable": true
+          },
+          {
+            "name": "pe",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "市盈率（总市值/净利润）",
+            "nullable": true
+          },
+          {
+            "name": "pe_ttm",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "市盈率（TTM）",
+            "nullable": true
+          },
+          {
+            "name": "pb",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "市净率（总市值/净资产）",
+            "nullable": true
+          },
+          {
+            "name": "ps",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "市销率",
+            "nullable": true
+          },
+          {
+            "name": "ps_ttm",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "市销率（TTM）",
+            "nullable": true
+          },
+          {
+            "name": "dv_ratio",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "股息率（%）",
+            "nullable": true
+          },
+          {
+            "name": "dv_ttm",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "股息率（TTM）（%）",
+            "nullable": true
+          },
+          {
+            "name": "total_share",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "总股本（万股）",
+            "nullable": true
+          },
+          {
+            "name": "float_share",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "流通股本（万股）",
+            "nullable": true
+          },
+          {
+            "name": "free_share",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "自由流通股本（万）",
+            "nullable": true
+          },
+          {
+            "name": "total_mv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "总市值（万元）",
+            "nullable": true
+          },
+          {
+            "name": "circ_mv",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "流通市值（万元）",
+            "nullable": true
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "comment": "更新时间",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_pb",
+            "column_names": [
+              "pb"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_pe",
+            "column_names": [
+              "pe"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_total_mv",
+            "column_names": [
+              "total_mv"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_trade_date",
+            "column_names": [
+              "trade_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          },
+          {
+            "name": "uk_daily_basic",
+            "column_names": [
+              "ts_code",
+              "trade_date"
+            ],
+            "unique": true,
+            "type": "UNIQUE"
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 20
+      },
+      "data": {
+        "record_count": 6308521,
+        "date_ranges": {
+          "trade_date": {
+            "min": "20200102",
+            "max": "20250616"
+          },
+          "update_time": {
+            "min": "2025-06-12 13:23:59",
+            "max": "2025-06-16 17:10:23"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "trade_date",
+          "close",
+          "turnover_rate",
+          "turnover_rate_f",
+          "volume_ratio",
+          "pe",
+          "pe_ttm",
+          "pb",
+          "ps",
+          "ps_ttm",
+          "dv_ratio",
+          "dv_ttm",
+          "total_share",
+          "float_share",
+          "free_share",
+          "total_mv",
+          "circ_mv",
+          "update_time"
+        ],
+        "extra_info": {
+          "latest_trade_date": "20250616",
+          "stock_count": 5400,
+          "market_stats": {
+            "avg_pe": 90.50858199655478,
+            "avg_pb": 4.694717185917546,
+            "total_market_cap_billion": 1021258.94085625
+          }
+        }
+      }
+    },
+    "tu_daily_detail": {
+      "structure": {
+        "table_name": "tu_daily_detail",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": null,
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(255)",
+            "default": null,
+            "comment": "股票代码（支持多个股票同时提取，逗号分隔）",
+            "nullable": true
+          },
+          {
+            "name": "trade_date",
+            "type": "DATE",
+            "default": null,
+            "comment": "交易日期（YYYYMMDD格式）",
+            "nullable": true
+          },
+          {
+            "name": "open",
+            "type": "DECIMAL(10, 2)",
+            "default": null,
+            "comment": "开盘价",
+            "nullable": true
+          },
+          {
+            "name": "high",
+            "type": "DECIMAL(10, 2)",
+            "default": null,
+            "comment": "最高价",
+            "nullable": true
+          },
+          {
+            "name": "low",
+            "type": "DECIMAL(10, 2)",
+            "default": null,
+            "comment": "最低价",
+            "nullable": true
+          },
+          {
+            "name": "close",
+            "type": "DECIMAL(10, 2)",
+            "default": null,
+            "comment": "收盘价",
+            "nullable": true
+          },
+          {
+            "name": "pre_close",
+            "type": "DECIMAL(10, 2)",
+            "default": null,
+            "comment": "昨收价【除权价，前复权】",
+            "nullable": true
+          },
+          {
+            "name": "change",
+            "type": "DECIMAL(10, 2)",
+            "default": null,
+            "comment": "涨跌额",
+            "nullable": true
+          },
+          {
+            "name": "pct_chg",
+            "type": "DECIMAL(10, 2)",
+            "default": null,
+            "comment": "涨跌幅 【基于除权后的昨收计算的涨跌幅：（今收-除权昨收）/除权昨收 】",
+            "nullable": true
+          },
+          {
+            "name": "vol",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "成交量 （手）",
+            "nullable": true,
+            "autoincrement": false
+          },
+          {
+            "name": "amount",
+            "type": "DECIMAL(18, 2)",
+            "default": null,
+            "comment": "成交额 （千元）",
+            "nullable": true
+          },
+          {
+            "name": "vwap",
+            "type": "DOUBLE",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_tu_daily_detail_trade_date",
+            "column_names": [
+              "trade_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_tu_daily_detail_trade_ts",
+            "column_names": [
+              "trade_date",
+              "ts_code"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_tu_daily_detail_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_tu_daily_detail_ts_trade",
+            "column_names": [
+              "ts_code",
+              "trade_date"
+            ],
+            "unique": false
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 13
+      },
+      "data": {
+        "record_count": 15643471,
+        "date_ranges": {
+          "trade_date": {
+            "min": "2000-01-04",
+            "max": "2025-06-20"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "trade_date",
+          "open",
+          "high",
+          "low",
+          "close",
+          "pre_close",
+          "change",
+          "pct_chg",
+          "vol",
+          "amount",
+          "vwap"
+        ],
+        "extra_info": {}
+      }
+    },
+    "tu_fina_indicator": {
+      "structure": {
+        "table_name": "tu_fina_indicator",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "自增主键",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "TS代码",
+            "nullable": false
+          },
+          {
+            "name": "ann_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "公告日期",
+            "nullable": true
+          },
+          {
+            "name": "end_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "报告期",
+            "nullable": false
+          },
+          {
+            "name": "eps",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "基本每股收益",
+            "nullable": true
+          },
+          {
+            "name": "dt_eps",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "稀释每股收益",
+            "nullable": true
+          },
+          {
+            "name": "bps",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "每股净资产",
+            "nullable": true
+          },
+          {
+            "name": "ocfps",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "每股经营活动产生的现金流量净额",
+            "nullable": true
+          },
+          {
+            "name": "cfps",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "每股现金流量净额",
+            "nullable": true
+          },
+          {
+            "name": "roe",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "净资产收益率",
+            "nullable": true
+          },
+          {
+            "name": "roe_waa",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "加权平均净资产收益率",
+            "nullable": true
+          },
+          {
+            "name": "roe_dt",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "净资产收益率(扣除非经常损益)",
+            "nullable": true
+          },
+          {
+            "name": "roa",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "总资产报酬率",
+            "nullable": true
+          },
+          {
+            "name": "roic",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "投入资本回报率",
+            "nullable": true
+          },
+          {
+            "name": "grossprofit_margin",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "销售毛利率",
+            "nullable": true
+          },
+          {
+            "name": "netprofit_margin",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "销售净利率",
+            "nullable": true
+          },
+          {
+            "name": "gross_margin",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "毛利",
+            "nullable": true
+          },
+          {
+            "name": "profit_to_gr",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "净利润/营业总收入",
+            "nullable": true
+          },
+          {
+            "name": "op_of_gr",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业利润/营业总收入",
+            "nullable": true
+          },
+          {
+            "name": "basic_eps_yoy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "基本每股收益同比增长率(%)",
+            "nullable": true
+          },
+          {
+            "name": "netprofit_yoy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "归属母公司股东的净利润同比增长率(%)",
+            "nullable": true
+          },
+          {
+            "name": "dt_netprofit_yoy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "归属母公司股东的净利润-扣除非经常损益同比增长率(%)",
+            "nullable": true
+          },
+          {
+            "name": "or_yoy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业收入同比增长率(%)",
+            "nullable": true
+          },
+          {
+            "name": "op_yoy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业利润同比增长率(%)",
+            "nullable": true
+          },
+          {
+            "name": "assets_yoy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "资产总计相对年初增长率(%)",
+            "nullable": true
+          },
+          {
+            "name": "equity_yoy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "净资产同比增长率",
+            "nullable": true
+          },
+          {
+            "name": "assets_turn",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "总资产周转率",
+            "nullable": true
+          },
+          {
+            "name": "ca_turn",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "流动资产周转率",
+            "nullable": true
+          },
+          {
+            "name": "fa_turn",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "固定资产周转率",
+            "nullable": true
+          },
+          {
+            "name": "inv_turn",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "存货周转率",
+            "nullable": true
+          },
+          {
+            "name": "ar_turn",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收账款周转率",
+            "nullable": true
+          },
+          {
+            "name": "invturn_days",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "存货周转天数",
+            "nullable": true
+          },
+          {
+            "name": "arturn_days",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "应收账款周转天数",
+            "nullable": true
+          },
+          {
+            "name": "turn_days",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业周期",
+            "nullable": true
+          },
+          {
+            "name": "debt_to_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "资产负债率",
+            "nullable": true
+          },
+          {
+            "name": "current_ratio",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "流动比率",
+            "nullable": true
+          },
+          {
+            "name": "quick_ratio",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "速动比率",
+            "nullable": true
+          },
+          {
+            "name": "cash_ratio",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "保守速动比率",
+            "nullable": true
+          },
+          {
+            "name": "ocf_to_shortdebt",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "经营活动产生的现金流量净额/流动负债",
+            "nullable": true
+          },
+          {
+            "name": "debt_to_eqt",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "产权比率",
+            "nullable": true
+          },
+          {
+            "name": "fcff",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "企业自由现金流量",
+            "nullable": true
+          },
+          {
+            "name": "fcfe",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "股权自由现金流量",
+            "nullable": true
+          },
+          {
+            "name": "ocf_to_or",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "经营活动产生的现金流量净额/营业收入",
+            "nullable": true
+          },
+          {
+            "name": "assets_to_eqt",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "权益乘数",
+            "nullable": true
+          },
+          {
+            "name": "dp_assets_to_eqt",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "权益乘数(杜邦分析)",
+            "nullable": true
+          },
+          {
+            "name": "roa_dp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "总资产净利率(杜邦分析)",
+            "nullable": true
+          },
+          {
+            "name": "q_eps",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "每股收益(单季度)",
+            "nullable": true
+          },
+          {
+            "name": "q_roe",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "净资产收益率(单季度)",
+            "nullable": true
+          },
+          {
+            "name": "q_dt_roe",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "净资产单季度收益率(扣除非经常损益)",
+            "nullable": true
+          },
+          {
+            "name": "q_sales_yoy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业收入同比增长率(%)(单季度)",
+            "nullable": true
+          },
+          {
+            "name": "q_op_qoq",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业利润环比增长率(%)(单季度)",
+            "nullable": true
+          },
+          {
+            "name": "q_netprofit_yoy",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "归属母公司股东的净利润同比增长率(%)(单季度)",
+            "nullable": true
+          },
+          {
+            "name": "rd_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "研发费用",
+            "nullable": true
+          },
+          {
+            "name": "profit_dedt",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "扣除非经常性损益后的净利润",
+            "nullable": true
+          },
+          {
+            "name": "ebit",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "息税前利润",
+            "nullable": true
+          },
+          {
+            "name": "ebitda",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "息税折旧摊销前利润",
+            "nullable": true
+          },
+          {
+            "name": "update_flag",
+            "type": "VARCHAR(1)",
+            "default": null,
+            "comment": "更新标识",
+            "nullable": true
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间",
+            "nullable": true
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "comment": "更新时间",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_ann_date",
+            "column_names": [
+              "ann_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_debt_to_assets",
+            "column_names": [
+              "debt_to_assets"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_end_date",
+            "column_names": [
+              "end_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_netprofit_yoy",
+            "column_names": [
+              "netprofit_yoy"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_roa",
+            "column_names": [
+              "roa"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_roe",
+            "column_names": [
+              "roe"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          },
+          {
+            "name": "uk_fina_indicator",
+            "column_names": [
+              "ts_code",
+              "end_date"
+            ],
+            "unique": true,
+            "type": "UNIQUE"
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 59
+      },
+      "data": {
+        "record_count": 137888,
+        "date_ranges": {
+          "ann_date": {
+            "min": "20190408",
+            "max": "20250613"
+          },
+          "end_date": {
+            "min": "20190331",
+            "max": "20250331"
+          },
+          "invturn_days": {
+            "min": "-900000.0",
+            "max": "1800000.0"
+          },
+          "arturn_days": {
+            "min": "-22222.2",
+            "max": "675000.0"
+          },
+          "turn_days": {
+            "min": "-847059.0",
+            "max": "1800340.0"
+          },
+          "update_flag": {
+            "min": "0",
+            "max": "1"
+          },
+          "create_time": {
+            "min": "2025-06-12 14:17:08",
+            "max": "2025-06-12 14:20:35"
+          },
+          "update_time": {
+            "min": "2025-06-12 14:17:08",
+            "max": "2025-06-12 14:20:35"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "ann_date",
+          "end_date",
+          "eps",
+          "dt_eps",
+          "bps",
+          "ocfps",
+          "cfps",
+          "roe",
+          "roe_waa",
+          "roe_dt",
+          "roa",
+          "roic",
+          "grossprofit_margin",
+          "netprofit_margin",
+          "gross_margin",
+          "profit_to_gr",
+          "op_of_gr",
+          "basic_eps_yoy",
+          "netprofit_yoy",
+          "dt_netprofit_yoy",
+          "or_yoy",
+          "op_yoy",
+          "assets_yoy",
+          "equity_yoy",
+          "assets_turn",
+          "ca_turn",
+          "fa_turn",
+          "inv_turn",
+          "ar_turn",
+          "invturn_days",
+          "arturn_days",
+          "turn_days",
+          "debt_to_assets",
+          "current_ratio",
+          "quick_ratio",
+          "cash_ratio",
+          "ocf_to_shortdebt",
+          "debt_to_eqt",
+          "fcff",
+          "fcfe",
+          "ocf_to_or",
+          "assets_to_eqt",
+          "dp_assets_to_eqt",
+          "roa_dp",
+          "q_eps",
+          "q_roe",
+          "q_dt_roe",
+          "q_sales_yoy",
+          "q_op_qoq",
+          "q_netprofit_yoy",
+          "rd_exp",
+          "profit_dedt",
+          "ebit",
+          "ebitda",
+          "update_flag",
+          "create_time",
+          "update_time"
+        ],
+        "extra_info": {
+          "recent_periods": [
+            {
+              "end_date": "20250331",
+              "company_count": 5501
+            },
+            {
+              "end_date": "20241231",
+              "company_count": 5907
+            },
+            {
+              "end_date": "20240930",
+              "company_count": 5529
+            },
+            {
+              "end_date": "20240630",
+              "company_count": 5926
+            },
+            {
+              "end_date": "20240331",
+              "company_count": 5630
+            }
+          ]
+        }
+      }
+    },
+    "tu_forecast": {
+      "structure": {
+        "table_name": "tu_forecast",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "自增主键",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "TS股票代码",
+            "nullable": false
+          },
+          {
+            "name": "ann_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "公告日期",
+            "nullable": true
+          },
+          {
+            "name": "end_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "报告期",
+            "nullable": false
+          },
+          {
+            "name": "type",
+            "type": "VARCHAR(20)",
+            "default": null,
+            "comment": "业绩预告类型(预增/预减/扭亏/首亏/续亏/续盈/略增/略减)",
+            "nullable": true
+          },
+          {
+            "name": "p_change_min",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "预告净利润变动幅度下限（%）",
+            "nullable": true
+          },
+          {
+            "name": "p_change_max",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "预告净利润变动幅度上限（%）",
+            "nullable": true
+          },
+          {
+            "name": "net_profit_min",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "预告净利润下限（万元）",
+            "nullable": true
+          },
+          {
+            "name": "net_profit_max",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "预告净利润上限（万元）",
+            "nullable": true
+          },
+          {
+            "name": "last_parent_net",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "上年同期归属母公司净利润（万元）",
+            "nullable": true
+          },
+          {
+            "name": "first_ann_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "首次公告日",
+            "nullable": true
+          },
+          {
+            "name": "summary",
+            "type": "TEXT",
+            "default": null,
+            "comment": "业绩预告摘要",
+            "nullable": true
+          },
+          {
+            "name": "change_reason",
+            "type": "TEXT",
+            "default": null,
+            "comment": "业绩变动原因",
+            "nullable": true
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间",
+            "nullable": true
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "comment": "更新时间",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_ann_date",
+            "column_names": [
+              "ann_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_end_date",
+            "column_names": [
+              "end_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_p_change_min",
+            "column_names": [
+              "p_change_min"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_type",
+            "column_names": [
+              "type"
+            ],
+            "unique": false
+          },
+          {
+            "name": "uk_forecast",
+            "column_names": [
+              "ts_code",
+              "end_date"
+            ],
+            "unique": true,
+            "type": "UNIQUE"
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 15
+      },
+      "data": {
+        "record_count": 37349,
+        "date_ranges": {
+          "ann_date": {
+            "min": "20190115",
+            "max": "20250612"
+          },
+          "end_date": {
+            "min": "20190331",
+            "max": "20250630"
+          },
+          "first_ann_date": {
+            "min": "20181228",
+            "max": "20250612"
+          },
+          "create_time": {
+            "min": "2025-06-12 14:26:41",
+            "max": "2025-06-12 14:32:03"
+          },
+          "update_time": {
+            "min": "2025-06-12 14:26:41",
+            "max": "2025-06-12 14:32:03"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "ann_date",
+          "end_date",
+          "type",
+          "p_change_min",
+          "p_change_max",
+          "net_profit_min",
+          "net_profit_max",
+          "last_parent_net",
+          "first_ann_date",
+          "summary",
+          "change_reason",
+          "create_time",
+          "update_time"
+        ],
+        "extra_info": {}
+      }
+    },
+    "tu_income": {
+      "structure": {
+        "table_name": "tu_income",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "自增主键",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "TS代码",
+            "nullable": false
+          },
+          {
+            "name": "ann_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "公告日期",
+            "nullable": true
+          },
+          {
+            "name": "f_ann_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "实际公告日期",
+            "nullable": true
+          },
+          {
+            "name": "end_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "报告期",
+            "nullable": false
+          },
+          {
+            "name": "report_type",
+            "type": "VARCHAR(2)",
+            "default": null,
+            "comment": "报告类型",
+            "nullable": true
+          },
+          {
+            "name": "comp_type",
+            "type": "VARCHAR(1)",
+            "default": null,
+            "comment": "公司类型(1一般工商业2银行3保险4证券)",
+            "nullable": true
+          },
+          {
+            "name": "end_type",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "报告期类型",
+            "nullable": true
+          },
+          {
+            "name": "basic_eps",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "基本每股收益",
+            "nullable": true
+          },
+          {
+            "name": "diluted_eps",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "稀释每股收益",
+            "nullable": true
+          },
+          {
+            "name": "total_revenue",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业总收入",
+            "nullable": true
+          },
+          {
+            "name": "revenue",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业收入",
+            "nullable": true
+          },
+          {
+            "name": "int_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "利息收入",
+            "nullable": true
+          },
+          {
+            "name": "prem_earned",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "已赚保费",
+            "nullable": true
+          },
+          {
+            "name": "comm_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "手续费及佣金收入",
+            "nullable": true
+          },
+          {
+            "name": "n_commis_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "手续费及佣金净收入",
+            "nullable": true
+          },
+          {
+            "name": "n_oth_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他经营净收益",
+            "nullable": true
+          },
+          {
+            "name": "n_oth_b_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "加:其他业务净收益",
+            "nullable": true
+          },
+          {
+            "name": "prem_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "保险业务收入",
+            "nullable": true
+          },
+          {
+            "name": "out_prem",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:分出保费",
+            "nullable": true
+          },
+          {
+            "name": "une_prem_reser",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "提取未到期责任准备金",
+            "nullable": true
+          },
+          {
+            "name": "reins_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其中:分保费收入",
+            "nullable": true
+          },
+          {
+            "name": "n_sec_tb_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "代理买卖证券业务净收入",
+            "nullable": true
+          },
+          {
+            "name": "n_sec_uw_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "证券承销业务净收入",
+            "nullable": true
+          },
+          {
+            "name": "n_asset_mg_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "受托客户资产管理业务净收入",
+            "nullable": true
+          },
+          {
+            "name": "oth_b_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他业务收入",
+            "nullable": true
+          },
+          {
+            "name": "fv_value_chg_gain",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "加:公允价值变动净收益",
+            "nullable": true
+          },
+          {
+            "name": "invest_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "加:投资净收益",
+            "nullable": true
+          },
+          {
+            "name": "ass_invest_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其中:对联营企业和合营企业的投资收益",
+            "nullable": true
+          },
+          {
+            "name": "forex_gain",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "加:汇兑净收益",
+            "nullable": true
+          },
+          {
+            "name": "total_cogs",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业总成本",
+            "nullable": true
+          },
+          {
+            "name": "oper_cost",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:营业成本",
+            "nullable": true
+          },
+          {
+            "name": "int_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:利息支出",
+            "nullable": true
+          },
+          {
+            "name": "comm_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:手续费及佣金支出",
+            "nullable": true
+          },
+          {
+            "name": "biz_tax_surchg",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:营业税金及附加",
+            "nullable": true
+          },
+          {
+            "name": "sell_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:销售费用",
+            "nullable": true
+          },
+          {
+            "name": "admin_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:管理费用",
+            "nullable": true
+          },
+          {
+            "name": "fin_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:财务费用",
+            "nullable": true
+          },
+          {
+            "name": "assets_impair_loss",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:资产减值损失",
+            "nullable": true
+          },
+          {
+            "name": "prem_refund",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "退保金",
+            "nullable": true
+          },
+          {
+            "name": "compens_payout",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "赔付总支出",
+            "nullable": true
+          },
+          {
+            "name": "reser_insur_liab",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "提取保险责任准备金",
+            "nullable": true
+          },
+          {
+            "name": "div_payt",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "保户红利支出",
+            "nullable": true
+          },
+          {
+            "name": "reins_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "分保费用",
+            "nullable": true
+          },
+          {
+            "name": "oper_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业支出",
+            "nullable": true
+          },
+          {
+            "name": "compens_payout_refu",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:摊回赔付支出",
+            "nullable": true
+          },
+          {
+            "name": "insur_reser_refu",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:摊回保险责任准备金",
+            "nullable": true
+          },
+          {
+            "name": "reins_cost_refund",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:摊回分保费用",
+            "nullable": true
+          },
+          {
+            "name": "other_bus_cost",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他业务成本",
+            "nullable": true
+          },
+          {
+            "name": "operate_profit",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业利润",
+            "nullable": true
+          },
+          {
+            "name": "non_oper_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "加:营业外收入",
+            "nullable": true
+          },
+          {
+            "name": "non_oper_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "减:营业外支出",
+            "nullable": true
+          },
+          {
+            "name": "nca_disploss",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其中:减:非流动资产处置净损失",
+            "nullable": true
+          },
+          {
+            "name": "total_profit",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "利润总额",
+            "nullable": true
+          },
+          {
+            "name": "income_tax",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "所得税费用",
+            "nullable": true
+          },
+          {
+            "name": "n_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "净利润(含少数股东损益)",
+            "nullable": true
+          },
+          {
+            "name": "n_income_attr_p",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "净利润(不含少数股东损益)",
+            "nullable": true
+          },
+          {
+            "name": "minority_gain",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "少数股东损益",
+            "nullable": true
+          },
+          {
+            "name": "oth_compr_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他综合收益",
+            "nullable": true
+          },
+          {
+            "name": "t_compr_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "综合收益总额",
+            "nullable": true
+          },
+          {
+            "name": "compr_inc_attr_p",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "归属于母公司(或股东)的综合收益总额",
+            "nullable": true
+          },
+          {
+            "name": "compr_inc_attr_m_s",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "归属于少数股东的综合收益总额",
+            "nullable": true
+          },
+          {
+            "name": "ebit",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "息税前利润",
+            "nullable": true
+          },
+          {
+            "name": "ebitda",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "息税折旧摊销前利润",
+            "nullable": true
+          },
+          {
+            "name": "insurance_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "保险业务支出",
+            "nullable": true
+          },
+          {
+            "name": "undist_profit",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "年初未分配利润",
+            "nullable": true
+          },
+          {
+            "name": "distable_profit",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "可分配利润",
+            "nullable": true
+          },
+          {
+            "name": "rd_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "研发费用",
+            "nullable": true
+          },
+          {
+            "name": "fin_exp_int_exp",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "财务费用:利息费用",
+            "nullable": true
+          },
+          {
+            "name": "fin_exp_int_inc",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "财务费用:利息收入",
+            "nullable": true
+          },
+          {
+            "name": "distr_profit_shrhder",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "可供股东分配的利润",
+            "nullable": true
+          },
+          {
+            "name": "credit_impa_loss",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "信用减值损失",
+            "nullable": true
+          },
+          {
+            "name": "net_expo_hedging_benefits",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "净敞口套期收益",
+            "nullable": true
+          },
+          {
+            "name": "oth_impair_loss_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他资产减值损失",
+            "nullable": true
+          },
+          {
+            "name": "total_opcost",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "营业总成本（二）",
+            "nullable": true
+          },
+          {
+            "name": "amodcost_fin_assets",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "以摊余成本计量的金融资产终止确认收益",
+            "nullable": true
+          },
+          {
+            "name": "oth_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "其他收益",
+            "nullable": true
+          },
+          {
+            "name": "asset_disp_income",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "资产处置收益",
+            "nullable": true
+          },
+          {
+            "name": "continued_net_profit",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "持续经营净利润",
+            "nullable": true
+          },
+          {
+            "name": "end_net_profit",
+            "type": "FLOAT",
+            "default": null,
+            "comment": "终止经营净利润",
+            "nullable": true
+          },
+          {
+            "name": "update_flag",
+            "type": "VARCHAR(1)",
+            "default": null,
+            "comment": "更新标识",
+            "nullable": true
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间",
+            "nullable": true
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "comment": "更新时间",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_ann_date",
+            "column_names": [
+              "ann_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_end_date",
+            "column_names": [
+              "end_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_n_income_attr_p",
+            "column_names": [
+              "n_income_attr_p"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_report_type",
+            "column_names": [
+              "report_type"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_total_revenue",
+            "column_names": [
+              "total_revenue"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          },
+          {
+            "name": "uk_income",
+            "column_names": [
+              "ts_code",
+              "end_date",
+              "report_type"
+            ],
+            "unique": true,
+            "type": "UNIQUE"
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 83
+      },
+      "data": {
+        "record_count": 128932,
+        "date_ranges": {
+          "ann_date": {
+            "min": "20190408",
+            "max": "20250524"
+          },
+          "f_ann_date": {
+            "min": "20190408",
+            "max": "20250524"
+          },
+          "end_date": {
+            "min": "20190331",
+            "max": "20250331"
+          },
+          "update_flag": {
+            "min": "0",
+            "max": "1"
+          },
+          "create_time": {
+            "min": "2025-06-12 11:51:08",
+            "max": "2025-06-12 12:25:27"
+          },
+          "update_time": {
+            "min": "2025-06-12 11:51:08",
+            "max": "2025-06-12 12:25:27"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "ann_date",
+          "f_ann_date",
+          "end_date",
+          "report_type",
+          "comp_type",
+          "end_type",
+          "basic_eps",
+          "diluted_eps",
+          "total_revenue",
+          "revenue",
+          "int_income",
+          "prem_earned",
+          "comm_income",
+          "n_commis_income",
+          "n_oth_income",
+          "n_oth_b_income",
+          "prem_income",
+          "out_prem",
+          "une_prem_reser",
+          "reins_income",
+          "n_sec_tb_income",
+          "n_sec_uw_income",
+          "n_asset_mg_income",
+          "oth_b_income",
+          "fv_value_chg_gain",
+          "invest_income",
+          "ass_invest_income",
+          "forex_gain",
+          "total_cogs",
+          "oper_cost",
+          "int_exp",
+          "comm_exp",
+          "biz_tax_surchg",
+          "sell_exp",
+          "admin_exp",
+          "fin_exp",
+          "assets_impair_loss",
+          "prem_refund",
+          "compens_payout",
+          "reser_insur_liab",
+          "div_payt",
+          "reins_exp",
+          "oper_exp",
+          "compens_payout_refu",
+          "insur_reser_refu",
+          "reins_cost_refund",
+          "other_bus_cost",
+          "operate_profit",
+          "non_oper_income",
+          "non_oper_exp",
+          "nca_disploss",
+          "total_profit",
+          "income_tax",
+          "n_income",
+          "n_income_attr_p",
+          "minority_gain",
+          "oth_compr_income",
+          "t_compr_income",
+          "compr_inc_attr_p",
+          "compr_inc_attr_m_s",
+          "ebit",
+          "ebitda",
+          "insurance_exp",
+          "undist_profit",
+          "distable_profit",
+          "rd_exp",
+          "fin_exp_int_exp",
+          "fin_exp_int_inc",
+          "distr_profit_shrhder",
+          "credit_impa_loss",
+          "net_expo_hedging_benefits",
+          "oth_impair_loss_assets",
+          "total_opcost",
+          "amodcost_fin_assets",
+          "oth_income",
+          "asset_disp_income",
+          "continued_net_profit",
+          "end_net_profit",
+          "update_flag",
+          "create_time",
+          "update_time"
+        ],
+        "extra_info": {
+          "recent_periods": [
+            {
+              "end_date": "20250331",
+              "company_count": 5474
+            },
+            {
+              "end_date": "20241231",
+              "company_count": 5746
+            },
+            {
+              "end_date": "20240930",
+              "company_count": 5528
+            },
+            {
+              "end_date": "20240630",
+              "company_count": 5717
+            },
+            {
+              "end_date": "20240331",
+              "company_count": 5514
+            }
+          ]
+        }
+      }
+    },
+    "tu_irm_qa_sh": {
+      "structure": {
+        "table_name": "tu_irm_qa_sh",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "主键ID",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "股票代码",
+            "nullable": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": "公司名称",
+            "nullable": true
+          },
+          {
+            "name": "trade_date",
+            "type": "DATE",
+            "default": null,
+            "comment": "日期",
+            "nullable": false
+          },
+          {
+            "name": "q",
+            "type": "TEXT",
+            "default": null,
+            "comment": "问题",
+            "nullable": true
+          },
+          {
+            "name": "a",
+            "type": "TEXT",
+            "default": null,
+            "comment": "回复",
+            "nullable": true
+          },
+          {
+            "name": "pub_time",
+            "type": "DATETIME",
+            "default": null,
+            "comment": "回复时间",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_trade_date",
+            "column_names": [
+              "trade_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 7
+      },
+      "data": {
+        "record_count": 200261,
+        "date_ranges": {
+          "trade_date": {
+            "min": "2023-06-07",
+            "max": "2025-06-20"
+          },
+          "pub_time": {
+            "min": "2025-01-14 16:02:58",
+            "max": "2025-06-20 22:55:25"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "name",
+          "trade_date",
+          "q",
+          "a",
+          "pub_time"
+        ],
+        "extra_info": {}
+      }
+    },
+    "tu_irm_qa_sz": {
+      "structure": {
+        "table_name": "tu_irm_qa_sz",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "唯一标识",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "股票代码",
+            "nullable": true
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": "公司名称",
+            "nullable": true
+          },
+          {
+            "name": "trade_date",
+            "type": "DATE",
+            "default": null,
+            "comment": "发布时间",
+            "nullable": true
+          },
+          {
+            "name": "q",
+            "type": "TEXT",
+            "default": null,
+            "comment": "问题",
+            "nullable": true
+          },
+          {
+            "name": "a",
+            "type": "TEXT",
+            "default": null,
+            "comment": "回复",
+            "nullable": true
+          },
+          {
+            "name": "pub_time",
+            "type": "DATETIME",
+            "default": null,
+            "comment": "答复时间",
+            "nullable": true
+          },
+          {
+            "name": "industry",
+            "type": "VARCHAR(255)",
+            "default": null,
+            "comment": "涉及行业",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_pub_time",
+            "column_names": [
+              "pub_time"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_trade_date",
+            "column_names": [
+              "trade_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 8
+      },
+      "data": {
+        "record_count": 497656,
+        "date_ranges": {
+          "trade_date": {
+            "min": "2023-01-01",
+            "max": "2025-06-20"
+          },
+          "pub_time": {
+            "min": "2023-01-19 17:03:49",
+            "max": "2025-06-20 19:03:23"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "name",
+          "trade_date",
+          "q",
+          "a",
+          "pub_time",
+          "industry"
+        ],
+        "extra_info": {}
+      }
+    },
+    "tu_moneyflow_dc": {
+      "structure": {
+        "table_name": "tu_moneyflow_dc",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "主键ID",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "trade_date",
+            "type": "DATE",
+            "default": null,
+            "comment": "交易日期",
+            "nullable": false
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "股票代码",
+            "nullable": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": "股票名称",
+            "nullable": true
+          },
+          {
+            "name": "pct_change",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": "涨跌幅",
+            "nullable": true
+          },
+          {
+            "name": "close",
+            "type": "DECIMAL(10, 2)",
+            "default": null,
+            "comment": "最新价",
+            "nullable": true
+          },
+          {
+            "name": "net_amount",
+            "type": "DECIMAL(15, 2)",
+            "default": null,
+            "comment": "今日主力净流入额（万元）",
+            "nullable": true
+          },
+          {
+            "name": "net_amount_rate",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": "今日主力净流入净占比（%）",
+            "nullable": true
+          },
+          {
+            "name": "buy_elg_amount",
+            "type": "DECIMAL(15, 2)",
+            "default": null,
+            "comment": "今日超大单净流入额（万元）",
+            "nullable": true
+          },
+          {
+            "name": "buy_elg_amount_rate",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": "今日超大单净流入占比（%）",
+            "nullable": true
+          },
+          {
+            "name": "buy_lg_amount",
+            "type": "DECIMAL(15, 2)",
+            "default": null,
+            "comment": "今日大单净流入额（万元）",
+            "nullable": true
+          },
+          {
+            "name": "buy_lg_amount_rate",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": "今日大单净流入占比（%）",
+            "nullable": true
+          },
+          {
+            "name": "buy_md_amount",
+            "type": "DECIMAL(15, 2)",
+            "default": null,
+            "comment": "今日中单净流入额（万元）",
+            "nullable": true
+          },
+          {
+            "name": "buy_md_amount_rate",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": "今日中单净流入占比（%）",
+            "nullable": true
+          },
+          {
+            "name": "buy_sm_amount",
+            "type": "DECIMAL(15, 2)",
+            "default": null,
+            "comment": "今日小单净流入额（万元）",
+            "nullable": true
+          },
+          {
+            "name": "buy_sm_amount_rate",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": "今日小单净流入占比（%）",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_tu_moneyflow_dc_trade_date",
+            "column_names": [
+              "trade_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_tu_moneyflow_dc_trade_ts_name",
+            "column_names": [
+              "trade_date",
+              "ts_code",
+              "name"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_tu_moneyflow_dc_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 16
+      },
+      "data": {
+        "record_count": 2411419,
+        "date_ranges": {
+          "trade_date": {
+            "min": "2023-09-11",
+            "max": "2025-06-20"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "trade_date",
+          "ts_code",
+          "name",
+          "pct_change",
+          "close",
+          "net_amount",
+          "net_amount_rate",
+          "buy_elg_amount",
+          "buy_elg_amount_rate",
+          "buy_lg_amount",
+          "buy_lg_amount_rate",
+          "buy_md_amount",
+          "buy_md_amount_rate",
+          "buy_sm_amount",
+          "buy_sm_amount_rate"
+        ],
+        "extra_info": {}
+      }
+    },
+    "tu_moneyflow_ind_dc": {
+      "structure": {
+        "table_name": "tu_moneyflow_ind_dc",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": null,
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "trade_date",
+            "type": "DATE",
+            "default": null,
+            "comment": null,
+            "nullable": false
+          },
+          {
+            "name": "content_type",
+            "type": "VARCHAR(20)",
+            "default": null,
+            "comment": null,
+            "nullable": false
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": null,
+            "nullable": false
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "pct_change",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "close",
+            "type": "DECIMAL(10, 2)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "net_amount",
+            "type": "DECIMAL(15, 2)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "net_amount_rate",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "buy_elg_amount",
+            "type": "DECIMAL(15, 2)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "buy_elg_amount_rate",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "buy_lg_amount",
+            "type": "DECIMAL(15, 2)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "buy_lg_amount_rate",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "buy_md_amount",
+            "type": "DECIMAL(15, 2)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "buy_md_amount_rate",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "buy_sm_amount",
+            "type": "DECIMAL(15, 2)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "buy_sm_amount_rate",
+            "type": "DECIMAL(10, 4)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "buy_sm_amount_stock",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": null,
+            "nullable": true
+          },
+          {
+            "name": "rank",
+            "type": "INTEGER",
+            "default": null,
+            "comment": null,
+            "nullable": true,
+            "autoincrement": false
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_trade_date_content_type_rank",
+            "column_names": [
+              "trade_date",
+              "content_type",
+              "rank"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_tu_moneyflow_ind_dc_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 19
+      },
+      "data": {
+        "record_count": 67134,
+        "date_ranges": {
+          "trade_date": {
+            "min": "2024-01-02",
+            "max": "2025-06-20"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "trade_date",
+          "content_type",
+          "ts_code",
+          "name",
+          "pct_change",
+          "close",
+          "net_amount",
+          "net_amount_rate",
+          "buy_elg_amount",
+          "buy_elg_amount_rate",
+          "buy_lg_amount",
+          "buy_lg_amount_rate",
+          "buy_md_amount",
+          "buy_md_amount_rate",
+          "buy_sm_amount",
+          "buy_sm_amount_rate",
+          "buy_sm_amount_stock",
+          "rank"
+        ],
+        "extra_info": {}
+      }
+    },
+    "tu_stock_basic": {
+      "structure": {
+        "table_name": "tu_stock_basic",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "主键ID",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "TS代码",
+            "nullable": false
+          },
+          {
+            "name": "symbol",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "股票代码",
+            "nullable": true
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": "股票名称",
+            "nullable": true
+          },
+          {
+            "name": "area",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": "地域",
+            "nullable": true
+          },
+          {
+            "name": "industry",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": "所属行业",
+            "nullable": true
+          },
+          {
+            "name": "fullname",
+            "type": "VARCHAR(100)",
+            "default": null,
+            "comment": "股票全称",
+            "nullable": true
+          },
+          {
+            "name": "enname",
+            "type": "VARCHAR(200)",
+            "default": null,
+            "comment": "英文全称",
+            "nullable": true
+          },
+          {
+            "name": "cnspell",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": "拼音缩写",
+            "nullable": true
+          },
+          {
+            "name": "market",
+            "type": "VARCHAR(20)",
+            "default": null,
+            "comment": "市场类型（主板/创业板/科创板/CDR/北交所）",
+            "nullable": true
+          },
+          {
+            "name": "exchange",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "交易所代码",
+            "nullable": true
+          },
+          {
+            "name": "curr_type",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "交易货币",
+            "nullable": true
+          },
+          {
+            "name": "list_status",
+            "type": "VARCHAR(5)",
+            "default": null,
+            "comment": "上市状态 L上市 D退市 P暂停上市",
+            "nullable": true
+          },
+          {
+            "name": "list_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "上市日期",
+            "nullable": true
+          },
+          {
+            "name": "delist_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "退市日期",
+            "nullable": true
+          },
+          {
+            "name": "is_hs",
+            "type": "VARCHAR(5)",
+            "default": null,
+            "comment": "是否沪深港通标的，N否 H沪股通 S深股通",
+            "nullable": true
+          },
+          {
+            "name": "act_name",
+            "type": "VARCHAR(100)",
+            "default": null,
+            "comment": "实控人名称",
+            "nullable": true
+          },
+          {
+            "name": "act_ent_type",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": "实控人企业性质",
+            "nullable": true
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间",
+            "nullable": true
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "comment": "更新时间",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_area",
+            "column_names": [
+              "area"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_exchange",
+            "column_names": [
+              "exchange"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_industry",
+            "column_names": [
+              "industry"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_is_hs",
+            "column_names": [
+              "is_hs"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_list_date",
+            "column_names": [
+              "list_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_list_status",
+            "column_names": [
+              "list_status"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_market",
+            "column_names": [
+              "market"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_symbol",
+            "column_names": [
+              "symbol"
+            ],
+            "unique": false
+          },
+          {
+            "name": "uk_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": true,
+            "type": "UNIQUE"
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 20
+      },
+      "data": {
+        "record_count": 5418,
+        "date_ranges": {
+          "list_date": {
+            "min": "19901219",
+            "max": "20250612"
+          },
+          "delist_date": {
+            "min": "None",
+            "max": "None"
+          },
+          "create_time": {
+            "min": "2025-06-11 05:58:50",
+            "max": "2025-06-11 09:23:32"
+          },
+          "update_time": {
+            "min": "2025-06-13 16:01:03",
+            "max": "2025-06-13 16:01:14"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "symbol",
+          "name",
+          "area",
+          "industry",
+          "fullname",
+          "enname",
+          "cnspell",
+          "market",
+          "exchange",
+          "curr_type",
+          "list_status",
+          "list_date",
+          "delist_date",
+          "is_hs",
+          "act_name",
+          "act_ent_type",
+          "create_time",
+          "update_time"
+        ],
+        "extra_info": {
+          "status_distribution": [
+            {
+              "list_status": "L",
+              "count": 5418,
+              "industry_count": 110
+            }
+          ],
+          "top_industries": [
+            {
+              "industry": "电气设备",
+              "count": 326
+            },
+            {
+              "industry": "元器件",
+              "count": 297
+            },
+            {
+              "industry": "软件服务",
+              "count": 283
+            },
+            {
+              "industry": "专用机械",
+              "count": 275
+            },
+            {
+              "industry": "化工原料",
+              "count": 250
+            },
+            {
+              "industry": "汽车配件",
+              "count": 247
+            },
+            {
+              "industry": "半导体",
+              "count": 181
+            },
+            {
+              "industry": "医疗保健",
+              "count": 176
+            },
+            {
+              "industry": "化学制药",
+              "count": 150
+            },
+            {
+              "industry": "通信设备",
+              "count": 136
+            }
+          ]
+        }
+      }
+    },
+    "tu_suspend_d": {
+      "structure": {
+        "table_name": "tu_suspend_d",
+        "table_comment": "",
+        "columns": [
+          {
+            "name": "id",
+            "type": "BIGINT",
+            "default": null,
+            "comment": "主键ID",
+            "nullable": false,
+            "autoincrement": true
+          },
+          {
+            "name": "ts_code",
+            "type": "VARCHAR(10)",
+            "default": null,
+            "comment": "TS股票代码",
+            "nullable": false
+          },
+          {
+            "name": "trade_date",
+            "type": "VARCHAR(8)",
+            "default": null,
+            "comment": "停复牌日期",
+            "nullable": false
+          },
+          {
+            "name": "suspend_timing",
+            "type": "VARCHAR(50)",
+            "default": null,
+            "comment": "日内停牌时间段",
+            "nullable": true
+          },
+          {
+            "name": "suspend_type",
+            "type": "VARCHAR(5)",
+            "default": null,
+            "comment": "停复牌类型：S-停牌，R-复牌",
+            "nullable": true
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP",
+            "comment": "创建时间",
+            "nullable": true
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "default": "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "comment": "更新时间",
+            "nullable": true
+          }
+        ],
+        "primary_key": {
+          "constrained_columns": [
+            "id"
+          ],
+          "name": null
+        },
+        "indexes": [
+          {
+            "name": "idx_suspend_type",
+            "column_names": [
+              "suspend_type"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_trade_date",
+            "column_names": [
+              "trade_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ts_code",
+            "column_names": [
+              "ts_code"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_ts_code_date",
+            "column_names": [
+              "ts_code",
+              "trade_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "uk_code_date_type",
+            "column_names": [
+              "ts_code",
+              "trade_date",
+              "suspend_type"
+            ],
+            "unique": true,
+            "type": "UNIQUE"
+          }
+        ],
+        "foreign_keys": [],
+        "column_count": 7
+      },
+      "data": {
+        "record_count": 5878,
+        "date_ranges": {
+          "trade_date": {
+            "min": "20240102",
+            "max": "20250613"
+          },
+          "create_time": {
+            "min": "2025-06-11 06:40:58",
+            "max": "2025-06-13 16:01:35"
+          },
+          "update_time": {
+            "min": "2025-06-11 06:40:58",
+            "max": "2025-06-13 16:01:35"
+          }
+        },
+        "sample_columns": [
+          "id",
+          "ts_code",
+          "trade_date",
+          "suspend_timing",
+          "suspend_type",
+          "create_time",
+          "update_time"
+        ],
+        "extra_info": {}
+      }
+    }
+  },
+  "completeness_check": {
+    "daily_data": {
+      "recent_30days": [
+        {
+          "trade_date": "2025-06-20",
+          "daily_count": 5407,
+          "basic_count": 0
+        },
+        {
+          "trade_date": "2025-06-19",
+          "daily_count": 5405,
+          "basic_count": 0
+        },
+        {
+          "trade_date": "2025-06-18",
+          "daily_count": 5406,
+          "basic_count": 0
+        },
+        {
+          "trade_date": "2025-06-17",
+          "daily_count": 5406,
+          "basic_count": 0
+        },
+        {
+          "trade_date": "2025-06-16",
+          "daily_count": 5400,
+          "basic_count": 5400
+        },
+        {
+          "trade_date": "2025-06-13",
+          "daily_count": 5398,
+          "basic_count": 5398
+        },
+        {
+          "trade_date": "2025-06-12",
+          "daily_count": 5398,
+          "basic_count": 5398
+        },
+        {
+          "trade_date": "2025-06-11",
+          "daily_count": 5398,
+          "basic_count": 5398
+        },
+        {
+          "trade_date": "2025-06-10",
+          "daily_count": 5395,
+          "basic_count": 5395
+        },
+        {
+          "trade_date": "2025-06-09",
+          "daily_count": 5387,
+          "basic_count": 5387
+        },
+        {
+          "trade_date": "2025-06-06",
+          "daily_count": 5391,
+          "basic_count": 5391
+        },
+        {
+          "trade_date": "2025-06-05",
+          "daily_count": 5388,
+          "basic_count": 5388
+        },
+        {
+          "trade_date": "2025-06-04",
+          "daily_count": 5386,
+          "basic_count": 5386
+        },
+        {
+          "trade_date": "2025-06-03",
+          "daily_count": 5380,
+          "basic_count": 5380
+        },
+        {
+          "trade_date": "2025-05-30",
+          "daily_count": 5384,
+          "basic_count": 5384
+        },
+        {
+          "trade_date": "2025-05-29",
+          "daily_count": 5386,
+          "basic_count": 5386
+        },
+        {
+          "trade_date": "2025-05-28",
+          "daily_count": 5383,
+          "basic_count": 5383
+        },
+        {
+          "trade_date": "2025-05-27",
+          "daily_count": 5385,
+          "basic_count": 5385
+        },
+        {
+          "trade_date": "2025-05-26",
+          "daily_count": 5385,
+          "basic_count": 5385
+        },
+        {
+          "trade_date": "2025-05-23",
+          "daily_count": 5388,
+          "basic_count": 5388
+        }
+      ],
+      "avg_daily_stocks": 5392,
+      "avg_basic_stocks": 4311
+    },
+    "financial_data": {
+      "recent_financial_data": [
+        {
+          "table_name": "balancesheet",
+          "end_date": "20250331",
+          "company_count": 5475
+        },
+        {
+          "table_name": "cashflow",
+          "end_date": "20250331",
+          "company_count": 5421
+        },
+        {
+          "table_name": "income",
+          "end_date": "20250331",
+          "company_count": 5474
+        },
+        {
+          "table_name": "balancesheet",
+          "end_date": "20241231",
+          "company_count": 5752
+        },
+        {
+          "table_name": "cashflow",
+          "end_date": "20241231",
+          "company_count": 4857
+        },
+        {
+          "table_name": "income",
+          "end_date": "20241231",
+          "company_count": 5746
+        }
+      ]
+    },
+    "basic_data": {
+      "stock_statistics": {
+        "total_stocks": 5418,
+        "listed_stocks": 5418.0,
+        "delisted_stocks": 0.0,
+        "paused_stocks": 0.0
+      }
+    }
+  },
+  "comment_coverage": {
+    "total_tables": 14,
+    "tables_with_comment": 0,
+    "total_fields": 535,
+    "fields_with_comment": 514,
+    "tables_coverage": {
+      "tu_anns_d": {
+        "total_fields": 7,
+        "commented_fields": 7,
+        "coverage_rate": 100.0
+      },
+      "tu_balancesheet": {
+        "total_fields": 161,
+        "commented_fields": 161,
+        "coverage_rate": 100.0
+      },
+      "tu_cashflow": {
+        "total_fields": 100,
+        "commented_fields": 100,
+        "coverage_rate": 100.0
+      },
+      "tu_daily_basic": {
+        "total_fields": 20,
+        "commented_fields": 20,
+        "coverage_rate": 100.0
+      },
+      "tu_daily_detail": {
+        "total_fields": 13,
+        "commented_fields": 11,
+        "coverage_rate": 84.62
+      },
+      "tu_fina_indicator": {
+        "total_fields": 59,
+        "commented_fields": 59,
+        "coverage_rate": 100.0
+      },
+      "tu_forecast": {
+        "total_fields": 15,
+        "commented_fields": 15,
+        "coverage_rate": 100.0
+      },
+      "tu_income": {
+        "total_fields": 83,
+        "commented_fields": 83,
+        "coverage_rate": 100.0
+      },
+      "tu_irm_qa_sh": {
+        "total_fields": 7,
+        "commented_fields": 7,
+        "coverage_rate": 100.0
+      },
+      "tu_irm_qa_sz": {
+        "total_fields": 8,
+        "commented_fields": 8,
+        "coverage_rate": 100.0
+      },
+      "tu_moneyflow_dc": {
+        "total_fields": 16,
+        "commented_fields": 16,
+        "coverage_rate": 100.0
+      },
+      "tu_moneyflow_ind_dc": {
+        "total_fields": 19,
+        "commented_fields": 0,
+        "coverage_rate": 0.0
+      },
+      "tu_stock_basic": {
+        "total_fields": 20,
+        "commented_fields": 20,
+        "coverage_rate": 100.0
+      },
+      "tu_suspend_d": {
+        "total_fields": 7,
+        "commented_fields": 7,
+        "coverage_rate": 100.0
+      }
+    },
+    "missing_comments": [
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "content_type",
+        "type": "VARCHAR(20)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "net_amount",
+        "type": "DECIMAL(15, 2)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "net_amount_rate",
+        "type": "DECIMAL(10, 4)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "buy_elg_amount",
+        "type": "DECIMAL(15, 2)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "buy_elg_amount_rate",
+        "type": "DECIMAL(10, 4)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "buy_lg_amount",
+        "type": "DECIMAL(15, 2)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "buy_lg_amount_rate",
+        "type": "DECIMAL(10, 4)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "buy_md_amount",
+        "type": "DECIMAL(15, 2)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "buy_md_amount_rate",
+        "type": "DECIMAL(10, 4)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "buy_sm_amount",
+        "type": "DECIMAL(15, 2)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "buy_sm_amount_rate",
+        "type": "DECIMAL(10, 4)"
+      },
+      {
+        "table": "tu_moneyflow_ind_dc",
+        "field": "buy_sm_amount_stock",
+        "type": "VARCHAR(50)"
+      }
+    ],
+    "table_comment_coverage": 0.0,
+    "field_comment_coverage": 96.07
+  },
+  "field_dictionary_summary": {
+    "total_fields": 535,
+    "fields_with_comments": 535
+  },
+  "recommendations": [
+    "tu_daily_basic 的数据已经 6 天未更新",
+    "tu_daily_basic 的数据已经 6 天未更新",
+    "tu_daily_detail 的数据已经 2 天未更新",
+    "tu_moneyflow_ind_dc 表的字段注释覆盖率仅 0.0%"
+  ]
+}
