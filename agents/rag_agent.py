@@ -15,7 +15,8 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferWindowMemory
@@ -59,7 +60,7 @@ class RAGAgent:
         
         self.logger.info("RAG Agent初始化完成")
     
-    def _create_qa_chain(self) -> LLMChain:
+    def _create_qa_chain(self):
         """创建问答链"""
         qa_prompt = PromptTemplate(
             input_variables=["context", "question", "chat_history"],
@@ -83,13 +84,9 @@ class RAGAgent:
 回答："""
         )
         
-        return LLMChain(
-            llm=self.llm,
-            prompt=qa_prompt,
-            verbose=True
-        )
+        return qa_prompt | self.llm | StrOutputParser()
     
-    def _create_analysis_chain(self) -> LLMChain:
+    def _create_analysis_chain(self):
         """创建分析链"""
         analysis_prompt = PromptTemplate(
             input_variables=["documents", "query", "analysis_type"],
@@ -109,10 +106,7 @@ class RAGAgent:
 分析报告："""
         )
         
-        return LLMChain(
-            llm=self.llm,
-            prompt=analysis_prompt
-        )
+        return analysis_prompt | self.llm | StrOutputParser()
     
     def query(self, 
              question: str, 
@@ -129,6 +123,14 @@ class RAGAgent:
         Returns:
             查询结果
         """
+        # 输入验证
+        if not question or not question.strip():
+            return {
+                'success': False,
+                'error': '查询内容不能为空',
+                'type': 'rag_query'
+            }
+        
         try:
             start_time = time.time()
             self.logger.info(f"RAG查询: {question}")
@@ -162,29 +164,14 @@ class RAGAgent:
             
             # 调用QA Chain并智能提取答案
             try:
-                result = self.qa_chain.invoke({
+                answer = self.qa_chain.invoke({
                     "context": context,
                     "question": question,
                     "chat_history": chat_history
                 })
                 
-                # 智能提取答案
-                if hasattr(result, 'content'):
-                    # ChatOpenAI 直接返回的情况
-                    answer = result.content
-                elif isinstance(result, dict):
-                    # LLMChain 返回字典的情况
-                    answer = result.get('text', '') or result.get('output', '') or result.get('answer', '') or str(result)
-                elif isinstance(result, str):
-                    # 直接返回字符串的情况
-                    answer = result
-                else:
-                    # 其他情况，转换为字符串
-                    self.logger.warning(f"未知的返回类型: {type(result)}")
-                    answer = str(result)
-                
                 # 确保答案不为空
-                if not answer or answer.strip() == '':
+                if not answer or not isinstance(answer, str) or answer.strip() == '':
                     self.logger.warning("答案为空，使用默认回复")
                     answer = "抱歉，我无法从提供的文档中找到相关信息来回答您的问题。"
                     
@@ -259,11 +246,11 @@ class RAGAgent:
             formatted_docs = self._format_documents_for_analysis(documents)
             
             # 3. 执行分析
-            analysis = self.analysis_chain.run(
-                documents=formatted_docs,
-                query=query,
-                analysis_type=analysis_type
-            )
+            analysis = self.analysis_chain.invoke({
+                "documents": formatted_docs,
+                "query": query,
+                "analysis_type": analysis_type
+            })
             
             return {
                 'success': True,

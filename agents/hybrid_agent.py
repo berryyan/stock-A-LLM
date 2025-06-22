@@ -19,7 +19,8 @@ from agents.sql_agent import SQLAgent
 from agents.rag_agent import RAGAgent
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 
 from config.settings import settings
 from utils.logger import setup_logger
@@ -157,10 +158,7 @@ class HybridAgent:
 决策："""
         )
         
-        return LLMChain(
-            llm=self.router_llm,
-            prompt=router_prompt
-        )
+        return router_prompt | self.router_llm | StrOutputParser()
     
     def _create_integration_chain(self) -> LLMChain:
         """创建结果整合链"""
@@ -185,10 +183,7 @@ class HybridAgent:
 整合答案："""
         )
         
-        return LLMChain(
-            llm=self.router_llm,
-            prompt=integration_prompt
-        )
+        return integration_prompt | self.router_llm | StrOutputParser()
     
     def query(self, question: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -201,6 +196,14 @@ class HybridAgent:
         Returns:
             查询结果
         """
+        # 输入验证
+        if not question or not question.strip():
+            return {
+                'success': False,
+                'error': '查询内容不能为空',
+                'type': 'hybrid_query'
+            }
+        
         try:
             self.logger.info(f"接收查询: {question}")
             
@@ -247,10 +250,10 @@ class HybridAgent:
             # 使用LLM进行智能路由
             patterns_str = json.dumps(self.query_patterns, ensure_ascii=False, indent=2)
             
-            result = self.router_chain.run(
-                question=question,
-                patterns=patterns_str
-            )
+            result = self.router_chain.invoke({
+                "question": question,
+                "patterns": patterns_str
+            })
             
             # 解析JSON结果
             # 清理可能的markdown代码块标记
@@ -403,11 +406,11 @@ class HybridAgent:
         
         # 3. 整合结果
         if rag_result.get('success', False):
-            integrated_answer = self.integration_chain.run(
-                question=question,
-                sql_result=json.dumps(sql_result.get('result', sql_result) if isinstance(sql_result, dict) else sql_result, ensure_ascii=False),
-                rag_result=rag_result.get('answer', '')
-            )
+            integrated_answer = self.integration_chain.invoke({
+                "question": question,
+                "sql_result": json.dumps(sql_result.get('result', sql_result) if isinstance(sql_result, dict) else sql_result, ensure_ascii=False),
+                "rag_result": rag_result.get('answer', '')
+            })
             
             return {
                 'success': True,
@@ -450,11 +453,11 @@ class HybridAgent:
             
             # 3. 整合结果
             if sql_result.get('success', False):
-                integrated_answer = self.integration_chain.run(
-                    question=question,
-                    sql_result=json.dumps(sql_result.get('result', sql_result) if isinstance(sql_result, dict) else sql_result, ensure_ascii=False),
-                    rag_result=rag_result.get('answer', '')
-                )
+                integrated_answer = self.integration_chain.invoke({
+                    "question": question,
+                    "sql_result": json.dumps(sql_result.get('result', sql_result) if isinstance(sql_result, dict) else sql_result, ensure_ascii=False),
+                    "rag_result": rag_result.get('answer', '')
+                })
                 
                 return {
                     'success': True,
@@ -507,11 +510,11 @@ class HybridAgent:
             sql_data = sql_result.get('result', '无数据') if isinstance(sql_result, dict) else str(sql_result)
             rag_data = rag_result.get('answer', '无文档') if isinstance(rag_result, dict) else str(rag_result)
             
-            integrated_answer = self.integration_chain.run(
-                question=question,
-                sql_result=json.dumps(sql_data, ensure_ascii=False),
-                rag_result=rag_data
-            )
+            integrated_answer = self.integration_chain.invoke({
+                "question": question,
+                "sql_result": json.dumps(sql_data, ensure_ascii=False),
+                "rag_result": rag_data
+            })
             
             return {
                 'success': True,
@@ -741,7 +744,7 @@ class HybridAgent:
 请提供整合的完整答案：
 """
         
-        integrated = self.router_llm.predict(integration_prompt)
+        integrated = self.router_llm.invoke(integration_prompt).content
         return integrated
 
     def _safe_extract_result(self, result: Any, source_type: str) -> str:

@@ -194,6 +194,14 @@ class SQLAgent:
         Returns:
             查询结果字符串
         """
+        # 输入验证
+        if not question or not question.strip():
+            return {
+                'success': False,
+                'error': '查询内容不能为空',
+                'result': None
+            }
+        
         try:
             self.logger.info(f"接收查询: {question}")
             
