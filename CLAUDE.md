@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v1.3.8)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v1.4.0)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ All systems operational, LangChain modernization complete, comprehensive testing passed (6/6).
+**Current Status**: ✅ All systems operational, Phase 1 深度财务分析系统开发完成, 新增专业财务分析功能.
 
 ## Development Commands
 
@@ -48,6 +48,10 @@ python scripts/tests/test_components.py
 # Essential comprehensive tests (keep in root directory)
 python baseline_test.py
 python comprehensive_verification.py
+
+# Test financial analysis features (v1.4.0 new)
+python test_financial_agent.py
+python test_advanced_financial_features.py
 
 # Archived test scripts (in scripts/tests/)
 python scripts/tests/test_optimized_rag.py
@@ -101,6 +105,7 @@ python scripts/debugging/test_cninfo_pdf.py
 - `HybridAgent`: Smart query router with modern chain composition using `|` operator
 - `SQLAgent`: Handles structured data queries with enhanced input validation
 - `RAGAgent`: Document retrieval with semantic search, query statistics, and modern chains
+- `FinancialAnalysisAgent`: **[v1.4.0 NEW]** 专业财务分析系统，支持四表联合查询和深度财务分析
 
 **Database Layer** (`database/`):
 - `MySQLConnector`: Manages connections to MySQL for structured financial data
@@ -174,7 +179,34 @@ The system supports three main query types:
 - Hybrid queries: 10-45 seconds with parallel processing
 - System supports 50+ concurrent users
 
-### Recent Updates (v1.3.8 - 2025-06-22)
+### Recent Updates
+
+#### v1.4.0 - Phase 1 深度财务分析系统 (2025-06-22)
+
+**FinancialAnalysisAgent 核心功能** ✅:
+- **四表联合分析**: 利润表(83字段) + 资产负债表(161字段) + 现金流量表(73字段) + 财务指标(143字段)
+- **财务健康度评分**: 基于盈利能力、偿债能力、运营能力、成长能力四维度的智能评分系统(AAA-CCC评级)
+- **杜邦分析功能**: ROE分解分析(净利率×资产周转率×权益乘数)，支持多期趋势分析
+- **现金流质量分析**: 现金含量比率计算、稳定性评分、综合质量评级
+- **多期财务对比**: 同比/环比增长率、趋势分析、波动性评估
+
+**智能查询能力** ✅:
+- **自然语言解析**: 支持"分析茅台的财务健康度"、"杜邦分析"、"现金流质量"等中文查询
+- **股票代码识别**: 自动提取TS代码(如600519.SH)或根据公司名称(如"贵州茅台")查找
+- **查询意图路由**: 智能识别财务分析意图并调用相应分析功能
+
+**专业分析报告** ✅:
+- **LLM增强分析**: 结合财务计算结果和AI分析生成专业财务报告
+- **多维度洞察**: 核心结论、详细分析、风险提示、投资建议
+- **数据可视化**: 格式化的财务指标展示和趋势分析
+
+**测试验证** ✅:
+- 贵州茅台财务健康度: AA级(81分)，盈利能力强，偿债能力优秀
+- 平安银行杜邦分析: 净利率41.82%，但资产周转率低(0.006次)，高杠杆(11.42倍)
+- 现金流质量分析: 准确识别茅台现金流波动问题，万科现金流质量评级
+- 查询响应时间: 25-30秒，包含完整的LLM分析报告生成
+
+#### v1.3.8 - LangChain现代化 (2025-06-22)
 
 **LangChain Modernization Complete** ✅:
 - Updated all `LLMChain` to modern `RunnableSequence` pattern
