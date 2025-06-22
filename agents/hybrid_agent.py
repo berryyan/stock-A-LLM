@@ -125,7 +125,7 @@ class HybridAgent:
             }
         }
     
-    def _create_router_chain(self) -> LLMChain:
+    def _create_router_chain(self):
         """创建路由决策链"""
         router_prompt = PromptTemplate(
             input_variables=["question", "patterns"],
@@ -160,7 +160,7 @@ class HybridAgent:
         
         return router_prompt | self.router_llm | StrOutputParser()
     
-    def _create_integration_chain(self) -> LLMChain:
+    def _create_integration_chain(self):
         """创建结果整合链"""
         integration_prompt = PromptTemplate(
             input_variables=["question", "sql_result", "rag_result"],
