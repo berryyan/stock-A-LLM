@@ -60,7 +60,7 @@ class QueryRequest(BaseModel):
     top_k: Optional[int] = Field(5, description="返回结果数量")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "question": "贵州茅台2024年第一季度的营收情况如何？",
                 "filters": {"ts_code": "600519.SH"},
@@ -88,7 +88,7 @@ class CompareRequest(BaseModel):
     period: Optional[str] = Field(None, description="时间段")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "companies": ["600519.SH", "000858.SZ"],
                 "aspect": "盈利能力",
@@ -103,7 +103,7 @@ class FinancialAnalysisRequest(BaseModel):
     analysis_type: str = Field("financial_health", description="分析类型")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "ts_code": "600519.SH",
                 "analysis_type": "financial_health"

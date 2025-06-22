@@ -45,12 +45,10 @@ class RAGAgent:
             base_url=settings.DEEPSEEK_BASE_URL
         )
         
-        # 对话记忆（保留最近5轮对话）
-        self.memory = ConversationBufferWindowMemory(
-            k=5,
-            memory_key="chat_history",
-            return_messages=True
-        )
+        # 对话记忆 - 使用现代化的内存管理
+        # 注意: 根据LangChain迁移指南，内存功能已被现代化
+        # 暂时保留但不在新的agent中使用
+        self.memory = None  # 将在未来版本中实现现代化内存管理
         
         # 创建查询链
         self.qa_chain = self._create_qa_chain()

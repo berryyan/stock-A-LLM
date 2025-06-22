@@ -60,11 +60,10 @@ class SQLAgent:
         # 创建SQL agent
         self.agent = self._create_agent()
         
-        # 对话记忆
-        self.memory = ConversationBufferMemory(
-            memory_key="chat_history",
-            return_messages=True
-        )
+        # 对话记忆 - 使用现代化的内存管理
+        # 注意: 根据LangChain迁移指南，内存功能已被现代化
+        # 暂时保留但不在新的agent中使用
+        self.memory = None  # 将在未来版本中实现现代化内存管理
         
         # 初始化查询缓存
         self._query_cache = {}
@@ -220,10 +219,15 @@ class SQLAgent:
             processed_question = self._preprocess_question(question)
             
             # 使用agent执行查询
-            result = self.agent.run(processed_question)
+            result = self.agent.invoke({"input": processed_question})
             
-            # 后处理结果 - 确保返回字符串
-            processed_result = self._postprocess_result(result)
+            # 处理invoke返回的结果
+            if isinstance(result, dict) and 'output' in result:
+                # invoke返回字典格式，提取output
+                processed_result = self._postprocess_result(result['output'])
+            else:
+                # 直接处理结果
+                processed_result = self._postprocess_result(result)
             
             # 转换为字符串
             if isinstance(processed_result, dict):
