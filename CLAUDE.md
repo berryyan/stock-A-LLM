@@ -4,17 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v1.3.8)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+
+**Current Status**: ✅ All systems operational, LangChain modernization complete, comprehensive testing passed (6/6).
 
 ## Development Commands
 
 ### Environment Setup
 ```bash
-# Activate virtual environment
+# Activate virtual environment (Updated: venv/ directory)
 # Windows:
-stock_analysis_env\Scripts\activate
+venv\Scripts\activate
 # Linux/Mac:
-source stock_analysis_env/bin/activate
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -43,8 +45,15 @@ python scripts/tests/test_api.py
 # Test specific components
 python scripts/tests/test_components.py
 
-# Run comprehensive verification
+# Essential comprehensive tests (keep in root directory)
+python baseline_test.py
 python comprehensive_verification.py
+
+# Archived test scripts (in scripts/tests/)
+python scripts/tests/test_optimized_rag.py
+python scripts/tests/test_final_rag.py
+python scripts/tests/test_rag_enhancements.py
+python scripts/tests/test_simple_stats.py
 
 # Performance testing
 python scripts/tests/performance_test.py
@@ -88,10 +97,10 @@ python scripts/debugging/test_cninfo_pdf.py
 - Handles query routing and response formatting
 - Provides health checks and system status endpoints
 
-**Agent System** (`agents/`):
-- `HybridAgent`: Smart query router that automatically determines whether to use SQL or RAG
-- `SQLAgent`: Handles structured data queries against MySQL database
-- `RAGAgent`: Manages document retrieval and semantic search using Milvus
+**Agent System** (`agents/`) - *All modernized with LangChain RunnableSequence*:
+- `HybridAgent`: Smart query router with modern chain composition using `|` operator
+- `SQLAgent`: Handles structured data queries with enhanced input validation
+- `RAGAgent`: Document retrieval with semantic search, query statistics, and modern chains
 
 **Database Layer** (`database/`):
 - `MySQLConnector`: Manages connections to MySQL for structured financial data
@@ -154,6 +163,8 @@ The system supports three main query types:
 
 ### Error Handling
 - All agents return standardized response format with `success`, `error`, and result fields
+- Input validation prevents empty/whitespace queries from causing errors  
+- Modern LangChain error handling with try-catch around `invoke()` calls
 - Milvus collections are automatically loaded if needed
 - PDF downloads use three-stage retry with session management
 
@@ -163,12 +174,30 @@ The system supports three main query types:
 - Hybrid queries: 10-45 seconds with parallel processing
 - System supports 50+ concurrent users
 
-### Recent Updates (2025-06-22)
-- ✅ Added empty query validation to all agents (RAG, SQL, Hybrid)
-- ✅ Updated deprecated LangChain LLMChain usage to new runnable chains
-- ✅ Removed StdOutCallbackHandler to eliminate errors
-- ✅ All agents now use modern LangChain patterns with `|` operator
-- ✅ Improved error handling and input validation
+### Recent Updates (v1.3.8 - 2025-06-22)
+
+**LangChain Modernization Complete** ✅:
+- Updated all `LLMChain` to modern `RunnableSequence` pattern
+- Replaced deprecated `Chain.run()` with `invoke()` method
+- Implemented pipeline composition with `|` operator: `prompt | llm | parser`
+- Resolved all LangChain deprecation warnings
+- Fixed `StdOutCallbackHandler` errors completely
+
+**Enhanced Input Validation** ✅:
+- Added empty query validation to all agents (RAG, SQL, Hybrid)
+- Standardized error response formats across all components
+- Prevents crashes from empty or whitespace-only inputs
+
+**RAG Agent Improvements** ✅:
+- Added query statistics tracking (`query_count`, `success_count`)
+- Implemented `get_stats()` method for performance monitoring
+- Enhanced error handling and logging
+
+**Testing & Quality Assurance** ✅:
+- All 6/6 comprehensive tests passing
+- Test script organization: essential tests in root, archived tests in `scripts/tests/`
+- Baseline functionality verification with `baseline_test.py`
+- Performance and integration testing completed
 
 ### Testing Strategy
 - Use the test-guide.md for comprehensive testing procedures
@@ -187,4 +216,25 @@ The system supports three main query types:
 - Performance logs: `data/performance_logs/`
 - Cache files: `data/pdfs/cache/`
 
-The system is designed for production use with comprehensive error handling, logging, and monitoring capabilities.
+## Development Best Practices
+
+### Code Quality
+- All LangChain code uses modern patterns (v0.1+ compatible)
+- Input validation is mandatory for all public methods
+- Error handling follows standardized response format
+- Test coverage includes unit, integration, and performance tests
+
+### Query Development
+```python
+# Example: Modern LangChain pattern in agents
+qa_chain = qa_prompt | self.llm | StrOutputParser()
+result = qa_chain.invoke({"context": context, "question": question})
+```
+
+### Testing Protocol
+1. Run `baseline_test.py` for quick functionality check
+2. Run `comprehensive_verification.py` for full system validation
+3. Check specific features with archived tests in `scripts/tests/`
+4. Performance testing via dedicated scripts
+
+The system is designed for production use with comprehensive error handling, logging, monitoring capabilities, and full LangChain modernization (v1.3.8).
