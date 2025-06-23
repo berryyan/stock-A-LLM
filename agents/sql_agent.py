@@ -7,6 +7,7 @@ SQL Agent - 自然语言转SQL查询
 import re
 import sys
 import os
+import time
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime, timedelta
 import json
@@ -29,6 +30,7 @@ from config.settings import settings
 from database.mysql_connector import MySQLConnector
 from utils.logger import setup_logger
 from utils.date_intelligence import date_intelligence
+
 
 
 class SQLAgent:
@@ -234,7 +236,7 @@ class SQLAgent:
             llm=self.llm,
             toolkit=self.toolkit,
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            verbose=True,
+            verbose=True,  # 保持verbose=True以获得调试价值
             handle_parsing_errors=True,
             max_iterations=10,  # 增加迭代次数
             early_stopping_method="force",
