@@ -276,6 +276,9 @@ Stock Analysis System 是一个基于 LangChain 框架的智能股票分析系�
 
 所有核心功能均已正常运行，系统处于稳定状态。
 
+### 非关键问题 (不影响功能)
+- **StdOutCallbackHandler警告**: SQL Agent在verbose模式下会在后台日志中显示LangChain callback警告，但不影响API功能正常使用。保留verbose=True是为了维持完整的ReAct思维过程调试信息。
+
 ### 已解决问题 ✅
 1. **Agent返回格式不一致**: 通过接口统一化解决
 2. **Milvus Hit对象访问错误**: 通过修改访问方式解决
@@ -284,7 +287,10 @@ Stock Analysis System 是一个基于 LangChain 框架的智能股票分析系�
 5. **RAG答案生成问题**: 通过优化答案提取逻辑解决 (v1.3.7)
 6. **Chain.run弃用问题**: 已替换为invoke方法 (v1.3.7)
 7. **LangChain弃用警告**: 完全解决，已更新为现代RunnableSequence模式 (v1.3.8)
-8. **StdOutCallbackHandler警告**: 已解决 (v1.3.8)
+8. **日期解析和中文输出问题**: 已完全解决 (v1.4.1+)
+   - 修复了LLM误判历史数据为"未来日期"的问题
+   - 修复了SQL Agent和RAG Agent的英文输出问题
+   - 现在查询"贵州茅台最新股价"正确返回中文格式结果
 
 ## 待完成任务清单
 
