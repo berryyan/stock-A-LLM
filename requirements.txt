@@ -23,6 +23,8 @@ jieba
 fastapi
 uvicorn
 python-multipart
+jinja2
+aiofiles
 
 # 其他
 python-dotenv

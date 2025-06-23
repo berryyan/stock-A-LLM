@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v1.4.1)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v1.4.2)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ All systems operational, Phase 1 深度财务分析系统开发完成, 新增专业财务分析功能, 新增智能日期解析功能.
+**Current Status**: ✅ All systems operational, Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析和网页前端开发完成, 智能日期解析系统v2.0已部署.
 
 ## Development Commands
 
@@ -53,9 +53,13 @@ python comprehensive_verification.py
 python test_financial_agent.py
 python test_advanced_financial_features.py
 
-# Test intelligent date parsing features (v1.4.1 new)
+# Test intelligent date parsing features (v1.4.1+)
 python test_date_intelligence.py
 python test_date_intelligence_integration.py
+python test_date_intelligence_v2.py  # v2.0 enhanced system
+
+# Test money flow analysis features (v1.4.2 new)
+python test_money_flow_simple.py
 
 # Archived test scripts (in scripts/tests/)
 python scripts/tests/test_optimized_rag.py
@@ -165,10 +169,12 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 ## Important Development Notes
 
 ### Query Types
-The system supports three main query types:
+The system supports five main query types:
 - `sql`: For numerical data, rankings, and structured queries
 - `rag`: For document content, explanations, and qualitative analysis  
-- `hybrid`: Automatically routes or combines both approaches
+- `financial_analysis`: For professional financial analysis and scoring
+- `money_flow`: For capital flow analysis and institutional behavior
+- `hybrid`: Automatically routes or combines multiple approaches
 
 ### Error Handling
 - All agents return standardized response format with `success`, `error`, and result fields
@@ -180,8 +186,11 @@ The system supports three main query types:
 ### Performance Considerations
 - SQL queries: 5-30 seconds depending on complexity
 - RAG queries: 3-15 seconds with vector optimization
-- Hybrid queries: 10-45 seconds with parallel processing
+- Financial analysis: 20-45 seconds with comprehensive calculations
+- Money flow analysis: 15-30 seconds with multi-tier calculations
+- Hybrid queries: 10-60 seconds with parallel processing
 - System supports 50+ concurrent users
+- WebSocket real-time communication supported
 
 ### Recent Updates
 
@@ -220,22 +229,62 @@ The system supports three main query types:
 - **最新公告日期**: 动态获取特定股票的最新公告发布日期
 
 **系统集成** ✅:
-- **SQL Agent集成**: 预处理"茅台最新股价"→"茅台2025-06-20股价"
-- **RAG Agent集成**: 预处理"贵州茅台最新公告"→"贵州茅台2025-06-20公告"
+- **SQL Agent集成**: 预处理"茅台最新股价"→"茅台2025-06-23股价" (已修复)
+- **RAG Agent集成**: 预处理"贵州茅台最新公告"→"贵州茅台2025-06-23公告" (已修复)
 - **Hybrid Agent支持**: 复合查询中的智能时间解析
 - **缓存机制**: 1小时TTL缓存，避免重复数据库查询
 
-**解析示例** ✅:
-- "茅台最新股价" → 查询2025-06-20交易日数据
-- "贵州茅台最新财务数据" → 查询20250331期最新报告
-- "600519.SH最新公告" → 查询2025-06-20最新公告
-- "比亚迪现在的股价如何" → 自动转换为最近交易日查询
+**解析示例** ✅ (更新为v2.0):
+- "茅台最新股价" → 查询2025-06-23交易日数据 (修复日期缓存BUG)
+- "5天前的股价" → 查询2025-06-17数据 (时间点)
+- "前5天的走势" → 查询2025-06-17至2025-06-23走势 (时间段)
+- "上个月的数据" → 查询2025-05-23数据 (21个交易日前)
+- "去年同期股价" → 查询2024-06-21股价 (智能修正非交易日)
 
 **技术实现** ✅:
 - 新增 `utils/date_intelligence.py` 智能日期解析模块
 - 正则表达式模式匹配 + 股票代码识别
 - SQLAlchemy参数化查询，防止SQL注入
 - 统一错误处理和日志记录
+
+#### v1.4.2 - Phase 2 资金流向分析和网页前端 + 日期解析v2.0 (2025-06-23)
+
+**资金流向分析系统** ✅:
+- **主力资金分析**: 最高优先级，分析主力资金(大单+超大单)净流入/流出
+- **超大单行为模式**: 重点单独分析，识别机构建仓/减仓/洗盘行为
+- **四级资金分布**: 超大单(≥100万)、大单(20-100万)、中单(4-20万)、小单(<4万)
+- **专业评估系统**: 资金流向强度、一致性评分、投资建议
+
+**网页版前端界面** ✅:
+- **ChatGPT风格交互**: 类似对话式的自然语言交互界面
+- **WebSocket实时通信**: 支持即时对话，无需刷新页面
+- **音体化设计**: 适配手机和电脑端，支持快捷按钮
+- **实时加载提示**: 查询处理状态实时反馈
+
+**智能日期解析v2.0** ✅:
+- **时间点vs时间段区分**: 精确区分"5天前"(时间点)和"前5天"(时间段)
+- **专业交易日计算**: 周5天、月21天、季61天、半年120天、年250天
+- **年份相对日期修正**: 去年同期非交易日智能向前查找最近交易日
+- **完整中文支持**: 支持最新、上周、上个月、去年、最近N天等所有常用表达
+
+**系统集成** ✅:
+- **MoneyFlowAgent**: 新增资金流向分析专用Agent
+- **Hybrid Agent路由**: 支持MONEY_FLOW查询类型智能路由
+- **API端点完善**: POST /money-flow-analysis接口和完整文档
+- **前端整合**: templates/index.html实现网页交互
+
+**测试验证** ✅:
+- 贵州茅台资金流向: 主力资金净流入+1.25亿元，超大单呈现建仓特征
+- 网页前端: 成功实现自然语言交互，支持所有模块查询
+- 日期解析v2.0: 修复日期缓存BUG，现正确返回2025-06-23最新数据
+- API文档: 完整更新所有端点文档，新增标签分组和使用示例
+
+**技术实现** ✅:
+- 新增 `utils/money_flow_analyzer.py` 资金流向分析核心模块
+- 新增 `agents/money_flow_agent.py` 资金流向分析Agent
+- 新增 `templates/index.html` 网页前端界面
+- 重写 `utils/date_intelligence.py` v2.0架构，新增设计文档
+- 完善 API文档和标签分组，新增多个使用示例
 
 #### v1.3.8 - LangChain现代化 (2025-06-22)
 

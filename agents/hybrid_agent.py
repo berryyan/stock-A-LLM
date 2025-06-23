@@ -18,6 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from agents.sql_agent import SQLAgent
 from agents.rag_agent import RAGAgent
 from agents.financial_agent import FinancialAnalysisAgent
+from agents.money_flow_agent import MoneyFlowAgent
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
@@ -32,6 +33,7 @@ class QueryType(str, Enum):
     SQL_ONLY = "sql"          # 仅需SQL查询
     RAG_ONLY = "rag"          # 仅需RAG查询
     FINANCIAL = "financial"   # 财务分析查询
+    MONEY_FLOW = "money_flow" # 资金流向分析查询
     SQL_FIRST = "hybrid"      # 先SQL后RAG
     RAG_FIRST = "hybrid"      # 先RAG后SQL
     PARALLEL = "hybrid"       # 并行查询
@@ -41,6 +43,7 @@ class QueryType(str, Enum):
     sql = "sql"
     rag = "rag"
     financial = "financial"
+    money_flow = "money_flow"
     hybrid = "hybrid"
     
     @classmethod
@@ -80,6 +83,7 @@ class HybridAgent:
         self.sql_agent = SQLAgent()
         self.rag_agent = RAGAgent()
         self.financial_agent = FinancialAnalysisAgent()
+        self.money_flow_agent = MoneyFlowAgent()
         
         # 初始化路由LLM
         self.router_llm = ChatOpenAI(
@@ -134,6 +138,24 @@ class HybridAgent:
                     r'ROE.*分解'
                 ]
             },
+            'money_flow_patterns': {
+                'keywords': ['资金流向', '资金流入', '资金流出', '主力资金', '机构资金', '大资金', '超大单', '大单', '中单', '小单', '主力净流入', '主力净流出', '机构行为', '主力行为', '散户', '个人投资者'],
+                'patterns': [
+                    r'.*资金.*流向',
+                    r'.*资金.*流入',
+                    r'.*资金.*流出',
+                    r'.*主力.*资金',
+                    r'.*机构.*资金',
+                    r'.*超大单',
+                    r'.*大单.*中单.*小单',
+                    r'.*主力.*净流入',
+                    r'.*主力.*净流出',
+                    r'.*机构.*行为',
+                    r'.*主力.*行为',
+                    r'.*买入.*卖出',
+                    r'.*散户.*机构'
+                ]
+            },
             'hybrid_patterns': {
                 'keywords': ['综合分析', '全面评估', '详细了解', '深入研究'],
                 'patterns': [
@@ -153,6 +175,7 @@ class HybridAgent:
 - SQL_ONLY: 查询结构化数据（股价、财务指标、排名等）
 - RAG_ONLY: 查询文档内容（公告详情、管理层分析等）
 - FINANCIAL: 专业财务分析（财务健康度、杜邦分析、现金流质量等）
+- MONEY_FLOW: 资金流向分析（主力资金、超大单、资金分布等）
 - SQL_FIRST: 先获取数据，再查找相关解释
 - RAG_FIRST: 先查找文档，可能需要补充数据
 - PARALLEL: 同时需要数据和文档
@@ -242,6 +265,9 @@ class HybridAgent:
             elif query_type == QueryType.FINANCIAL:
                 return self._handle_financial_analysis(question, routing_decision)
             
+            elif query_type == QueryType.MONEY_FLOW:
+                return self._handle_money_flow_analysis(question, routing_decision)
+            
             elif query_type == QueryType.SQL_FIRST:
                 return self._handle_sql_first(question, routing_decision)
             
@@ -303,6 +329,7 @@ class HybridAgent:
         sql_score = 0
         rag_score = 0
         financial_score = 0
+        money_flow_score = 0
         
         # 关键词匹配
         for keyword in self.query_patterns['sql_patterns']['keywords']:
@@ -317,13 +344,23 @@ class HybridAgent:
             if keyword in question:
                 financial_score += 2  # 财务分析关键词权重更高
         
+        for keyword in self.query_patterns['money_flow_patterns']['keywords']:
+            if keyword in question:
+                money_flow_score += 2  # 资金流向关键词权重更高
+        
         # 模式匹配
         for pattern in self.query_patterns['financial_patterns']['patterns']:
             if re.search(pattern, question):
                 financial_score += 3
         
+        for pattern in self.query_patterns['money_flow_patterns']['patterns']:
+            if re.search(pattern, question):
+                money_flow_score += 3
+        
         # 决定查询类型
-        if financial_score > 0:
+        if money_flow_score > 0:
+            query_type = QueryType.MONEY_FLOW.value
+        elif financial_score > 0:
             query_type = QueryType.FINANCIAL.value
         elif sql_score > 0 and rag_score == 0:
             query_type = QueryType.SQL_ONLY.value
@@ -457,6 +494,45 @@ class HybridAgent:
                 'question': question,
                 'error': str(e),
                 'query_type': QueryType.FINANCIAL.value,
+                'routing': routing
+            }
+    
+    def _handle_money_flow_analysis(self, question: str, routing: Dict) -> Dict[str, Any]:
+        """处理资金流向分析查询"""
+        try:
+            self.logger.info(f"执行资金流向分析查询: {question}")
+            
+            # 直接调用资金流向分析代理
+            money_flow_result = self.money_flow_agent.query(question)
+            
+            if money_flow_result.get('success', False):
+                return {
+                    'success': True,
+                    'question': question,
+                    'answer': money_flow_result.get('answer', '资金流向分析完成'),
+                    'query_type': QueryType.MONEY_FLOW.value,
+                    'routing': routing,
+                    'sources': {
+                        'money_flow': money_flow_result
+                    },
+                    'money_flow_data': money_flow_result.get('money_flow_data')  # 保留完整的资金流向数据
+                }
+            else:
+                return {
+                    'success': False,
+                    'question': question,
+                    'error': money_flow_result.get('error', '资金流向分析失败'),
+                    'query_type': QueryType.MONEY_FLOW.value,
+                    'routing': routing
+                }
+                
+        except Exception as e:
+            self.logger.error(f"资金流向分析处理失败: {e}")
+            return {
+                'success': False,
+                'question': question,
+                'error': str(e),
+                'query_type': QueryType.MONEY_FLOW.value,
                 'routing': routing
             }
     
