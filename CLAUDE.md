@@ -35,51 +35,71 @@ python scripts/utils/system_check.py
 ```
 
 ### Testing
+
+**重要**: WSL2环境中所有Python命令都需要激活虚拟环境！
+
+#### WSL2环境测试命令格式
+```bash
+# 标准格式：激活虚拟环境 + Python命令
+source venv/bin/activate && python [script_name]
+
+# 或使用便捷脚本
+./run_with_venv.sh python [script_name]
+```
+
+#### 具体测试命令
 ```bash
 # Test database connections
-python scripts/tests/test_databases.py
+source venv/bin/activate && python scripts/tests/test_databases.py
 
-# Test API endpoints
-python scripts/tests/test_api.py
+# Test API endpoints  
+source venv/bin/activate && python scripts/tests/test_api.py
 
 # Test specific components
-python scripts/tests/test_components.py
+source venv/bin/activate && python scripts/tests/test_components.py
 
 # Essential comprehensive tests (keep in root directory)
-python baseline_test.py
-python comprehensive_verification.py
+source venv/bin/activate && python baseline_test.py
+source venv/bin/activate && python comprehensive_verification.py
 
 # Test financial analysis features (v1.4.0 new)
-python test_financial_agent.py
-python test_advanced_financial_features.py
+source venv/bin/activate && python test_financial_agent.py
+source venv/bin/activate && python test_advanced_financial_features.py
 
 # Test intelligent date parsing features (v1.4.1+)
-python test_date_intelligence.py
-python test_date_intelligence_integration.py
-python test_date_intelligence_v2.py  # v2.0 enhanced system
+source venv/bin/activate && python test_date_intelligence.py
+source venv/bin/activate && python test_date_intelligence_integration.py
+source venv/bin/activate && python test_date_intelligence_v2.py  # v2.0 enhanced system
 
 # Test money flow analysis features (v1.4.2 new)
-python test_money_flow_simple.py
+source venv/bin/activate && python test_money_flow_simple.py
 
 # Bug fix verification tests (v1.4.1 fixes)
-python test_bug_fixes.py
-python test_money_flow_analysis.py
-python test_latest_trading_day_fix.py
-python test_comprehensive_final.py
+source venv/bin/activate && python test_bug_fixes.py
+source venv/bin/activate && python test_money_flow_analysis.py
+source venv/bin/activate && python test_latest_trading_day_fix.py
+source venv/bin/activate && python test_comprehensive_final.py
 
 # Archived test scripts (in scripts/tests/)
-python scripts/tests/test_optimized_rag.py
-python scripts/tests/test_final_rag.py
-python scripts/tests/test_rag_enhancements.py
-python scripts/tests/test_simple_stats.py
+source venv/bin/activate && python scripts/tests/test_optimized_rag.py
+source venv/bin/activate && python scripts/tests/test_final_rag.py
+source venv/bin/activate && python scripts/tests/test_rag_enhancements.py
+source venv/bin/activate && python scripts/tests/test_simple_stats.py
 
-# Performance testing
-python scripts/tests/performance_test.py
+# Performance testing (use longer timeout)
+source venv/bin/activate && python scripts/tests/performance_test.py
 
 # Web Frontend Testing (NEW v1.4.2)
 # Follow the comprehensive web testing guide:
 # docs/testing/WEB_FUNCTIONAL_TEST_GUIDE.md
 # Test all core functions through web interface at http://localhost:8000
+```
+
+#### 快捷脚本使用方式
+```bash
+# 使用便捷脚本（推荐）
+./run_with_venv.sh python baseline_test.py
+./run_with_venv.sh python test_financial_agent.py
 ```
 
 ### Data Processing
