@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票分析智能助手 v1.4.2</title>
+    
+    <!-- 优先加载核心 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 异步加载其他资源，避免阻塞页面渲染 -->
+    <script>
+        // 异步加载资源的函数
+        function loadScript(src, callback) {
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+            script.onload = callback;
+            script.onerror = () => console.warn('Failed to load:', src);
+            document.head.appendChild(script);
+        }
+
+        function loadCSS(href) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            link.onerror = () => console.warn('Failed to load CSS:', href);
+            document.head.appendChild(link);
+        }
+
+        // 页面加载后异步加载非关键资源
+        window.addEventListener('DOMContentLoaded', function() {
+            // 异步加载 marked.js
+            loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js', function() {
+                console.log('✅ Marked.js loaded');
+                initializeMarkdown();
+            });
+
+            // 异步加载 Chart.js（仅在需要时）
+            setTimeout(() => {
+                loadScript('https://cdn.jsdelivr.net/npm/chart.js', function() {
+                    console.log('✅ Chart.js loaded');
+                });
+            }, 1000);
+
+            // 异步加载 Prism.js（代码高亮，优先级最低）
+            setTimeout(() => {
+                loadCSS('https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css');
+                loadScript('https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js', function() {
+                    loadScript('https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js');
+                    console.log('✅ Prism.js loaded');
+                });
+            }, 2000);
+        });
+
+        // 初始化Markdown配置
+        function initializeMarkdown() {
+            if (typeof marked !== 'undefined') {
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true,
+                    sanitize: false,
+                    smartLists: true,
+                    smartypants: false
+                });
+                
+                // 更新加载状态
+                updateLoadingStatus();
+            }
+        }
+
+        // 更新加载状态
+        function updateLoadingStatus() {
+            const status = document.getElementById('loadingStatus');
+            if (status) {
+                status.innerHTML = `
+                    <div class="flex items-center justify-center space-x-2">
+                        <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <span>✅ 增强功能已就绪</span>
+                    </div>
+                `;
+                
+                // 3秒后隐藏状态提示
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 3000);
+            }
+        }
+    </script>
+    
+    <style>
+        /* 自定义样式 */
+        .chat-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 #f7fafc;
+        }
+        
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-scroll::-webkit-scrollbar-track {
+            background: #f7fafc;
+        }
+        
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+        
+        .chat-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+
+        /* 打字动画 */
+        .typing-animation {
+            display: inline-block;
+        }
+        
+        .typing-dot {
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        /* 渐入动画 */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 代码块样式 */
+        .message-content pre {
+            background: #f8f9fa !important;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+            overflow-x: auto;
+        }
+        
+        .message-content code {
+            background: #f1f5f9;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+
+        /* 表格样式 */
+        .message-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 12px 0;
+        }
+        
+        .message-content th, .message-content td {
+            border: 1px solid #e5e7eb;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        
+        .message-content th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="h-screen flex flex-col lg:flex-row">
+        <!-- 左侧对话区域 (Claude.ai风格) -->
+        <div class="flex-1 lg:w-3/5 flex flex-col bg-white">
+            <!-- 头部 -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 lg:p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl lg:text-3xl font-bold flex items-center">
+                            🚀 股票分析智能助手 Enhanced
+                        </h1>
+                        <p class="text-blue-100 text-sm lg:text-base mt-1">
+                            Claude.ai风格界面 • Tailwind CSS • v1.4.2 Enhanced
+                        </p>
+                    </div>
+                    <div class="hidden lg:flex space-x-2">
+                        <span class="px-3 py-1 bg-blue-500 bg-opacity-30 rounded-full text-xs">财务分析</span>
+                        <span class="px-3 py-1 bg-purple-500 bg-opacity-30 rounded-full text-xs">资金流向</span>
+                        <span class="px-3 py-1 bg-indigo-500 bg-opacity-30 rounded-full text-xs">智能解析</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 聊天消息区域 -->
+            <div id="chatMessages" class="flex-1 p-4 lg:p-6 overflow-y-auto chat-scroll bg-gray-50">
+                <!-- 初始欢迎消息 -->
+                <div class="flex items-start space-x-3 mb-6">
+                    <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                        🤖
+                    </div>
+                    <div class="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="prose prose-sm max-w-none">
+                            <p class="mb-3">您好！我是股票分析智能助手，可以为您提供：</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 my-4">
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <div class="font-semibold text-blue-800 mb-1">📊 财务分析</div>
+                                    <div class="text-blue-600 text-sm">财务健康度评分、杜邦分析、现金流质量分析</div>
+                                </div>
+                                <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                                    <div class="font-semibold text-purple-800 mb-1">💰 资金流向</div>
+                                    <div class="text-purple-600 text-sm">主力资金监控、超大单分析、四级资金分布</div>
+                                </div>
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                                    <div class="font-semibold text-green-800 mb-1">📈 智能解析</div>
+                                    <div class="text-green-600 text-sm">自然语言查询、时间智能解析、数据洞察</div>
+                                </div>
+                            </div>
+                            
+                            <p class="text-sm text-gray-600">请输入您想了解的股票或分析需求，例如：</p>
+                            <ul class="text-sm text-gray-700 mt-2 space-y-1">
+                                <li>• "分析贵州茅台的财务健康度"</li>
+                                <li>• "茅台最近的主力资金流向"</li>
+                                <li>• "平安银行和招商银行对比分析"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快捷操作区域 -->
+            <div class="p-4 bg-white border-t border-gray-200">
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <button onclick="insertQuickMessage('分析贵州茅台的财务健康度')" 
+                            class="px-3 py-1.5 bg-gray-100 hover:bg-blue-100 hover:text-blue-700 rounded-lg text-sm transition-colors duration-200">
+                        茅台财务分析
+                    </button>
+                    <button onclick="insertQuickMessage('600519.SH最近的资金流向')" 
+                            class="px-3 py-1.5 bg-gray-100 hover:bg-purple-100 hover:text-purple-700 rounded-lg text-sm transition-colors duration-200">
+                        茅台资金流向
+                    </button>
+                    <button onclick="insertQuickMessage('比较贵州茅台和五粮液的盈利能力')" 
+                            class="px-3 py-1.5 bg-gray-100 hover:bg-green-100 hover:text-green-700 rounded-lg text-sm transition-colors duration-200">
+                        白酒对比分析
+                    </button>
+                    <button onclick="insertQuickMessage('A股市值排名前10')" 
+                            class="px-3 py-1.5 bg-gray-100 hover:bg-indigo-100 hover:text-indigo-700 rounded-lg text-sm transition-colors duration-200">
+                        市值排行榜
+                    </button>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="flex space-x-3">
+                    <div class="flex-1 relative">
+                        <input type="text" 
+                               id="messageInput" 
+                               placeholder="请输入您的问题..." 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed">
+                        <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <button id="sendButton" 
+                                    onclick="sendMessage()" 
+                                    class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧详情展示区域 (大屏显示) -->
+        <div id="detailPanel" class="hidden lg:flex lg:w-2/5 bg-gray-50 border-l border-gray-200 flex-col">
+            <div class="p-6 bg-white border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    分析详情
+                </h2>
+                <p class="text-sm text-gray-600 mt-1">详细数据和可视化图表将在这里显示</p>
+            </div>
+            
+            <div id="detailContent" class="flex-1 p-6 overflow-y-auto chat-scroll">
+                <div class="text-center text-gray-500 mt-20">
+                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <p class="text-lg font-medium">开始您的分析</p>
+                    <p class="text-sm text-gray-400 mt-2">发送问题后，详细结果将在这里显示</p>
+                    
+                    <!-- 资源加载状态 -->
+                    <div id="loadingStatus" class="mt-4 text-xs text-gray-400">
+                        <div class="flex items-center justify-center space-x-2">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                            <span>正在加载增强功能...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let ws = null;
+        let messageId = 0;
+        let isSending = false;
+
+        // Markdown配置已在异步加载中处理
+
+        // 初始化WebSocket连接
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function(event) {
+                console.log('WebSocket连接已建立');
+                showConnectionStatus('connected');
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            ws.onclose = function(event) {
+                console.log('WebSocket连接已关闭');
+                showConnectionStatus('disconnected');
+                setTimeout(initWebSocket, 3000);
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket错误:', error);
+                showConnectionStatus('error');
+            };
+        }
+
+        // 显示连接状态
+        function showConnectionStatus(status) {
+            // 可以在这里添加连接状态指示器
+        }
+
+        // 处理WebSocket消息
+        function handleWebSocketMessage(data) {
+            hideTypingIndicator();
+            setSendingState(false);
+            
+            if (data.type === 'analysis_result') {
+                addMessage('assistant', data.content, data);
+            } else if (data.type === 'error') {
+                addMessage('assistant', `❌ 分析出错：${data.message}`);
+            } else {
+                addMessage('assistant', data.content || data.answer, data);
+            }
+        }
+
+        // 设置发送状态
+        function setSendingState(sending) {
+            isSending = sending;
+            const sendButton = document.getElementById('sendButton');
+            const messageInput = document.getElementById('messageInput');
+            
+            sendButton.disabled = sending;
+            messageInput.disabled = sending;
+            
+            if (sending) {
+                messageInput.placeholder = '正在分析中，请稍候...';
+            } else {
+                messageInput.placeholder = '请输入您的问题...';
+                messageInput.focus();
+            }
+
+            // 更新快捷按钮状态
+            const quickButtons = document.querySelectorAll('[onclick^="insertQuickMessage"]');
+            quickButtons.forEach(button => {
+                button.disabled = sending;
+                if (sending) {
+                    button.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    button.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            if (isSending) return;
+            
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            setSendingState(true);
+            addMessage('user', message);
+            input.value = '';
+            
+            showTypingIndicator();
+            
+            try {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'query',
+                        message: message,
+                        id: ++messageId
+                    }));
+                } else {
+                    await sendHttpMessage(message);
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                setSendingState(false);
+                addMessage('assistant', `❌ 发送失败：${error.message}`);
+            }
+        }
+
+        // HTTP API发送消息
+        async function sendHttpMessage(message) {
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: message
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                hideTypingIndicator();
+                setSendingState(false);
+                
+                if (data.success) {
+                    addMessage('assistant', data.answer, data);
+                } else {
+                    addMessage('assistant', `❌ 分析失败：${data.error || '未知错误'}`);
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                setSendingState(false);
+                addMessage('assistant', `❌ 连接失败：${error.message}`);
+            }
+        }
+
+        // 添加消息到聊天界面
+        function addMessage(sender, content, data = null) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex items-start space-x-3 mb-6 fade-in ${sender === 'user' ? 'justify-end' : ''}`;
+            
+            if (sender === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="max-w-xs lg:max-w-md bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg p-4 shadow-sm">
+                        <div class="prose prose-sm prose-invert max-w-none">
+                            ${escapeHtml(content)}
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-sm font-bold">
+                        👤
+                    </div>
+                `;
+            } else {
+                // 处理AI回复的内容格式化
+                let processedContent = content || '';
+                
+                // 首先处理换行符
+                if (typeof processedContent === 'string') {
+                    processedContent = processedContent.replace(/\n/g, '\n\n');
+                }
+                
+                // 使用marked.js渲染Markdown，如果不可用则使用基础格式化
+                let renderedContent;
+                if (typeof marked !== 'undefined' && marked.parse) {
+                    try {
+                        renderedContent = marked.parse(processedContent);
+                    } catch (e) {
+                        console.warn('Marked.js parsing failed:', e);
+                        renderedContent = formatTextBasic(processedContent);
+                    }
+                } else {
+                    renderedContent = formatTextBasic(processedContent);
+                }
+                
+                messageDiv.innerHTML = `
+                    <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                        🤖
+                    </div>
+                    <div class="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-4 max-w-none">
+                        <div class="message-content prose prose-sm max-w-none">
+                            ${renderedContent}
+                        </div>
+                    </div>
+                `;
+
+                // 如果有数据，更新详情面板
+                if (data && window.innerWidth >= 1024) {
+                    updateDetailPanel(data);
+                }
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 更新详情面板
+        function updateDetailPanel(data) {
+            const detailContent = document.getElementById('detailContent');
+            
+            let content = '<div class="space-y-6">';
+            
+            // 查询信息
+            if (data.question) {
+                content += `
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h3 class="font-semibold text-blue-800 mb-2">查询内容</h3>
+                        <p class="text-blue-700">${escapeHtml(data.question)}</p>
+                    </div>
+                `;
+            }
+
+            // 查询类型
+            if (data.query_type) {
+                const typeMap = {
+                    'sql': { name: 'SQL数据查询', color: 'green' },
+                    'rag': { name: 'RAG文档检索', color: 'purple' },
+                    'financial_analysis': { name: '财务分析', color: 'blue' },
+                    'money_flow': { name: '资金流向分析', color: 'red' },
+                    'hybrid': { name: '混合查询', color: 'indigo' }
+                };
+                
+                const type = typeMap[data.query_type] || { name: data.query_type, color: 'gray' };
+                content += `
+                    <div class="bg-${type.color}-50 border border-${type.color}-200 rounded-lg p-4">
+                        <h3 class="font-semibold text-${type.color}-800 mb-2">查询类型</h3>
+                        <span class="inline-block bg-${type.color}-100 text-${type.color}-800 px-3 py-1 rounded-full text-sm font-medium">
+                            ${type.name}
+                        </span>
+                    </div>
+                `;
+            }
+
+            // 财务分析数据
+            if (data.sources && data.sources.financial) {
+                content += formatFinancialAnalysis(data.sources.financial);
+            }
+
+            // 资金流向数据
+            if (data.money_flow_data) {
+                content += formatMoneyFlowAnalysis(data.money_flow_data);
+            }
+
+            // 处理时间
+            if (data.timestamp) {
+                content += `
+                    <div class="text-xs text-gray-500 border-t pt-4">
+                        查询时间: ${new Date(data.timestamp).toLocaleString('zh-CN')}
+                    </div>
+                `;
+            }
+
+            content += '</div>';
+            detailContent.innerHTML = content;
+        }
+
+        // 格式化财务分析数据
+        function formatFinancialAnalysis(financial) {
+            let content = '';
+            
+            if (financial.health_score) {
+                const score = financial.health_score;
+                content += `
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">财务健康度评分</h3>
+                        <div class="text-center mb-4">
+                            <div class="text-3xl font-bold text-blue-600">${score.rating}</div>
+                            <div class="text-gray-600">${score.total_score}分</div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>盈利能力</span>
+                                <span class="font-medium">${score.dimension_scores.profitability}分</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>偿债能力</span>
+                                <span class="font-medium">${score.dimension_scores.solvency}分</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>运营能力</span>
+                                <span class="font-medium">${score.dimension_scores.operation}分</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>成长能力</span>
+                                <span class="font-medium">${score.dimension_scores.growth}分</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return content;
+        }
+
+        // 格式化资金流向数据
+        function formatMoneyFlowAnalysis(moneyFlow) {
+            // 这里可以添加资金流向数据的格式化逻辑
+            return `
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-800 mb-3">资金流向分析</h3>
+                    <p class="text-gray-600 text-sm">详细的资金流向数据正在处理中...</p>
+                </div>
+            `;
+        }
+
+        // 显示打字指示器
+        function showTypingIndicator() {
+            const chatMessages = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'flex items-start space-x-3 mb-6 fade-in';
+            
+            typingDiv.innerHTML = `
+                <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    🤖
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="typing-animation flex space-x-1">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 隐藏打字指示器
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // 插入快捷消息
+        function insertQuickMessage(message) {
+            if (isSending) return;
+            
+            const input = document.getElementById('messageInput');
+            input.value = message;
+            input.focus();
+        }
+
+        // 基础文本格式化函数 (作为marked.js的后备)
+        function formatTextBasic(text) {
+            if (!text) return '';
+            
+            return text
+                // 转换换行符
+                .replace(/\n/g, '<br>')
+                // 加粗
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // 斜体
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // 代码
+                .replace(/`(.*?)`/g, '<code style="background: #f1f5f9; padding: 2px 4px; border-radius: 3px; font-family: monospace; font-size: 0.9em;">$1</code>')
+                // 列表项
+                .replace(/^- (.*$)/gim, '<div style="margin-left: 20px;">• $1</div>')
+                // 数字列表
+                .replace(/^(\d+)\. (.*$)/gim, '<div style="margin-left: 20px;"><strong>$1.</strong> $2</div>');
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 键盘事件处理
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey && !isSending) {
+                const input = document.getElementById('messageInput');
+                if (document.activeElement === input) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            }
+        });
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                initWebSocket();
+            } catch (error) {
+                console.log('WebSocket不可用，将使用HTTP API');
+            }
+            
+            // 设置输入框焦点
+            document.getElementById('messageInput').focus();
+        });
+    </script>
+</body>
+</html>

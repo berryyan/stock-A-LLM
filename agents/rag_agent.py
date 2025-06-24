@@ -143,30 +143,52 @@ class RAGAgent:
             start_time = time.time()
             self.logger.info(f"RAG查询: {question}")
             
-            # 0. 使用智能日期解析预处理问题
+            # 0. 智能日期解析（RAG模式：仅提取股票代码，不强制时间过滤）
+            self.logger.info("步骤1: 开始智能日期解析（RAG模式）")
             processed_question, parsing_result = date_intelligence.preprocess_question(question)
             
-            # 如果解析出了股票代码和特定数据类型，可以优化过滤条件
-            if parsing_result.get('stock_code') and parsing_result.get('date_type') == 'announcement_date':
-                if not filters:
-                    filters = {}
-                if 'ts_code' not in filters:
-                    filters['ts_code'] = parsing_result['stock_code']
+            # RAG查询模式：保持原问题不变，避免时间表达被过度处理
+            if processed_question != question:
+                self.logger.info(f"RAG模式：保持原问题不变，避免时间过滤干扰")
+                processed_question = question  # 对RAG查询，保持原问题的语义完整性
+            
+            self.logger.info(f"使用问题: {processed_question}")
+            
+            # 仅提取股票代码用于过滤，不添加严格的时间限制
+            if parsing_result.get('stock_code') and not filters:
+                filters = {}
+                filters['ts_code'] = parsing_result['stock_code']
+                self.logger.info(f"从日期解析提取股票代码: {parsing_result['stock_code']}")
             
             # 1. 生成查询向量 (使用处理后的问题)
-            query_vector = self.embedding_model.encode([processed_question])[0].tolist()
+            self.logger.info("步骤2: 开始生成查询向量")
+            try:
+                query_vector = self.embedding_model.encode([processed_question])[0].tolist()
+                self.logger.info(f"向量生成成功: 维度={len(query_vector)}")
+            except Exception as e:
+                self.logger.error(f"向量生成失败: {e}")
+                raise
             
             # 2. 构建过滤表达式
+            self.logger.info("步骤3: 构建过滤表达式")
             filter_expr = self._build_filter_expr(filters)
+            self.logger.info(f"过滤表达式: {filter_expr}")
             
             # 3. 向量搜索
-            search_results = self.milvus.search(
-                query_vectors=[query_vector],
-                top_k=top_k,
-                filter_expr=filter_expr
-            )
+            self.logger.info("步骤4: 开始向量搜索")
+            try:
+                search_results = self.milvus.search(
+                    query_vectors=[query_vector],
+                    top_k=top_k,
+                    filter_expr=filter_expr
+                )
+                self.logger.info(f"向量搜索完成: 找到{len(search_results[0]) if search_results else 0}个结果")
+            except Exception as e:
+                self.logger.error(f"向量搜索失败: {e}")
+                raise
             
             if not search_results or len(search_results[0]) == 0:
+                self.logger.warning("未找到相关文档")
                 return {
                     'success': False,
                     'message': '未找到相关文档',
@@ -174,19 +196,24 @@ class RAGAgent:
                 }
             
             # 4. 提取文档内容
+            self.logger.info("步骤5: 提取文档内容")
             documents = self._extract_documents(search_results[0])
+            self.logger.info(f"文档提取完成: {len(documents)}个文档")
             
             # 5. 生成答案
+            self.logger.info("步骤6: 生成答案")
             context = self._format_context(documents)
             chat_history = self._get_chat_history()
             
             # 调用QA Chain并智能提取答案
             try:
+                self.logger.info("开始调用QA Chain")
                 answer = self.qa_chain.invoke({
                     "context": context,
                     "question": question,
                     "chat_history": chat_history
                 })
+                self.logger.info(f"QA Chain调用成功: 答案长度={len(answer) if answer else 0}")
                 
                 # 确保答案不为空
                 if not answer or not isinstance(answer, str) or answer.strip() == '':
@@ -230,6 +257,8 @@ class RAGAgent:
             
         except Exception as e:
             self.logger.error(f"RAG查询失败: {e}")
+            import traceback
+            self.logger.error(f"异常详情: {traceback.format_exc()}")
             return {
                 'success': False,
                 'question': question,

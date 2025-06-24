@@ -21,7 +21,11 @@ class DateIntelligenceModule:
         self.mysql = MySQLConnector()
         self._cache = {}
         self._cache_timestamp = {}
-        self._cache_ttl = 3600  # 缓存1小时
+        self._cache_ttl = 1800  # 缓存30分钟，应对交易日数据更新
+        
+        # 交易日快速缓存 - 一旦确定当天是交易日，缓存到当日结束
+        self._trading_day_cache = {}
+        self._daily_cache_date = None
         
         # 时间关键词模式 (增强版)
         self.time_patterns = {
@@ -68,9 +72,31 @@ class DateIntelligenceModule:
         self._cache[cache_key] = data
         self._cache_timestamp[cache_key] = time.time()
     
+    def clear_daily_cache(self):
+        """清理过期的今日缓存（通常在午夜后调用）"""
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        if self._daily_cache_date and self._daily_cache_date != current_date:
+            logger.info(f"清理过期的今日缓存: {self._daily_cache_date} -> {current_date}")
+            self._trading_day_cache.clear()
+            self._daily_cache_date = None
+    
+    def get_cache_status(self) -> Dict[str, Any]:
+        """获取缓存状态信息（用于监控和调试）"""
+        current_time = time.time()
+        valid_cache_count = sum(1 for key in self._cache_timestamp 
+                               if current_time - self._cache_timestamp[key] < self._cache_ttl)
+        
+        return {
+            'total_cache_entries': len(self._cache),
+            'valid_cache_entries': valid_cache_count,
+            'daily_cache_date': self._daily_cache_date,
+            'current_latest_trading_day': self._trading_day_cache.get('current_latest'),
+            'cache_ttl_minutes': self._cache_ttl / 60
+        }
+    
     def get_latest_trading_day(self, before_date: Optional[str] = None) -> Optional[str]:
         """
-        获取最近的交易日
+        获取最近的交易日 - 数据驱动+智能缓存版本
         
         Args:
             before_date: 在此日期之前的最近交易日，格式YYYY-MM-DD，默认为当前日期
@@ -78,9 +104,23 @@ class DateIntelligenceModule:
         Returns:
             最近交易日，格式YYYY-MM-DD
         """
+        # 生成缓存键
         cache_key = f"latest_trading_day_{before_date or 'current'}"
+        
+        # 检查今日缓存（如果查询的是当前最新交易日）
+        if not before_date:
+            # 自动清理过期的今日缓存
+            self.clear_daily_cache()
+            
+            today = datetime.now().strftime('%Y-%m-%d')
+            if self._daily_cache_date == today and 'current_latest' in self._trading_day_cache:
+                logger.debug(f"使用今日交易日缓存: {self._trading_day_cache['current_latest']}")
+                return self._trading_day_cache['current_latest']
+        
+        # 检查常规缓存
         cached_result = self._get_cache(cache_key)
         if cached_result:
+            logger.debug(f"使用常规缓存: {cached_result}")
             return cached_result
         
         try:
@@ -91,6 +131,7 @@ class DateIntelligenceModule:
                 else:
                     formatted_date = before_date
                 
+                # 历史日期查询（保持原逻辑）
                 query = """
                 SELECT trade_date 
                 FROM tu_daily_detail 
@@ -100,20 +141,36 @@ class DateIntelligenceModule:
                 """
                 result = self.mysql.execute_query(query, {'before_date': formatted_date})
             else:
+                # 【核心改进】数据驱动的最新交易日判断
                 query = """
                 SELECT trade_date 
                 FROM tu_daily_detail 
-                WHERE trade_date < CURDATE()
+                WHERE trade_date <= CURDATE()
+                  AND trade_date >= DATE_SUB(CURDATE(), INTERVAL 10 DAY)
                 ORDER BY trade_date DESC 
                 LIMIT 1
                 """
                 result = self.mysql.execute_query(query)
+                
+                logger.info(f"数据驱动查询最新交易日，查询范围：最近10天内")
             
             if result and len(result) > 0:
                 latest_date = str(result[0]['trade_date'])
+                
+                # 设置常规缓存
                 self._set_cache(cache_key, latest_date)
+                
+                # 如果是当前查询，设置今日交易日缓存
+                if not before_date:
+                    today = datetime.now().strftime('%Y-%m-%d') 
+                    self._daily_cache_date = today
+                    self._trading_day_cache['current_latest'] = latest_date
+                    logger.info(f"更新今日交易日缓存: {latest_date}")
+                
+                logger.info(f"获取最近交易日成功: {latest_date}")
                 return latest_date
             
+            logger.warning("未找到最近交易日数据")
             return None
             
         except Exception as e:

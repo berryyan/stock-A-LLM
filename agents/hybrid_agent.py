@@ -404,22 +404,45 @@ class HybridAgent:
             }
     def _handle_rag_only(self, question: str, routing: Dict) -> Dict[str, Any]:
         """处理仅需RAG的查询"""
-        # 构建过滤条件
-        filters = self._build_rag_filters(routing)
-        
-        rag_result = self.rag_agent.query(question, filters=filters)
-        
-        if rag_result.get('success', False):
+        try:
+            # 构建过滤条件
+            filters = self._build_rag_filters(routing)
+            
+            # 直接调用RAG Agent（依赖其内部超时机制）
+            self.logger.info(f"开始RAG查询: {question}")
+            rag_result = self.rag_agent.query(question, filters=filters)
+            self.logger.info(f"RAG查询完成: success={rag_result.get('success', False)}")
+            
+            if rag_result.get('success', False):
+                return {
+                    'success': True,
+                    'question': question,
+                    'answer': rag_result.get('answer', ''),
+                    'query_type': QueryType.RAG_ONLY.value,
+                    'routing': routing,
+                    'sources': {'rag': rag_result}
+                }
+            else:
+                self.logger.warning(f"RAG查询失败: {rag_result.get('error', '未知错误')}")
+                return {
+                    'success': False,
+                    'question': question,
+                    'error': rag_result.get('error', 'RAG查询失败'),
+                    'query_type': QueryType.RAG_ONLY.value,
+                    'routing': routing
+                }
+                
+        except Exception as e:
+            self.logger.error(f"RAG查询异常: {e}")
+            import traceback
+            self.logger.error(f"异常详情: {traceback.format_exc()}")
             return {
-                'success': True,
+                'success': False,
                 'question': question,
-                'answer': rag_result.get('answer', ''),
+                'error': str(e),
                 'query_type': QueryType.RAG_ONLY.value,
-                'routing': routing,
-                'sources': {'rag': rag_result}
+                'routing': routing
             }
-        else:
-            return rag_result
     
     def _handle_financial_analysis(self, question: str, routing: Dict) -> Dict[str, Any]:
         """处理财务分析查询"""
@@ -632,25 +655,98 @@ class HybridAgent:
         """提取问题中的实体（公司代码等）"""
         entities = []
         
-        # 股票代码模式
+        # 股票代码模式 - 直接识别股票代码
         code_pattern = r'\b\d{6}\.[SH|SZ]{2}\b'
         codes = re.findall(code_pattern, question)
         entities.extend(codes)
         
-        # 公司名称映射
+        # 公司名称映射 - 使用统一的转换函数
         company_mapping = {
             '茅台': '600519.SH',
+            '贵州茅台': '600519.SH',
             '五粮液': '000858.SZ',
             '宁德时代': '300750.SZ',
             '比亚迪': '002594.SZ',
-            '招商银行': '600036.SH'
+            '招商银行': '600036.SH',
+            '平安银行': '000001.SZ',
+            '万科A': '000002.SZ',
+            '万科': '000002.SZ',
+            '中国平安': '601318.SH',
+            '工商银行': '601398.SH',
+            '建设银行': '601939.SH',
+            '农业银行': '601288.SH',
+            '中国银行': '601988.SH',
+            '中石油': '601857.SH',
+            '中石化': '600028.SH'
         }
         
+        # 精确和模糊匹配公司名称，转换为股票代码
         for name, code in company_mapping.items():
             if name in question and code not in entities:
                 entities.append(code)
         
+        # 额外的模糊匹配，使用转换函数
+        found_any = False
+        for name in company_mapping.keys():
+            if name in question:
+                found_any = True
+                break
+        
+        # 如果没有找到任何匹配的公司名称，尝试提取其他可能的实体并转换
+        if not found_any:
+            # 查找可能的公司名称（中文字符+可能的公司后缀）
+            company_pattern = r'[\u4e00-\u9fff]+(?:股份|有限|集团|银行|科技|电子|医药|能源|地产|保险|证券|基金|投资|控股|实业|发展|建设|工业|贸易|服务|传媒|文化|教育|环保|新能源|生物|化工|机械|汽车|房地产|金融|通信|软件|网络|互联网|电商|物流|交通|航空|海运|港口|钢铁|有色|煤炭|石油|天然气|电力|水务|燃气|食品|饮料|服装|家电|家具|建材|装饰|酒店|旅游|餐饮|零售|超市|百货|药店|医院|养老|地产|物业|园区)?(?:股份有限公司|有限责任公司|有限公司|集团|公司|股份|有限)?'
+            potential_companies = re.findall(company_pattern, question)
+            
+            for company in potential_companies:
+                converted_code = self._convert_entity_to_stock_code(company)
+                if converted_code and converted_code != company and converted_code not in entities:
+                    entities.append(converted_code)
+        
         return entities
+    
+    def _convert_entity_to_stock_code(self, entity: str) -> Optional[str]:
+        """将实体（公司名称或代码）转换为标准股票代码"""
+        if not entity:
+            return None
+        
+        # 如果已经是股票代码格式，直接返回
+        if re.match(r'^\d{6}\.[SH|SZ]{2}$', entity):
+            return entity
+        
+        # 扩展公司名称映射
+        company_mapping = {
+            '茅台': '600519.SH',
+            '贵州茅台': '600519.SH',
+            '五粮液': '000858.SZ',
+            '宁德时代': '300750.SZ',
+            '比亚迪': '002594.SZ',
+            '招商银行': '600036.SH',
+            '平安银行': '000001.SZ',
+            '万科A': '000002.SZ',
+            '万科': '000002.SZ',
+            '中国平安': '601318.SH',
+            '工商银行': '601398.SH',
+            '建设银行': '601939.SH',
+            '农业银行': '601288.SH',
+            '中国银行': '601988.SH',
+            '中石油': '601857.SH',
+            '中石化': '600028.SH',
+            '腾讯控股': '700.HK',  # 港股，但保留映射
+            '阿里巴巴': '9988.HK'   # 港股，但保留映射
+        }
+        
+        # 精确匹配
+        if entity in company_mapping:
+            return company_mapping[entity]
+        
+        # 模糊匹配（包含关系）
+        for name, code in company_mapping.items():
+            if name in entity or entity in name:
+                return code
+        
+        # 如果没有匹配到，返回原始实体（可能是其他股票代码）
+        return entity
     
     def _extract_time_range(self, question: str) -> Optional[str]:
         """提取时间范围"""
@@ -717,28 +813,56 @@ class HybridAgent:
         
         # 添加实体过滤
         if routing.get('entities'):
-            if len(routing['entities']) == 1:
-                filters['ts_code'] = routing['entities'][0]
+            # 确保转换为股票代码而不是公司名称
+            entities = routing['entities']
+            if isinstance(entities, list):
+                # 转换所有实体为股票代码
+                converted_entities = []
+                for entity in entities:
+                    converted_entity = self._convert_entity_to_stock_code(entity)
+                    if converted_entity:
+                        converted_entities.append(converted_entity)
+                if converted_entities:
+                    if len(converted_entities) == 1:
+                        filters['ts_code'] = converted_entities[0]
+                    else:
+                        filters['ts_code'] = converted_entities
             else:
-                filters['ts_code'] = routing['entities']
+                # 单个实体
+                converted_entity = self._convert_entity_to_stock_code(entities)
+                if converted_entity:
+                    filters['ts_code'] = converted_entity
         
-        # 添加时间过滤
+        # RAG查询的时间过滤策略：宽松模式，避免过度限制
+        # 对于描述性时间表达（如"2024年的经营策略"），不添加严格时间过滤
         if routing.get('time_range'):
             time_range = routing['time_range']
+            
+            # 判断是否为明确的时间查询需求
             if time_range.startswith('recent_'):
-                # 最近N天
+                # "最近N天" - 这是明确的时间需求，保留过滤
                 days = int(time_range.split('_')[1].replace('d', ''))
                 end_date = datetime.now().strftime('%Y%m%d')
                 start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
                 filters['ann_date'] = {'start': start_date, 'end': end_date}
+                self.logger.info(f"添加时间过滤: 最近{days}天")
             elif 'Q' in time_range:
-                # 季度
+                # 季度查询 - 这是明确的时间需求，保留过滤
                 year = time_range[:4]
                 quarter = time_range[-1]
                 filters['ann_date'] = self._get_quarter_date_range(year, quarter)
+                self.logger.info(f"添加时间过滤: {year}年第{quarter}季度")
             else:
-                # 年度
-                filters['ann_date'] = {'start': f"{time_range}0101", 'end': f"{time_range}1231"}
+                # 年度表达 - 对RAG查询采用宽松策略
+                clean_time_range = time_range.replace('年', '').replace('月', '').replace('日', '')
+                if clean_time_range.isdigit() and len(clean_time_range) == 4:
+                    # 对于RAG查询，年度时间表达通常是描述性的，不应该成为严格限制
+                    # 因此跳过时间过滤，让语义搜索自然匹配相关时间的内容
+                    self.logger.info(f"RAG模式：跳过年度时间过滤 ({clean_time_range}年)，保持语义搜索灵活性")
+                    # 注释掉严格的时间过滤
+                    # filters['ann_date'] = {'start': f"{clean_time_range}0101", 'end': f"{clean_time_range}1231"}
+        else:
+            self.logger.info("无时间范围，使用纯语义搜索")
         
         return filters
     
