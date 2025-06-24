@@ -39,10 +39,13 @@ class EmbeddingModel:
         self._init_model()
     
     def _init_model(self):
-        """初始化模型"""
+        """初始化模型（Windows兼容版本）"""
         try:
             # 检查是否有本地模型
             import os
+            import platform
+            import threading
+            
             local_model_path = os.path.join(os.path.dirname(__file__), "bge-m3")
             if os.path.exists(local_model_path):
                 logger.info(f"发现本地模型: {local_model_path}")
@@ -53,17 +56,63 @@ class EmbeddingModel:
             logger.info(f"正在加载嵌入模型: {model_name_to_use}")
             logger.info(f"使用设备: {self.device}")
             
-            # 加载模型
-            self.model = SentenceTransformer(
-                model_name_to_use,
-                device=self.device
-            )
+            # Windows兼容的超时处理
+            model_loaded = False
+            load_error = None
+            
+            def load_model():
+                nonlocal model_loaded, load_error
+                try:
+                    self.model = SentenceTransformer(
+                        model_name_to_use,
+                        device=self.device,
+                        trust_remote_code=True
+                    )
+                    model_loaded = True
+                except Exception as e:
+                    load_error = e
+            
+            # 启动模型加载线程
+            load_thread = threading.Thread(target=load_model)
+            load_thread.daemon = True
+            load_thread.start()
+            
+            # 等待60秒
+            load_thread.join(timeout=60)
+            
+            if not model_loaded:
+                if load_error:
+                    raise load_error
+                else:
+                    raise TimeoutError("模型加载超时(60秒)")
             
             # 设置模型为评估模式
             self.model.eval()
             
-            # 验证模型维度
-            test_embedding = self.model.encode("测试文本", convert_to_numpy=True)
+            # 验证模型维度（带超时保护）
+            test_embedding = None
+            test_error = None
+            
+            def test_encode():
+                nonlocal test_embedding, test_error
+                try:
+                    test_embedding = self.model.encode("测试文本", convert_to_numpy=True)
+                except Exception as e:
+                    test_error = e
+            
+            # 启动测试编码线程
+            test_thread = threading.Thread(target=test_encode)
+            test_thread.daemon = True
+            test_thread.start()
+            
+            # 等待30秒
+            test_thread.join(timeout=30)
+            
+            if test_error:
+                raise test_error
+            elif test_embedding is None:
+                raise TimeoutError("模型测试编码超时(30秒)")
+            
             actual_dim = test_embedding.shape[0]
             
             if actual_dim != self.dimension:
@@ -113,20 +162,42 @@ class EmbeddingModel:
             return empty_embedding if is_single else [empty_embedding]
         
         try:
-            # 编码文本
-            embeddings = self.model.encode(
-                texts,
-                batch_size=batch_size,
-                show_progress_bar=show_progress_bar,
-                normalize_embeddings=normalize_embeddings,
-                convert_to_numpy=convert_to_numpy,
-                device=self.device
-            )
+            # Windows兼容的编码超时处理
+            import threading
+            encode_result = None
+            encode_error = None
+            
+            def encode_texts():
+                nonlocal encode_result, encode_error
+                try:
+                    encode_result = self.model.encode(
+                        texts,
+                        batch_size=batch_size,
+                        show_progress_bar=show_progress_bar,
+                        normalize_embeddings=normalize_embeddings,
+                        convert_to_numpy=convert_to_numpy,
+                        device=self.device
+                    )
+                except Exception as e:
+                    encode_error = e
+            
+            # 启动编码线程
+            encode_thread = threading.Thread(target=encode_texts)
+            encode_thread.daemon = True
+            encode_thread.start()
+            
+            # 等待30秒
+            encode_thread.join(timeout=30)
+            
+            if encode_error:
+                raise encode_error
+            elif encode_result is None:
+                raise TimeoutError(f"文本编码超时(30秒): {len(texts)}个文本")
             
             # 确保返回正确的格式
             if is_single:
-                return embeddings[0]
-            return embeddings
+                return encode_result[0]
+            return encode_result
             
         except Exception as e:
             logger.error(f"文本编码失败: {e}")

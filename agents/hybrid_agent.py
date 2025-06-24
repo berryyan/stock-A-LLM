@@ -17,9 +17,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.sql_agent import SQLAgent
 from agents.rag_agent import RAGAgent
+from agents.financial_agent import FinancialAnalysisAgent
+from agents.money_flow_agent import MoneyFlowAgent
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 
 from config.settings import settings
 from utils.logger import setup_logger
@@ -29,6 +32,8 @@ class QueryType(str, Enum):
     """查询类型枚举"""
     SQL_ONLY = "sql"          # 仅需SQL查询
     RAG_ONLY = "rag"          # 仅需RAG查询
+    FINANCIAL = "financial"   # 财务分析查询
+    MONEY_FLOW = "money_flow" # 资金流向分析查询
     SQL_FIRST = "hybrid"      # 先SQL后RAG
     RAG_FIRST = "hybrid"      # 先RAG后SQL
     PARALLEL = "hybrid"       # 并行查询
@@ -37,6 +42,8 @@ class QueryType(str, Enum):
     # 添加小写别名以便兼容
     sql = "sql"
     rag = "rag"
+    financial = "financial"
+    money_flow = "money_flow"
     hybrid = "hybrid"
     
     @classmethod
@@ -52,8 +59,10 @@ class QueryType(str, Enum):
         mappings = {
             'sql_only': cls.SQL_ONLY,
             'rag_only': cls.RAG_ONLY,
+            'financial': cls.FINANCIAL,
             'sql': cls.sql,
             'rag': cls.rag,
+            'financial': cls.financial,
             'hybrid': cls.hybrid,
             'complex': cls.COMPLEX,
             'sql_first': cls.SQL_FIRST,
@@ -73,6 +82,8 @@ class HybridAgent:
         # 初始化子代理
         self.sql_agent = SQLAgent()
         self.rag_agent = RAGAgent()
+        self.financial_agent = FinancialAnalysisAgent()
+        self.money_flow_agent = MoneyFlowAgent()
         
         # 初始化路由LLM
         self.router_llm = ChatOpenAI(
@@ -106,25 +117,55 @@ class HybridAgent:
                 ]
             },
             'rag_patterns': {
-                'keywords': ['公告', '报告', '说明', '解释', '原因', '计划', '战略', '风险', '优势', '分析'],
+                'keywords': ['公告', '报告', '说明', '解释', '原因', '计划', '战略', '风险', '优势'],
                 'patterns': [
                     r'.*报告.*内容',
                     r'.*公告.*说',
-                    r'分析.*表现',
                     r'.*未来.*计划'
+                ]
+            },
+            'financial_patterns': {
+                'keywords': ['财务健康', '财务状况', '经营状况', '财务评级', '健康度', '盈利能力', 'ROE', 'ROA', '杜邦分析', '现金流质量', '偿债能力', '多期对比', '增长率', '财务分析'],
+                'patterns': [
+                    r'.*财务.*分析',
+                    r'.*杜邦.*分析',
+                    r'.*现金流.*质量',
+                    r'.*财务.*健康',
+                    r'.*财务.*评级',
+                    r'.*盈利.*能力',
+                    r'.*偿债.*能力',
+                    r'.*多期.*对比',
+                    r'ROE.*分解'
+                ]
+            },
+            'money_flow_patterns': {
+                'keywords': ['资金流向', '资金流入', '资金流出', '主力资金', '机构资金', '大资金', '超大单', '大单', '中单', '小单', '主力净流入', '主力净流出', '机构行为', '主力行为', '散户', '个人投资者'],
+                'patterns': [
+                    r'.*资金.*流向',
+                    r'.*资金.*流入',
+                    r'.*资金.*流出',
+                    r'.*主力.*资金',
+                    r'.*机构.*资金',
+                    r'.*超大单',
+                    r'.*大单.*中单.*小单',
+                    r'.*主力.*净流入',
+                    r'.*主力.*净流出',
+                    r'.*机构.*行为',
+                    r'.*主力.*行为',
+                    r'.*买入.*卖出',
+                    r'.*散户.*机构'
                 ]
             },
             'hybrid_patterns': {
                 'keywords': ['综合分析', '全面评估', '详细了解', '深入研究'],
                 'patterns': [
-                    r'.*财务.*分析',
                     r'.*业绩.*原因',
                     r'.*比较.*分析'
                 ]
             }
         }
     
-    def _create_router_chain(self) -> LLMChain:
+    def _create_router_chain(self):
         """创建路由决策链"""
         router_prompt = PromptTemplate(
             input_variables=["question", "patterns"],
@@ -133,6 +174,8 @@ class HybridAgent:
 查询模式说明：
 - SQL_ONLY: 查询结构化数据（股价、财务指标、排名等）
 - RAG_ONLY: 查询文档内容（公告详情、管理层分析等）
+- FINANCIAL: 专业财务分析（财务健康度、杜邦分析、现金流质量等）
+- MONEY_FLOW: 资金流向分析（主力资金、超大单、资金分布等）
 - SQL_FIRST: 先获取数据，再查找相关解释
 - RAG_FIRST: 先查找文档，可能需要补充数据
 - PARALLEL: 同时需要数据和文档
@@ -157,12 +200,9 @@ class HybridAgent:
 决策："""
         )
         
-        return LLMChain(
-            llm=self.router_llm,
-            prompt=router_prompt
-        )
+        return router_prompt | self.router_llm | StrOutputParser()
     
-    def _create_integration_chain(self) -> LLMChain:
+    def _create_integration_chain(self):
         """创建结果整合链"""
         integration_prompt = PromptTemplate(
             input_variables=["question", "sql_result", "rag_result"],
@@ -185,10 +225,7 @@ class HybridAgent:
 整合答案："""
         )
         
-        return LLMChain(
-            llm=self.router_llm,
-            prompt=integration_prompt
-        )
+        return integration_prompt | self.router_llm | StrOutputParser()
     
     def query(self, question: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -201,6 +238,14 @@ class HybridAgent:
         Returns:
             查询结果
         """
+        # 输入验证
+        if not question or not question.strip():
+            return {
+                'success': False,
+                'error': '查询内容不能为空',
+                'type': 'hybrid_query'
+            }
+        
         try:
             self.logger.info(f"接收查询: {question}")
             
@@ -216,6 +261,12 @@ class HybridAgent:
             
             elif query_type == QueryType.RAG_ONLY:
                 return self._handle_rag_only(question, routing_decision)
+            
+            elif query_type == QueryType.FINANCIAL:
+                return self._handle_financial_analysis(question, routing_decision)
+            
+            elif query_type == QueryType.MONEY_FLOW:
+                return self._handle_money_flow_analysis(question, routing_decision)
             
             elif query_type == QueryType.SQL_FIRST:
                 return self._handle_sql_first(question, routing_decision)
@@ -247,10 +298,10 @@ class HybridAgent:
             # 使用LLM进行智能路由
             patterns_str = json.dumps(self.query_patterns, ensure_ascii=False, indent=2)
             
-            result = self.router_chain.run(
-                question=question,
-                patterns=patterns_str
-            )
+            result = self.router_chain.invoke({
+                "question": question,
+                "patterns": patterns_str
+            })
             
             # 解析JSON结果
             # 清理可能的markdown代码块标记
@@ -277,6 +328,8 @@ class HybridAgent:
         """基于规则的路由（降级方案）"""
         sql_score = 0
         rag_score = 0
+        financial_score = 0
+        money_flow_score = 0
         
         # 关键词匹配
         for keyword in self.query_patterns['sql_patterns']['keywords']:
@@ -287,8 +340,29 @@ class HybridAgent:
             if keyword in question:
                 rag_score += 1
         
+        for keyword in self.query_patterns['financial_patterns']['keywords']:
+            if keyword in question:
+                financial_score += 2  # 财务分析关键词权重更高
+        
+        for keyword in self.query_patterns['money_flow_patterns']['keywords']:
+            if keyword in question:
+                money_flow_score += 2  # 资金流向关键词权重更高
+        
+        # 模式匹配
+        for pattern in self.query_patterns['financial_patterns']['patterns']:
+            if re.search(pattern, question):
+                financial_score += 3
+        
+        for pattern in self.query_patterns['money_flow_patterns']['patterns']:
+            if re.search(pattern, question):
+                money_flow_score += 3
+        
         # 决定查询类型
-        if sql_score > 0 and rag_score == 0:
+        if money_flow_score > 0:
+            query_type = QueryType.MONEY_FLOW.value
+        elif financial_score > 0:
+            query_type = QueryType.FINANCIAL.value
+        elif sql_score > 0 and rag_score == 0:
             query_type = QueryType.SQL_ONLY.value
         elif rag_score > 0 and sql_score == 0:
             query_type = QueryType.RAG_ONLY.value
@@ -367,22 +441,123 @@ class HybridAgent:
             }
     def _handle_rag_only(self, question: str, routing: Dict) -> Dict[str, Any]:
         """处理仅需RAG的查询"""
-        # 构建过滤条件
-        filters = self._build_rag_filters(routing)
-        
-        rag_result = self.rag_agent.query(question, filters=filters)
-        
-        if rag_result.get('success', False):
+        try:
+            # 构建过滤条件
+            filters = self._build_rag_filters(routing)
+            
+            # 直接调用RAG Agent（依赖其内部超时机制）
+            self.logger.info(f"开始RAG查询: {question}")
+            rag_result = self.rag_agent.query(question, filters=filters)
+            self.logger.info(f"RAG查询完成: success={rag_result.get('success', False)}")
+            
+            if rag_result.get('success', False):
+                return {
+                    'success': True,
+                    'question': question,
+                    'answer': rag_result.get('answer', ''),
+                    'query_type': QueryType.RAG_ONLY.value,
+                    'routing': routing,
+                    'sources': {'rag': rag_result}
+                }
+            else:
+                self.logger.warning(f"RAG查询失败: {rag_result.get('error', '未知错误')}")
+                return {
+                    'success': False,
+                    'question': question,
+                    'error': rag_result.get('error', 'RAG查询失败'),
+                    'query_type': QueryType.RAG_ONLY.value,
+                    'routing': routing
+                }
+                
+        except Exception as e:
+            self.logger.error(f"RAG查询异常: {e}")
+            import traceback
+            self.logger.error(f"异常详情: {traceback.format_exc()}")
             return {
-                'success': True,
+                'success': False,
                 'question': question,
-                'answer': rag_result.get('answer', ''),
+                'error': str(e),
                 'query_type': QueryType.RAG_ONLY.value,
-                'routing': routing,
-                'sources': {'rag': rag_result}
+                'routing': routing
             }
-        else:
-            return rag_result
+    
+    def _handle_financial_analysis(self, question: str, routing: Dict) -> Dict[str, Any]:
+        """处理财务分析查询"""
+        try:
+            self.logger.info(f"执行财务分析查询: {question}")
+            
+            # 直接调用财务分析代理
+            financial_result = self.financial_agent.query(question)
+            
+            if financial_result.get('success', False):
+                return {
+                    'success': True,
+                    'question': question,
+                    'answer': financial_result.get('analysis_report', '财务分析完成'),
+                    'query_type': QueryType.FINANCIAL.value,
+                    'routing': routing,
+                    'sources': {
+                        'financial': financial_result
+                    },
+                    'financial_data': financial_result  # 保留完整的财务分析数据
+                }
+            else:
+                return {
+                    'success': False,
+                    'question': question,
+                    'error': financial_result.get('error', '财务分析失败'),
+                    'query_type': QueryType.FINANCIAL.value,
+                    'routing': routing
+                }
+                
+        except Exception as e:
+            self.logger.error(f"财务分析处理失败: {e}")
+            return {
+                'success': False,
+                'question': question,
+                'error': str(e),
+                'query_type': QueryType.FINANCIAL.value,
+                'routing': routing
+            }
+    
+    def _handle_money_flow_analysis(self, question: str, routing: Dict) -> Dict[str, Any]:
+        """处理资金流向分析查询"""
+        try:
+            self.logger.info(f"执行资金流向分析查询: {question}")
+            
+            # 直接调用资金流向分析代理
+            money_flow_result = self.money_flow_agent.query(question)
+            
+            if money_flow_result.get('success', False):
+                return {
+                    'success': True,
+                    'question': question,
+                    'answer': money_flow_result.get('answer', '资金流向分析完成'),
+                    'query_type': QueryType.MONEY_FLOW.value,
+                    'routing': routing,
+                    'sources': {
+                        'money_flow': money_flow_result
+                    },
+                    'money_flow_data': money_flow_result.get('money_flow_data')  # 保留完整的资金流向数据
+                }
+            else:
+                return {
+                    'success': False,
+                    'question': question,
+                    'error': money_flow_result.get('error', '资金流向分析失败'),
+                    'query_type': QueryType.MONEY_FLOW.value,
+                    'routing': routing
+                }
+                
+        except Exception as e:
+            self.logger.error(f"资金流向分析处理失败: {e}")
+            return {
+                'success': False,
+                'question': question,
+                'error': str(e),
+                'query_type': QueryType.MONEY_FLOW.value,
+                'routing': routing
+            }
     
     def _handle_sql_first(self, question: str, routing: Dict) -> Dict[str, Any]:
         """先SQL后RAG的查询"""
@@ -403,11 +578,11 @@ class HybridAgent:
         
         # 3. 整合结果
         if rag_result.get('success', False):
-            integrated_answer = self.integration_chain.run(
-                question=question,
-                sql_result=json.dumps(sql_result.get('result', sql_result) if isinstance(sql_result, dict) else sql_result, ensure_ascii=False),
-                rag_result=rag_result.get('answer', '')
-            )
+            integrated_answer = self.integration_chain.invoke({
+                "question": question,
+                "sql_result": json.dumps(sql_result.get('result', sql_result) if isinstance(sql_result, dict) else sql_result, ensure_ascii=False),
+                "rag_result": rag_result.get('answer', '')
+            })
             
             return {
                 'success': True,
@@ -450,11 +625,11 @@ class HybridAgent:
             
             # 3. 整合结果
             if sql_result.get('success', False):
-                integrated_answer = self.integration_chain.run(
-                    question=question,
-                    sql_result=json.dumps(sql_result.get('result', sql_result) if isinstance(sql_result, dict) else sql_result, ensure_ascii=False),
-                    rag_result=rag_result.get('answer', '')
-                )
+                integrated_answer = self.integration_chain.invoke({
+                    "question": question,
+                    "sql_result": json.dumps(sql_result.get('result', sql_result) if isinstance(sql_result, dict) else sql_result, ensure_ascii=False),
+                    "rag_result": rag_result.get('answer', '')
+                })
                 
                 return {
                     'success': True,
@@ -507,11 +682,11 @@ class HybridAgent:
             sql_data = sql_result.get('result', '无数据') if isinstance(sql_result, dict) else str(sql_result)
             rag_data = rag_result.get('answer', '无文档') if isinstance(rag_result, dict) else str(rag_result)
             
-            integrated_answer = self.integration_chain.run(
-                question=question,
-                sql_result=json.dumps(sql_data, ensure_ascii=False),
-                rag_result=rag_data
-            )
+            integrated_answer = self.integration_chain.invoke({
+                "question": question,
+                "sql_result": json.dumps(sql_data, ensure_ascii=False),
+                "rag_result": rag_data
+            })
             
             return {
                 'success': True,
@@ -556,25 +731,98 @@ class HybridAgent:
         """提取问题中的实体（公司代码等）"""
         entities = []
         
-        # 股票代码模式
+        # 股票代码模式 - 直接识别股票代码
         code_pattern = r'\b\d{6}\.[SH|SZ]{2}\b'
         codes = re.findall(code_pattern, question)
         entities.extend(codes)
         
-        # 公司名称映射
+        # 公司名称映射 - 使用统一的转换函数
         company_mapping = {
             '茅台': '600519.SH',
+            '贵州茅台': '600519.SH',
             '五粮液': '000858.SZ',
             '宁德时代': '300750.SZ',
             '比亚迪': '002594.SZ',
-            '招商银行': '600036.SH'
+            '招商银行': '600036.SH',
+            '平安银行': '000001.SZ',
+            '万科A': '000002.SZ',
+            '万科': '000002.SZ',
+            '中国平安': '601318.SH',
+            '工商银行': '601398.SH',
+            '建设银行': '601939.SH',
+            '农业银行': '601288.SH',
+            '中国银行': '601988.SH',
+            '中石油': '601857.SH',
+            '中石化': '600028.SH'
         }
         
+        # 精确和模糊匹配公司名称，转换为股票代码
         for name, code in company_mapping.items():
             if name in question and code not in entities:
                 entities.append(code)
         
+        # 额外的模糊匹配，使用转换函数
+        found_any = False
+        for name in company_mapping.keys():
+            if name in question:
+                found_any = True
+                break
+        
+        # 如果没有找到任何匹配的公司名称，尝试提取其他可能的实体并转换
+        if not found_any:
+            # 查找可能的公司名称（中文字符+可能的公司后缀）
+            company_pattern = r'[\u4e00-\u9fff]+(?:股份|有限|集团|银行|科技|电子|医药|能源|地产|保险|证券|基金|投资|控股|实业|发展|建设|工业|贸易|服务|传媒|文化|教育|环保|新能源|生物|化工|机械|汽车|房地产|金融|通信|软件|网络|互联网|电商|物流|交通|航空|海运|港口|钢铁|有色|煤炭|石油|天然气|电力|水务|燃气|食品|饮料|服装|家电|家具|建材|装饰|酒店|旅游|餐饮|零售|超市|百货|药店|医院|养老|地产|物业|园区)?(?:股份有限公司|有限责任公司|有限公司|集团|公司|股份|有限)?'
+            potential_companies = re.findall(company_pattern, question)
+            
+            for company in potential_companies:
+                converted_code = self._convert_entity_to_stock_code(company)
+                if converted_code and converted_code != company and converted_code not in entities:
+                    entities.append(converted_code)
+        
         return entities
+    
+    def _convert_entity_to_stock_code(self, entity: str) -> Optional[str]:
+        """将实体（公司名称或代码）转换为标准股票代码"""
+        if not entity:
+            return None
+        
+        # 如果已经是股票代码格式，直接返回
+        if re.match(r'^\d{6}\.[SH|SZ]{2}$', entity):
+            return entity
+        
+        # 扩展公司名称映射
+        company_mapping = {
+            '茅台': '600519.SH',
+            '贵州茅台': '600519.SH',
+            '五粮液': '000858.SZ',
+            '宁德时代': '300750.SZ',
+            '比亚迪': '002594.SZ',
+            '招商银行': '600036.SH',
+            '平安银行': '000001.SZ',
+            '万科A': '000002.SZ',
+            '万科': '000002.SZ',
+            '中国平安': '601318.SH',
+            '工商银行': '601398.SH',
+            '建设银行': '601939.SH',
+            '农业银行': '601288.SH',
+            '中国银行': '601988.SH',
+            '中石油': '601857.SH',
+            '中石化': '600028.SH',
+            '腾讯控股': '700.HK',  # 港股，但保留映射
+            '阿里巴巴': '9988.HK'   # 港股，但保留映射
+        }
+        
+        # 精确匹配
+        if entity in company_mapping:
+            return company_mapping[entity]
+        
+        # 模糊匹配（包含关系）
+        for name, code in company_mapping.items():
+            if name in entity or entity in name:
+                return code
+        
+        # 如果没有匹配到，返回原始实体（可能是其他股票代码）
+        return entity
     
     def _extract_time_range(self, question: str) -> Optional[str]:
         """提取时间范围"""
@@ -641,28 +889,56 @@ class HybridAgent:
         
         # 添加实体过滤
         if routing.get('entities'):
-            if len(routing['entities']) == 1:
-                filters['ts_code'] = routing['entities'][0]
+            # 确保转换为股票代码而不是公司名称
+            entities = routing['entities']
+            if isinstance(entities, list):
+                # 转换所有实体为股票代码
+                converted_entities = []
+                for entity in entities:
+                    converted_entity = self._convert_entity_to_stock_code(entity)
+                    if converted_entity:
+                        converted_entities.append(converted_entity)
+                if converted_entities:
+                    if len(converted_entities) == 1:
+                        filters['ts_code'] = converted_entities[0]
+                    else:
+                        filters['ts_code'] = converted_entities
             else:
-                filters['ts_code'] = routing['entities']
+                # 单个实体
+                converted_entity = self._convert_entity_to_stock_code(entities)
+                if converted_entity:
+                    filters['ts_code'] = converted_entity
         
-        # 添加时间过滤
+        # RAG查询的时间过滤策略：宽松模式，避免过度限制
+        # 对于描述性时间表达（如"2024年的经营策略"），不添加严格时间过滤
         if routing.get('time_range'):
             time_range = routing['time_range']
+            
+            # 判断是否为明确的时间查询需求
             if time_range.startswith('recent_'):
-                # 最近N天
+                # "最近N天" - 这是明确的时间需求，保留过滤
                 days = int(time_range.split('_')[1].replace('d', ''))
                 end_date = datetime.now().strftime('%Y%m%d')
                 start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
                 filters['ann_date'] = {'start': start_date, 'end': end_date}
+                self.logger.info(f"添加时间过滤: 最近{days}天")
             elif 'Q' in time_range:
-                # 季度
+                # 季度查询 - 这是明确的时间需求，保留过滤
                 year = time_range[:4]
                 quarter = time_range[-1]
                 filters['ann_date'] = self._get_quarter_date_range(year, quarter)
+                self.logger.info(f"添加时间过滤: {year}年第{quarter}季度")
             else:
-                # 年度
-                filters['ann_date'] = {'start': f"{time_range}0101", 'end': f"{time_range}1231"}
+                # 年度表达 - 对RAG查询采用宽松策略
+                clean_time_range = time_range.replace('年', '').replace('月', '').replace('日', '')
+                if clean_time_range.isdigit() and len(clean_time_range) == 4:
+                    # 对于RAG查询，年度时间表达通常是描述性的，不应该成为严格限制
+                    # 因此跳过时间过滤，让语义搜索自然匹配相关时间的内容
+                    self.logger.info(f"RAG模式：跳过年度时间过滤 ({clean_time_range}年)，保持语义搜索灵活性")
+                    # 注释掉严格的时间过滤
+                    # filters['ann_date'] = {'start': f"{clean_time_range}0101", 'end': f"{clean_time_range}1231"}
+        else:
+            self.logger.info("无时间范围，使用纯语义搜索")
         
         return filters
     
@@ -741,7 +1017,7 @@ class HybridAgent:
 请提供整合的完整答案：
 """
         
-        integrated = self.router_llm.predict(integration_prompt)
+        integrated = self.router_llm.invoke(integration_prompt).content
         return integrated
 
     def _safe_extract_result(self, result: Any, source_type: str) -> str:

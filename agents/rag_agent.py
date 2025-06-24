@@ -15,7 +15,8 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferWindowMemory
@@ -24,6 +25,7 @@ from database.milvus_connector import MilvusConnector
 from models.embedding_model import EmbeddingModel
 from config.settings import settings
 from utils.logger import setup_logger
+from utils.date_intelligence import date_intelligence
 
 
 class RAGAgent:
@@ -44,12 +46,10 @@ class RAGAgent:
             base_url=settings.DEEPSEEK_BASE_URL
         )
         
-        # 对话记忆（保留最近5轮对话）
-        self.memory = ConversationBufferWindowMemory(
-            k=5,
-            memory_key="chat_history",
-            return_messages=True
-        )
+        # 对话记忆 - 使用现代化的内存管理
+        # 注意: 根据LangChain迁移指南，内存功能已被现代化
+        # 暂时保留但不在新的agent中使用
+        self.memory = None  # 将在未来版本中实现现代化内存管理
         
         # 创建查询链
         self.qa_chain = self._create_qa_chain()
@@ -57,9 +57,13 @@ class RAGAgent:
         # 创建分析链
         self.analysis_chain = self._create_analysis_chain()
         
+        # 初始化统计信息
+        self.query_count = 0
+        self.success_count = 0
+        
         self.logger.info("RAG Agent初始化完成")
     
-    def _create_qa_chain(self) -> LLMChain:
+    def _create_qa_chain(self):
         """创建问答链"""
         qa_prompt = PromptTemplate(
             input_variables=["context", "question", "chat_history"],
@@ -74,22 +78,20 @@ class RAGAgent:
 用户问题：{question}
 
 请注意：
-1. 回答必须基于提供的文档内容，不要编造信息
-2. 如果文档中没有相关信息，请明确说明
-3. 涉及财务数据时，请注明数据来源（如具体报告期）
-4. 重要结论请用**加粗**标注
-5. 数字请使用合适的单位（如亿元、万元）
+1. 必须使用中文回答，不要使用英文
+2. 回答必须基于提供的文档内容，不要编造信息
+3. 如果文档中没有相关信息，请明确说明"根据现有文档，暂未找到相关信息"
+4. 涉及财务数据时，请注明数据来源（如具体报告期）
+5. 重要结论请用**加粗**标注
+6. 数字请使用合适的单位（如亿元、万元）
+7. 保持回答简洁明了，突出重点信息
 
-回答："""
+中文回答："""
         )
         
-        return LLMChain(
-            llm=self.llm,
-            prompt=qa_prompt,
-            verbose=True
-        )
+        return qa_prompt | self.llm | StrOutputParser()
     
-    def _create_analysis_chain(self) -> LLMChain:
+    def _create_analysis_chain(self):
         """创建分析链"""
         analysis_prompt = PromptTemplate(
             input_variables=["documents", "query", "analysis_type"],
@@ -109,10 +111,7 @@ class RAGAgent:
 分析报告："""
         )
         
-        return LLMChain(
-            llm=self.llm,
-            prompt=analysis_prompt
-        )
+        return analysis_prompt | self.llm | StrOutputParser()
     
     def query(self, 
              question: str, 
@@ -129,24 +128,67 @@ class RAGAgent:
         Returns:
             查询结果
         """
+        # 更新查询统计（包括无效查询）
+        self.query_count += 1
+        
+        # 输入验证
+        if not question or not question.strip():
+            return {
+                'success': False,
+                'error': '查询内容不能为空',
+                'type': 'rag_query'
+            }
+        
         try:
             start_time = time.time()
             self.logger.info(f"RAG查询: {question}")
             
-            # 1. 生成查询向量
-            query_vector = self.embedding_model.encode([question])[0].tolist()
+            # 0. 智能日期解析（RAG模式：仅提取股票代码，不强制时间过滤）
+            self.logger.info("步骤1: 开始智能日期解析（RAG模式）")
+            processed_question, parsing_result = date_intelligence.preprocess_question(question)
+            
+            # RAG查询模式：保持原问题不变，避免时间表达被过度处理
+            if processed_question != question:
+                self.logger.info(f"RAG模式：保持原问题不变，避免时间过滤干扰")
+                processed_question = question  # 对RAG查询，保持原问题的语义完整性
+            
+            self.logger.info(f"使用问题: {processed_question}")
+            
+            # 仅提取股票代码用于过滤，不添加严格的时间限制
+            if parsing_result.get('stock_code') and not filters:
+                filters = {}
+                filters['ts_code'] = parsing_result['stock_code']
+                self.logger.info(f"从日期解析提取股票代码: {parsing_result['stock_code']}")
+            
+            # 1. 生成查询向量 (使用处理后的问题)
+            self.logger.info("步骤2: 开始生成查询向量")
+            try:
+                query_vector = self.embedding_model.encode([processed_question])[0].tolist()
+                self.logger.info(f"向量生成成功: 维度={len(query_vector)}")
+            except Exception as e:
+                self.logger.error(f"向量生成失败: {e}")
+                raise
             
             # 2. 构建过滤表达式
+            self.logger.info("步骤3: 构建过滤表达式")
             filter_expr = self._build_filter_expr(filters)
+            self.logger.info(f"过滤表达式: {filter_expr}")
             
             # 3. 向量搜索
-            search_results = self.milvus.search(
-                query_vectors=[query_vector],
-                top_k=top_k,
-                filter_expr=filter_expr
-            )
+            self.logger.info("步骤4: 开始向量搜索")
+            try:
+                search_results = self.milvus.search(
+                    query_vectors=[query_vector],
+                    top_k=top_k,
+                    filter_expr=filter_expr
+                )
+                self.logger.info(f"向量搜索完成: 找到{len(search_results[0]) if search_results else 0}个结果")
+            except Exception as e:
+                self.logger.error(f"向量搜索失败: {e}")
+                raise
             
             if not search_results or len(search_results[0]) == 0:
+                self.logger.warning("未找到相关文档")
                 return {
                     'success': False,
                     'message': '未找到相关文档',
@@ -154,37 +196,27 @@ class RAGAgent:
                 }
             
             # 4. 提取文档内容
+            self.logger.info("步骤5: 提取文档内容")
             documents = self._extract_documents(search_results[0])
+            self.logger.info(f"文档提取完成: {len(documents)}个文档")
             
             # 5. 生成答案
+            self.logger.info("步骤6: 生成答案")
             context = self._format_context(documents)
             chat_history = self._get_chat_history()
             
             # 调用QA Chain并智能提取答案
             try:
-                result = self.qa_chain.invoke({
+                self.logger.info("开始调用QA Chain")
+                answer = self.qa_chain.invoke({
                     "context": context,
                     "question": question,
                     "chat_history": chat_history
                 })
-                
-                # 智能提取答案
-                if hasattr(result, 'content'):
-                    # ChatOpenAI 直接返回的情况
-                    answer = result.content
-                elif isinstance(result, dict):
-                    # LLMChain 返回字典的情况
-                    answer = result.get('text', '') or result.get('output', '') or result.get('answer', '') or str(result)
-                elif isinstance(result, str):
-                    # 直接返回字符串的情况
-                    answer = result
-                else:
-                    # 其他情况，转换为字符串
-                    self.logger.warning(f"未知的返回类型: {type(result)}")
-                    answer = str(result)
+                self.logger.info(f"QA Chain调用成功: 答案长度={len(answer) if answer else 0}")
                 
                 # 确保答案不为空
-                if not answer or answer.strip() == '':
+                if not answer or not isinstance(answer, str) or answer.strip() == '':
                     self.logger.warning("答案为空，使用默认回复")
                     answer = "抱歉，我无法从提供的文档中找到相关信息来回答您的问题。"
                     
@@ -192,13 +224,18 @@ class RAGAgent:
                 self.logger.error(f"QA Chain调用失败: {e}", exc_info=True)
                 answer = f"生成答案时出错: {str(e)}"
             
-            # 6. 保存到记忆
-            self.memory.save_context(
-                {"input": question},
-                {"output": answer}
-            )
+            # 6. 保存到记忆 (已现代化，暂时跳过内存保存)
+            # TODO: 实现现代化的内存管理
+            # if self.memory:
+            #     self.memory.save_context(
+            #         {"input": question},
+            #         {"output": answer}
+            #     )
             
-            return {
+            # 更新成功统计
+            self.success_count += 1
+            
+            result = {
                 'success': True,
                 'question': question,
                 'answer': answer,
@@ -208,8 +245,20 @@ class RAGAgent:
                 'processing_time': time.time() - start_time
             }
             
+            # 如果有日期解析结果，添加到返回信息中
+            if parsing_result.get('suggestion'):
+                result['date_parsing'] = {
+                    'suggestion': parsing_result['suggestion'],
+                    'modified_question': parsing_result.get('modified_question'),
+                    'parsed_date': parsing_result.get('parsed_date')
+                }
+            
+            return result
+            
         except Exception as e:
             self.logger.error(f"RAG查询失败: {e}")
+            import traceback
+            self.logger.error(f"异常详情: {traceback.format_exc()}")
             return {
                 'success': False,
                 'question': question,
@@ -259,11 +308,11 @@ class RAGAgent:
             formatted_docs = self._format_documents_for_analysis(documents)
             
             # 3. 执行分析
-            analysis = self.analysis_chain.run(
-                documents=formatted_docs,
-                query=query,
-                analysis_type=analysis_type
-            )
+            analysis = self.analysis_chain.invoke({
+                "documents": formatted_docs,
+                "query": query,
+                "analysis_type": analysis_type
+            })
             
             return {
                 'success': True,
@@ -466,22 +515,35 @@ class RAGAgent:
     
     def _get_chat_history(self) -> str:
         """获取格式化的对话历史"""
-        messages = self.memory.chat_memory.messages
-        history_parts = []
-        
-        for i in range(0, len(messages), 2):
-            if i + 1 < len(messages):
-                user_msg = messages[i].content
-                assistant_msg = messages[i + 1].content
-                history_parts.append(f"用户: {user_msg}\n助手: {assistant_msg}")
-        
-        return "\n\n".join(history_parts) if history_parts else "无历史对话"
+        # 由于内存管理已现代化，暂时返回空字符串
+        # TODO: 实现现代化的内存管理
+        if self.memory and hasattr(self.memory, 'chat_memory'):
+            messages = self.memory.chat_memory.messages
+            history_parts = []
+            
+            for i in range(0, len(messages), 2):
+                if i + 1 < len(messages):
+                    user_msg = messages[i].content
+                    assistant_msg = messages[i + 1].content
+                    history_parts.append(f"用户: {user_msg}\n助手: {assistant_msg}")
+            
+            return "\n\n".join(history_parts) if history_parts else "无历史对话"
+        else:
+            return "无历史对话"
     
     def clear_memory(self):
         """清除对话记忆"""
         self.memory.clear()
         self.logger.info("对话记忆已清除")
     
+    def get_stats(self) -> Dict[str, Any]:
+        """获取查询统计信息"""
+        return {
+            'query_count': self.query_count,
+            'success_count': self.success_count,
+            'success_rate': self.success_count / self.query_count if self.query_count > 0 else 0.0
+        }
+
     def get_similar_questions(self, question: str, top_k: int = 5) -> List[str]:
         """获取相似的问题建议"""
         # 这里可以基于历史查询或预定义的问题模板

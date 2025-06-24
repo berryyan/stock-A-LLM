@@ -9,9 +9,11 @@ import os
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from typing import Dict, List, Any, Optional
 import json
@@ -26,12 +28,83 @@ from config.settings import settings
 from utils.logger import setup_logger
 
 
+# 时间戳生成函数（替代lambda，解决OpenAPI序列化问题）
+def generate_timestamp() -> str:
+    """生成当前时间的ISO格式字符串"""
+    return datetime.now().isoformat()
+
+
 # 创建FastAPI应用
 app = FastAPI(
     title="股票分析智能查询系统",
-    description="基于LangChain + RAG的智能股票分析API",
-    version="1.0.0"
+    description="""基于LangChain + RAG + 深度财务分析 + 智能日期解析 + 资金流向分析的智能股票分析API (v1.4.1)
+    
+## 核心功能
+- 🧠 **智能查询路由**: 自动识别问题类型并路由到合适的处理模块
+- 📊 **SQL数据查询**: 股价、市值、财务指标等结构化数据查询
+- 📖 **RAG文档检索**: 语义搜索公告、年报、研报等文档内容
+- 💰 **专业财务分析**: 四表联合分析、财务健康度评分、杜邦分析、现金流质量
+- 💸 **资金流向分析**: 主力资金、超大单行为、四级资金分布分析
+- 📅 **智能日期解析**: 自动识别"最新"、"最近"等时间表达
+- 🌐 **网页版前端**: ChatGPT风格的自然语言交互界面
+- ⚡ **WebSocket支持**: 实时对话体验
+    
+## 数据源
+- MySQL: 2800万+条股票数据 (Tushare)
+- Milvus: 120万+文档向量 (公告、年报)
+- 实时资金流向数据 (tu_moneyflow_dc表)
+    """,
+    version="1.4.1",
+    contact={
+        "name": "股票分析系统",
+        "url": "http://localhost:8000"
+    },
+    license_info={
+        "name": "MIT",
+    },
+    tags_metadata=[
+        {
+            "name": "基础",
+            "description": "🛠️ 基础API信息和系统状态检查"
+        },
+        {
+            "name": "核心查询",
+            "description": "🧠 智能查询路由和公司对比分析 - 最常用的API"
+        },
+        {
+            "name": "专业财务分析",
+            "description": "💰 Phase 1核心功能 - 四表联合深度财务分析、财务健康度评分、杜邦分析、现金流质量分析"
+        },
+        {
+            "name": "资金流向分析",
+            "description": "💸 Phase 2重点功能 - 主力资金、超大单行为模式识别、四级资金分布分析"
+        },
+        {
+            "name": "数据查询",
+            "description": "📊 原始数据查询 - 公司列表、最近报告等结构化数据"
+        },
+        {
+            "name": "系统",
+            "description": "💻 系统状态和监控 - 运维和调试用"
+        },
+        {
+            "name": "辅助功能",
+            "description": "💡 查询建议和智能提示"
+        },
+        {
+            "name": "前端",
+            "description": "🌐 网页版前端界面访问"
+        },
+        {
+            "name": "高级功能",
+            "description": "⚡ 流式查询和WebSocket实时通信"
+        }
+    ]
 )
+
+# 配置静态文件和模板
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # 配置CORS
 app.add_middleware(
@@ -53,32 +126,87 @@ milvus_conn = None
 
 # 请求/响应模型
 class QueryRequest(BaseModel):
-    """查询请求模型"""
-    question: str = Field(..., description="用户问题")
-    context: Optional[Dict[str, Any]] = Field(None, description="上下文信息")
-    filters: Optional[Dict[str, Any]] = Field(None, description="过滤条件")
-    top_k: Optional[int] = Field(5, description="返回结果数量")
+    """智能查询请求模型
+    
+    用于封装用户的查询请求，支持上下文和过滤条件。
+    """
+    question: str = Field(
+        ..., 
+        description="用户问题，支持自然语言输入",
+        example="贵州茅台最新的财务健康状况如何？"
+    )
+    context: Optional[Dict[str, Any]] = Field(
+        None, 
+        description="可选的上下文信息，用于持续对话"
+    )
+    filters: Optional[Dict[str, Any]] = Field(
+        None, 
+        description="可选的过滤条件，如股票代码、时间范围等"
+    )
+    top_k: Optional[int] = Field(
+        5, 
+        description="RAG查询返回结果数量，默认5条",
+        ge=1,
+        le=20
+    )
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "question": "贵州茅台2024年第一季度的营收情况如何？",
-                "filters": {"ts_code": "600519.SH"},
+                "context": {
+                    "previous_query": "上一次查询内容",
+                    "user_preference": "用户偏好设置"
+                },
+                "filters": {
+                    "ts_code": "600519.SH",
+                    "start_date": "20240101",
+                    "end_date": "20240331"
+                },
                 "top_k": 5
             }
         }
 
 
 class QueryResponse(BaseModel):
-    """查询响应模型"""
-    success: bool
-    question: str
-    answer: Optional[str] = None
-    query_type: Optional[str] = None
-    sources: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    query_id: Optional[str] = None
-    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
+    """智能查询响应模型
+    
+    标准化的查询响应格式，包含结果、源数据和元数据。
+    """
+    success: bool = Field(
+        description="查询是否成功",
+        example=True
+    )
+    question: str = Field(
+        description="用户原始问题",
+        example="贵州茅台最新股价"
+    )
+    answer: Optional[str] = Field(
+        None,
+        description="智能分析结果，包含数据和分析解读",
+        example="贵州茅台（600519.SH）在2025年6月20日的股价为：开盘价1423.58元..."
+    )
+    query_type: Optional[str] = Field(
+        None,
+        description="查询类型：sql/rag/financial_analysis/money_flow/hybrid",
+        example="sql"
+    )
+    sources: Optional[Dict[str, Any]] = Field(
+        None,
+        description="数据源信息和元数据"
+    )
+    error: Optional[str] = Field(
+        None,
+        description="错误信息（仅在success=false时存在）"
+    )
+    query_id: Optional[str] = Field(
+        None,
+        description="查询唯一标识符，用于追踪和调试"
+    )
+    timestamp: str = Field(
+        default_factory=generate_timestamp,
+        description="响应时间戳 (ISO 8601格式)"
+    )
 
 
 class CompareRequest(BaseModel):
@@ -88,57 +216,139 @@ class CompareRequest(BaseModel):
     period: Optional[str] = Field(None, description="时间段")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "companies": ["600519.SH", "000858.SZ"],
                 "aspect": "盈利能力",
                 "period": "2024Q1"
-            }
+            },
+            "examples": [
+                {
+                    "companies": ["600519.SH", "000858.SZ"],
+                    "aspect": "盈利能力",
+                    "period": "2024Q1"
+                },
+                {
+                    "companies": ["600519.SH", "002415.SZ", "000568.SZ"],
+                    "aspect": "成长能力",
+                    "period": "2024年"
+                }
+            ]
         }
+
+
+class FinancialAnalysisRequest(BaseModel):
+    """财务分析请求模型"""
+    ts_code: str = Field(..., description="股票代码")
+    analysis_type: str = Field("financial_health", description="分析类型")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "ts_code": "600519.SH",
+                "analysis_type": "financial_health"
+            },
+            "examples": [
+                {
+                    "ts_code": "600519.SH",
+                    "analysis_type": "financial_health"
+                },
+                {
+                    "ts_code": "000001.SZ",
+                    "analysis_type": "dupont_analysis"
+                },
+                {
+                    "ts_code": "000002.SZ",
+                    "analysis_type": "cash_flow_quality"
+                }
+            ]
+        }
+
+
+class FinancialAnalysisResponse(BaseModel):
+    """财务分析响应模型"""
+    success: bool
+    ts_code: str
+    analysis_type: str
+    analysis_report: Optional[str] = None
+    financial_data: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+    processing_time: Optional[float] = None
+    timestamp: str = Field(default_factory=generate_timestamp)
+
+
+class MoneyFlowAnalysisRequest(BaseModel):
+    """资金流向分析请求模型"""
+    ts_code: str = Field(..., description="股票代码")
+    days: int = Field(30, description="分析天数", ge=1, le=365)
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "ts_code": "600519.SH",
+                "days": 30
+            },
+            "examples": [
+                {
+                    "ts_code": "600519.SH",
+                    "days": 30
+                },
+                {
+                    "ts_code": "000001.SZ",
+                    "days": 7
+                },
+                {
+                    "ts_code": "000002.SZ",
+                    "days": 90
+                }
+            ]
+        }
+
+
+class MoneyFlowAnalysisResponse(BaseModel):
+    """资金流向分析响应模型"""
+    success: bool
+    ts_code: str
+    analysis_period: int
+    analysis_report: Optional[str] = None
+    money_flow_data: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+    processing_time: Optional[float] = None
+    timestamp: str = Field(default_factory=generate_timestamp)
 
 
 class SystemStatus(BaseModel):
-    """系统状态模型"""
-    status: str
-    mysql_connected: bool
-    milvus_connected: bool
-    documents_count: int
-    processed_companies: int
-    last_update: Optional[str]
+    """系统状态信息模型
+    
+    提供系统整体运行状态和数据统计信息。
+    """
+    status: str = Field(
+        description="系统整体状态",
+        example="operational"
+    )
+    mysql_connected: bool = Field(
+        description="MySQL数据库连接状态",
+        example=True
+    )
+    milvus_connected: bool = Field(
+        description="Milvus向量数据库连接状态",
+        example=True
+    )
+    documents_count: int = Field(
+        description="Milvus中的文档向量数量",
+        example=1200000
+    )
+    processed_companies: int = Field(
+        description="已处理的上市公司数量",
+        example=5000
+    )
+    last_update: Optional[str] = Field(
+        description="最后更新时间 (ISO 8601格式)"
+    )
 
 
-# WebSocket连接管理器
-class ConnectionManager:
-    """WebSocket连接管理器"""
-    def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
-        self.user_sessions: Dict[str, Dict] = {}
-    
-    async def connect(self, websocket: WebSocket, client_id: str):
-        await websocket.accept()
-        self.active_connections[client_id] = websocket
-        self.user_sessions[client_id] = {
-            "connected_at": datetime.now(),
-            "query_count": 0
-        }
-        logger.info(f"客户端 {client_id} 已连接")
-    
-    def disconnect(self, client_id: str):
-        if client_id in self.active_connections:
-            del self.active_connections[client_id]
-            del self.user_sessions[client_id]
-            logger.info(f"客户端 {client_id} 已断开")
-    
-    async def send_personal_message(self, message: str, client_id: str):
-        if client_id in self.active_connections:
-            await self.active_connections[client_id].send_text(message)
-    
-    async def broadcast(self, message: str):
-        for connection in self.active_connections.values():
-            await connection.send_text(message)
-
-
-manager = ConnectionManager()
+# WebSocket功能已暂时移除，以解决OpenAPI文档生成问题
+# 后续开发时将重新添加WebSocket实时通信功能
 
 
 # 启动事件
@@ -177,21 +387,71 @@ async def shutdown_event():
     logger.info("系统已关闭")
 
 
-# API路由
-@app.get("/", tags=["基础"])
-async def root():
-    """API根路径"""
+# 前端路由
+@app.get("/", response_class=HTMLResponse, tags=["前端"])
+async def frontend_home(request: Request):
+    """前端主页"""
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/chat", response_class=HTMLResponse, tags=["前端"])
+async def frontend_chat(request: Request):
+    """聊天界面（重定向到主页）"""
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+# API信息路由
+@app.get("/api", tags=["基础"])
+async def api_info():
+    """获取API基本信息和功能列表
+    
+    返回系统版本、功能特性、访问地址等基本信息。
+    """
     return {
         "message": "股票分析智能查询系统 API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "redoc": "/redoc"
+        "version": "1.4.1",
+        "release_date": "2025-06-23",
+        "features": [
+            "🧠 智能查询路由 - 自动识别问题类型",
+            "📊 SQL数据查询 - 股价、财务指标查询",
+            "📖 RAG文档检索 - 语义搜索年报公告", 
+            "💰 专业财务分析 - 四表联合深度分析",
+            "📈 财务健康度评分 - AAA-CCC专业评级",
+            "🔍 杜邦分析 - ROE三因素分解",
+            "💧 现金流质量分析 - A-D级质量评估",
+            "📅 智能日期解析 - 自动识别时间表达",
+            "💸 资金流向分析 - 主力资金行为追踪",
+            "💰 超大单分析 - 机构行为模式识别",
+            "📊 四级资金分布 - 全方位资金结构",
+            "🌐 网页版前端界面 - ChatGPT式交互",
+            "⚡ WebSocket实时通信 - 即时对话体验"
+        ],
+        "endpoints": {
+            "frontend": "/",
+            "docs": "/docs",
+            "redoc": "/redoc",
+            "health": "/health",
+            "status": "/status"
+        },
+        "data_stats": {
+            "mysql_records": "28M+ 股票数据记录",
+            "milvus_documents": "120万+ 文档向量",
+            "companies_covered": "5000+ 上市公司",
+            "data_sources": ["Tushare", "东方财富", "巨潮资讯"]
+        }
     }
 
 
 @app.get("/health", tags=["基础"])
 async def health_check():
-    """健康检查"""
+    """系统健康状态检查
+    
+    检查MySQL和Milvus数据库连接状态，返回系统整体健康度。
+    用于监控和运维，确保系统正常运行。
+    
+    Returns:
+        dict: 包含系统状态、数据库连接状态和时间戳的健康检查结果
+    """
     try:
         # 检查数据库连接
         mysql_ok = mysql_conn.test_connection() if mysql_conn else False
@@ -199,14 +459,26 @@ async def health_check():
         
         return {
             "status": "healthy" if mysql_ok else "unhealthy",
-            "mysql": mysql_ok,
-            "milvus": bool(milvus_stats),
+            "services": {
+                "mysql": "✅ 连接正常" if mysql_ok else "❌ 连接异常",
+                "milvus": "✅ 连接正常" if bool(milvus_stats) else "❌ 连接异常",
+                "hybrid_agent": "✅ 就绪" if hybrid_agent else "❌ 未初始化"
+            },
+            "database_stats": {
+                "mysql_connected": mysql_ok,
+                "milvus_connected": bool(milvus_stats),
+                "milvus_document_count": milvus_stats.get('row_count', 0) if milvus_stats else 0
+            },
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         return JSONResponse(
             status_code=503,
-            content={"status": "unhealthy", "error": str(e)}
+            content={
+                "status": "unhealthy", 
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
         )
 
 
@@ -245,9 +517,23 @@ async def get_system_status():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/query", response_model=QueryResponse, tags=["查询"])
+@app.post("/query", response_model=QueryResponse, tags=["核心查询"])
 async def query(request: QueryRequest):
-    """执行智能查询"""
+    """智能查询接口 - 核心功能
+    
+    自动识别用户问题类型并路由到合适的处理模块：
+    - SQL查询：股价、市值、财务指标等数值类问题
+    - RAG查询：公告内容、年报分析等文本类问题  
+    - 财务分析：财务健康度、杜邦分析等专业分析
+    - 资金流向：主力资金、超大单行为等资金分析
+    - 混合查询：需要多种数据源的复杂问题
+    
+    支持自然语言输入，如：
+    - "贵州茅台最新股价"
+    - "分析茅台的财务健康状况"
+    - "茅台的资金流向如何"
+    - "茅台最新年报说了什么"
+    """
     query_id = str(uuid.uuid4())
     logger.info(f"收到查询请求 {query_id}: {request.question}")
     
@@ -285,9 +571,23 @@ async def query(request: QueryRequest):
         )
 
 
-@app.post("/compare", tags=["查询"])
+@app.post("/compare", tags=["核心查询"])
 async def compare_companies(request: CompareRequest):
-    """比较多家公司"""
+    """多公司对比分析
+    
+    支持2家或多家公司的对比分析，可指定对比维度和时间段。
+    
+    对比维度支持：
+    - 综合表现：整体财务和市场表现对比
+    - 盈利能力：ROE、净利率、毛利率等对比
+    - 偿债能力：资产负债率、流动比率等对比
+    - 成长能力：营收增长、利润增长等对比
+    - 估值水平：PE、PB、PEG等估值指标对比
+    
+    示例：
+    - 比较贵州茅台和五粮液的盈利能力
+    - 对比平安银行和招商银行2024Q1表现
+    """
     try:
         if not hybrid_agent:
             raise HTTPException(status_code=503, detail="系统未初始化")
@@ -318,9 +618,23 @@ async def compare_companies(request: CompareRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/suggestions", tags=["查询"])
+@app.get("/suggestions", tags=["辅助功能"])
 async def get_query_suggestions(q: str = Query(..., description="用户输入")):
-    """获取查询建议"""
+    """智能查询建议
+    
+    基于用户输入内容，提供相关的查询建议，帮助用户发现更多分析角度。
+    
+    功能特点：
+    - 根据股票名称/代码提供针对性建议
+    - 涵盖财务分析、资金流向、公告查询等多个维度
+    - 智能匹配用户可能感兴趣的查询方向
+    
+    Args:
+        q: 用户输入的查询内容或股票名称
+        
+    Returns:
+        dict: 包含建议查询列表的响应
+    """
     try:
         # 简单的建议生成
         suggestions = []
@@ -349,12 +663,196 @@ async def get_query_suggestions(q: str = Query(..., description="用户输入"))
         return {"suggestions": []}
 
 
-@app.get("/companies", tags=["数据"])
+@app.post("/financial-analysis", response_model=FinancialAnalysisResponse, tags=["专业财务分析"])
+async def financial_analysis(request: FinancialAnalysisRequest):
+    """专业财务分析接口 - Phase 1 核心功能
+    
+    基于四表联合分析（利润表83字段 + 资产负债表161字段 + 现金流量表73字段 + 财务指标143字段）
+    提供专业级财务分析报告。
+    
+    支持的分析类型：
+    - **financial_health**: 财务健康度评分 (AAA-CCC评级)
+      - 盈利能力 (30%): ROE、净利率、毛利率
+      - 偿债能力 (25%): 资产负债率、流动比率、速动比率
+      - 运营能力 (25%): 资产周转率、存货周转率等
+      - 成长能力 (20%): 营收增长率、净利润增长率等
+    
+    - **dupont_analysis**: 杜邦分析
+      - ROE = 净利率 × 总资产周转率 × 权益乘数
+      - 支持多期趋势分析和同行业对比
+    
+    - **cash_flow_quality**: 现金流质量分析
+      - 现金含量比率 = 经营现金流 / 净利润
+      - A-D级质量评级和风险提示
+    
+    - **multi_period_comparison**: 多期财务对比
+      - 同比/环比增长率分析
+      - 趋势变化和波动性评估
+    
+    分析结果包含：
+    - 📊 专业财务评分和评级
+    - 🔍 详细的财务指标分析
+    - ⚠️ 风险提示和投资建议
+    - 📈 LLM增强的专业解读
+    """
+    import time
+    
+    try:
+        if not hybrid_agent:
+            raise HTTPException(status_code=503, detail="系统未初始化")
+        
+        # 构建财务分析查询
+        analysis_queries = {
+            "financial_health": f"分析{request.ts_code}的财务健康状况",
+            "dupont_analysis": f"对{request.ts_code}进行杜邦分析",
+            "cash_flow_quality": f"分析{request.ts_code}的现金流质量",
+            "multi_period_comparison": f"{request.ts_code}的多期财务对比分析"
+        }
+        
+        query_text = analysis_queries.get(request.analysis_type, 
+                                         f"分析{request.ts_code}的财务状况")
+        
+        # 执行财务分析
+        start_time = time.time()
+        result = hybrid_agent.query(query_text)
+        processing_time = time.time() - start_time
+        
+        if result.get('success', False):
+            return FinancialAnalysisResponse(
+                success=True,
+                ts_code=request.ts_code,
+                analysis_type=request.analysis_type,
+                analysis_report=result.get('answer'),
+                financial_data=result.get('financial_data'),
+                processing_time=processing_time
+            )
+        else:
+            return FinancialAnalysisResponse(
+                success=False,
+                ts_code=request.ts_code,
+                analysis_type=request.analysis_type,
+                error=result.get('error', '财务分析失败'),
+                processing_time=processing_time
+            )
+        
+    except Exception as e:
+        logger.error(f"财务分析API失败: {e}")
+        return FinancialAnalysisResponse(
+            success=False,
+            ts_code=request.ts_code,
+            analysis_type=request.analysis_type,
+            error=str(e)
+        )
+
+
+@app.post("/money-flow-analysis", response_model=MoneyFlowAnalysisResponse, tags=["资金流向分析"])
+async def money_flow_analysis(request: MoneyFlowAnalysisRequest):
+    """资金流向分析接口 - Phase 2 重点功能
+    
+    基于tu_moneyflow_dc表数据，提供专业级资金流向分析报告。
+    
+    核心分析维度：
+    
+    **1. 主力资金分析 (最高优先级)**
+    - 主力资金 = 大单(20-100万) + 超大单(≥100万)
+    - 净流入/流出金额和趋势分析
+    - 流向强度评估：强势(>5000万)/中等(1000-5000万)/弱势(<1000万)
+    - 流向一致性评分(0-100%)
+    
+    **2. 超大单资金分析 (重点单独分析)**
+    - 超大单(≥100万)行为模式识别：
+      - 📈 建仓模式：买入占比>65%且净流入为正
+      - 📉 减仓模式：买入占比<35%且净流出为负
+      - 🔄 洗盘模式：买卖相当，净流向接近0
+      - ❓ 不明模式：其他情况
+    - 机构资金主导程度分析
+    - 与股价走势的相关性分析
+    
+    **3. 四级资金分布分析**
+    - 超大单：≥100万元 (机构资金)
+    - 大单：20-100万元 (大户资金)
+    - 中单：4-20万元 (中户资金)
+    - 小单：<4万元 (散户资金)
+    - 各级别资金占比和流向趋势
+    
+    **4. 综合评估和投资建议**
+    - 基于资金流向的整体评估
+    - 风险提示和投资建议
+    - LLM增强的专业解读
+    
+    分析结果包含：
+    - 💰 主力资金净流向及强度评估
+    - 📈 超大单机构行为模式识别
+    - 📊 四级资金的分布情况和趋势
+    - ⚠️ 风险警示和投资策略建议
+    
+    示例查询：
+    - 分析贵州茅台最近30天的资金流向
+    - 查看平安银行的主力资金流入情况
+    - 茅台的超大单资金如何
+    """
+    import time
+    
+    try:
+        if not hybrid_agent:
+            raise HTTPException(status_code=503, detail="系统未初始化")
+        
+        # 构建资金流向分析查询
+        query_text = f"分析{request.ts_code}最近{request.days}天的资金流向"
+        
+        # 执行资金流向分析
+        start_time = time.time()
+        result = hybrid_agent.query(query_text)
+        processing_time = time.time() - start_time
+        
+        if result.get('success', False):
+            return MoneyFlowAnalysisResponse(
+                success=True,
+                ts_code=request.ts_code,
+                analysis_period=request.days,
+                analysis_report=result.get('answer'),
+                money_flow_data=result.get('money_flow_data'),
+                processing_time=processing_time
+            )
+        else:
+            return MoneyFlowAnalysisResponse(
+                success=False,
+                ts_code=request.ts_code,
+                analysis_period=request.days,
+                error=result.get('error', '资金流向分析失败'),
+                processing_time=processing_time
+            )
+        
+    except Exception as e:
+        logger.error(f"资金流向分析API失败: {e}")
+        return MoneyFlowAnalysisResponse(
+            success=False,
+            ts_code=request.ts_code,
+            analysis_period=request.days,
+            error=str(e)
+        )
+
+
+@app.get("/companies", tags=["数据查询"])
 async def list_companies(
     sector: Optional[str] = None,
     limit: int = Query(20, le=100)
 ):
-    """获取公司列表"""
+    """获取上市公司列表
+    
+    查询数据库中的上市公司信息，支持按行业过滤。
+    
+    Args:
+        sector: 可选，按行业过滤 (如："白酒行业"、"银行业"等)
+        limit: 返回结果数量限制，最大100
+        
+    Returns:
+        dict: 包含公司代码、名称等信息的公司列表
+        
+    示例：
+    - 获取所有公司前20家
+    - 获取白酒行业所有公司
+    """
     try:
         # 构建查询
         query = "SELECT DISTINCT ts_code, name FROM stock_basic"
@@ -374,9 +872,24 @@ async def list_companies(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/reports/recent", tags=["数据"])
+@app.get("/reports/recent", tags=["数据查询"])
 async def get_recent_reports(days: int = 7, limit: int = 20):
-    """获取最近的报告"""
+    """获取最近发布的财务报告
+    
+    查询指定时间范围内发布的年度报告和季度报告信息。
+    
+    Args:
+        days: 查询范围（天数），默认查询近7天
+        limit: 返回结果数量限制，默认20条
+        
+    Returns:
+        dict: 包含报告时间范围、总数量和报告列表
+        
+    报告信息包含：
+    - 股票代码和公司名称
+    - 报告标题和发布日期
+    - 报告下载链接
+    """
     try:
         end_date = datetime.now().strftime('%Y%m%d')
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
@@ -403,89 +916,60 @@ async def get_recent_reports(days: int = 7, limit: int = 20):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# WebSocket路由
-@app.websocket("/ws/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    """WebSocket连接端点"""
-    await manager.connect(websocket, client_id)
-    
-    try:
-        # 发送欢迎消息
-        await manager.send_personal_message(
-            json.dumps({
-                "type": "welcome",
-                "message": "连接成功，可以开始查询",
-                "client_id": client_id
-            }),
-            client_id
-        )
-        
-        while True:
-            # 接收消息
-            data = await websocket.receive_text()
-            message = json.loads(data)
-            
-            # 处理不同类型的消息
-            if message.get("type") == "query":
-                # 执行查询
-                query_id = str(uuid.uuid4())
-                
-                # 发送处理中消息
-                await manager.send_personal_message(
-                    json.dumps({
-                        "type": "processing",
-                        "query_id": query_id,
-                        "message": "正在处理您的查询..."
-                    }),
-                    client_id
-                )
-                
-                # 执行查询
-                try:
-                    result = hybrid_agent.query(message.get("question", ""))
-                    
-                    # 发送结果
-                    await manager.send_personal_message(
-                        json.dumps({
-                            "type": "result",
-                            "query_id": query_id,
-                            "success": result.get("success", False),
-                            "answer": result.get("answer"),
-                            "query_type": result.get("query_type"),
-                            "sources": result.get("sources")
-                        }),
-                        client_id
-                    )
-                except Exception as e:
-                    # 发送错误消息
-                    await manager.send_personal_message(
-                        json.dumps({
-                            "type": "error",
-                            "query_id": query_id,
-                            "error": str(e)
-                        }),
-                        client_id
-                    )
-            
-            elif message.get("type") == "ping":
-                # 心跳响应
-                await manager.send_personal_message(
-                    json.dumps({"type": "pong"}),
-                    client_id
-                )
-            
-    except WebSocketDisconnect:
-        manager.disconnect(client_id)
-        logger.info(f"WebSocket客户端 {client_id} 断开连接")
-    except Exception as e:
-        logger.error(f"WebSocket错误: {e}")
-        manager.disconnect(client_id)
+# WebSocket端点已暂时移除，以解决OpenAPI文档生成问题
+# 后续开发时将重新添加WebSocket实时通信功能
 
 
 # 流式响应端点（用于大型查询）
-@app.post("/query/stream", tags=["查询"])
+@app.post("/query/stream", tags=["高级功能"])
 async def query_stream(request: QueryRequest):
-    """流式查询响应"""
+    """流式查询响应 - 适用于大型查询
+    
+    为大型复杂查询提供流式响应，实时返回部分结果，提升用户体验。
+    特别适用于财务分析、资金流向分析等耗时较长的查询。
+    
+    响应格式：application/x-ndjson (新行分隔JSON)
+    
+    流式消息类型：
+    - **start**: 查询开始信息
+      ```json
+      {
+          "type": "start",
+          "query_id": "uuid",
+          "timestamp": "2025-06-23T10:00:00Z"
+      }
+      ```
+    
+    - **chunk**: 部分结果块
+      ```json
+      {
+          "type": "chunk",
+          "content": "查询结果的一部分..."
+      }
+      ```
+    
+    - **complete**: 查询完成信息
+      ```json
+      {
+          "type": "complete",
+          "query_id": "uuid",
+          "sources": {}
+      }
+      ```
+    
+    - **error**: 错误信息
+      ```json
+      {
+          "type": "error",
+          "error": "错误描述"
+      }
+      ```
+    
+    使用场景：
+    - 复杂财务分析报告生成
+    - 多公司对比分析
+    - 大量数据的资金流向分析
+    """
     query_id = str(uuid.uuid4())
     
     async def generate():

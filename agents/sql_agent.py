@@ -7,6 +7,7 @@ SQL Agent - 自然语言转SQL查询
 import re
 import sys
 import os
+import time
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime, timedelta
 import json
@@ -28,6 +29,8 @@ import pandas as pd
 from config.settings import settings
 from database.mysql_connector import MySQLConnector
 from utils.logger import setup_logger
+from utils.date_intelligence import date_intelligence
+
 
 
 class SQLAgent:
@@ -60,11 +63,10 @@ class SQLAgent:
         # 创建SQL agent
         self.agent = self._create_agent()
         
-        # 对话记忆
-        self.memory = ConversationBufferMemory(
-            memory_key="chat_history",
-            return_messages=True
-        )
+        # 对话记忆 - 使用现代化的内存管理
+        # 注意: 根据LangChain迁移指南，内存功能已被现代化
+        # 暂时保留但不在新的agent中使用
+        self.memory = None  # 将在未来版本中实现现代化内存管理
         
         # 初始化查询缓存
         self._query_cache = {}
@@ -140,15 +142,25 @@ class SQLAgent:
 重要提示：
 1. 股票代码格式：使用ts_code字段，格式为"600519.SH"（沪市）或"000001.SZ"（深市）
 2. 日期格式：使用trade_date或ann_date字段，格式为"YYYYMMDD"，如"20250422"
-3. 今天是{datetime.now().strftime("%Y-%m-%d")}，最近的交易日是{last_trading_date}
-4. 如果用户询问"最新"或"今天"的数据，请使用最近的交易日{last_trading_date}
-5. 金额单位：财务数据通常以元为单位，大数字请转换为"亿元"显示
-6. 查询限制：默认限制返回10条记录，除非用户指定
-7. 排序规则：财务数据默认按金额降序，时间数据按最新优先
+3. 当前实际日期是{datetime.now().strftime("%Y-%m-%d")}，最近的交易日是{last_trading_date}
+4. 数据库中包含历史数据到{last_trading_date}，这不是未来日期，而是实际存在的历史数据
+5. 如果用户询问"最新"或"今天"的数据，请使用最近的交易日{last_trading_date}
+6. 对于{last_trading_date}及之前的日期，都是有效的历史数据，请正常查询
+7. 金额单位：财务数据通常以元为单位，大数字请转换为"亿元"显示
+8. 查询限制：默认限制返回10条记录，除非用户指定
+9. 排序规则：财务数据默认按金额降序，时间数据按最新优先
+
+特别说明：即使日期看起来像"2025年"，但如果是{last_trading_date}或之前的日期，都是数据库中实际存在的历史数据，可以正常查询。
 
 用户问题：{{question}}
 
 请生成SQL查询语句，并用中文解释查询结果。
+
+输出要求：
+- 必须使用中文回答
+- 对于股价数据，格式示例："贵州茅台（600519.SH）在2025年6月20日的股价为：开盘价1423.58元，最高价1441.14元，最低价1420.20元，收盘价1428.66元"
+- 对于财务数据，请转换为易读的单位（如亿元、万元）
+- 保持回答简洁清晰，突出重点数据
 """
         
         return PromptTemplate(
@@ -174,14 +186,62 @@ class SQLAgent:
     
     def _create_agent(self):
         """创建SQL agent"""
+        # 获取最近交易日作为数据截止日期
+        last_trading_date = self._get_last_trading_date()
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        
+        # 创建带有日期上下文的系统提示
+        system_message = f"""
+        重要系统信息：
+        - 当前实际日期：{current_date}
+        - 数据库最新数据日期：{last_trading_date}
+        - 所有{last_trading_date}及之前的日期都是有效的历史数据
+        - 请将{last_trading_date}视为可查询的最新数据日期，而不是"未来日期"
+        """
+        
+        # 创建自定义的agent_executor前缀（中文版）
+        prefix = f"""你是一个专门与SQL数据库交互的智能助手。
+给定用户的问题，创建语法正确的SQL查询语句，执行查询并返回答案。
+除非用户指定具体的数量，否则请将查询结果限制在最多5条记录。
+你可以按相关列排序以返回最有价值的数据。
+不要查询表中的所有列，只查询与问题相关的列。
+你可以使用下面的工具与数据库交互。
+只使用下面工具返回的信息来构建最终答案。
+在执行查询前必须仔细检查SQL语句。如果执行时出现错误，请重写查询并重试。
+
+不要执行任何DML语句（INSERT、UPDATE、DELETE、DROP等）。
+
+如果问题与数据库无关，请回答"我不知道"。
+
+重要：请始终使用中文回复用户。即使工具返回的是英文，也要翻译成中文。
+对于股价等金融数据，请使用清晰的中文格式展示。
+
+{system_message}
+"""
+        
+        # 创建中文版的suffix
+        suffix = f"""开始！
+
+当前日期：{current_date}
+数据库最新数据：{last_trading_date}
+
+问题：{{input}}
+思考：我应该查看数据库中有哪些表
+{{agent_scratchpad}}
+
+记住：最终答案(Final Answer)必须使用中文。对于股价数据，请使用类似"贵州茅台（600519.SH）在2025年6月20日的股价为：开盘价xxx元，最高价xxx元，最低价xxx元，收盘价xxx元"的格式。
+"""
+        
         return create_sql_agent(
             llm=self.llm,
             toolkit=self.toolkit,
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            verbose=True,
+            verbose=True,  # 保持verbose=True以获得调试价值
             handle_parsing_errors=True,
-            max_iterations=5,
-            early_stopping_method="force"
+            max_iterations=10,  # 增加迭代次数
+            early_stopping_method="force",
+            prefix=prefix,
+            suffix=suffix
         )
     
     def query(self, question: str) -> Dict[str, Any]:
@@ -194,6 +254,14 @@ class SQLAgent:
         Returns:
             查询结果字符串
         """
+        # 输入验证
+        if not question or not question.strip():
+            return {
+                'success': False,
+                'error': '查询内容不能为空',
+                'result': None
+            }
+        
         try:
             self.logger.info(f"接收查询: {question}")
             
@@ -208,14 +276,54 @@ class SQLAgent:
                 'cached': True
             }
             
-            # 预处理问题
-            processed_question = self._preprocess_question(question)
+            # 使用智能日期解析预处理问题
+            processed_question, parsing_result = date_intelligence.preprocess_question(question)
             
-            # 使用agent执行查询
-            result = self.agent.run(processed_question)
+            # 如果没有日期解析结果，使用传统预处理
+            if not parsing_result['modified_question']:
+                processed_question = self._preprocess_question(question)
             
-            # 后处理结果 - 确保返回字符串
-            processed_result = self._postprocess_result(result)
+            # 在问题前添加当前日期上下文，以确保agent理解日期范围
+            last_trading_date = self._get_last_trading_date()
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            
+            # 构建带上下文的查询
+            contextualized_question = f"""
+            系统信息：当前日期是{current_date}，数据库中最新的历史数据截止到{last_trading_date}。
+            请注意：{last_trading_date}不是未来日期，而是数据库中实际存在的最新历史数据。
+            
+            用户问题：{processed_question}
+            """
+            
+            # 使用agent执行查询，增加更好的错误处理
+            try:
+                result = self.agent.invoke({"input": contextualized_question})
+                
+                # 处理invoke返回的结果
+                if isinstance(result, dict) and 'output' in result:
+                    # invoke返回字典格式，提取output
+                    output = result['output']
+                else:
+                    # 直接处理结果
+                    output = result
+                
+                # 检查是否为解析错误（通常包含raw SQL）
+                if isinstance(output, str) and "Could not parse LLM output" in output:
+                    self.logger.warning("LLM输出解析失败，尝试提取有用信息")
+                    # 尝试从错误消息中提取SQL结果
+                    if "Final Answer:" in output:
+                        # 提取Final Answer后的内容
+                        final_answer_start = output.find("Final Answer:") + len("Final Answer:")
+                        processed_result = output[final_answer_start:].strip()
+                    else:
+                        # 如果无法解析，返回友好的错误信息
+                        processed_result = "查询处理过程中遇到格式问题，请尝试重新表述您的问题或使用更具体的查询条件。"
+                else:
+                    processed_result = self._postprocess_result(output)
+                    
+            except Exception as invoke_error:
+                self.logger.error(f"Agent invoke执行失败: {invoke_error}")
+                processed_result = f"查询执行失败: {str(invoke_error)}"
             
             # 转换为字符串
             if isinstance(processed_result, dict):
@@ -230,11 +338,13 @@ class SQLAgent:
             # 缓存结果
             self._query_cache[cache_key] = final_result
             
-            # 记录到内存
-            self.memory.save_context(
-                {"input": question},
-                {"output": final_result}
-            )
+            # 记录到内存 (已现代化，暂时跳过内存保存)
+            # TODO: 实现现代化的内存管理
+            # if self.memory:
+            #     self.memory.save_context(
+            #         {"input": question},
+            #         {"output": final_result}
+            #     )
             
             return {
                 'success': True,
@@ -322,9 +432,17 @@ class SQLAgent:
         return processed
     
     def _postprocess_result(self, result: Any) -> str:
-        """后处理查询结果 - 确保返回字符串"""
-        # 如果结果是字符串，直接返回
+        """后处理查询结果 - 确保返回中文字符串"""
+        # 如果结果是字符串，检查是否需要中文化
         if isinstance(result, str):
+            # 检查是否主要是英文回复
+            chinese_chars = sum(1 for c in result if '\u4e00' <= c <= '\u9fff')
+            english_chars = sum(1 for c in result if 'a' <= c.lower() <= 'z')
+            
+            # 如果主要是英文，且包含常见的股价信息，进行中文化
+            if english_chars > chinese_chars and ('price' in result.lower() or 'opening' in result.lower() or 'closing' in result.lower()):
+                return self._translate_to_chinese(result)
+            
             # 尝试美化格式
             if "```" in result:
                 # 提取代码块中的内容
@@ -336,6 +454,29 @@ class SQLAgent:
         
         # 如果是其他类型，转换为字符串
         return str(result)
+    
+    def _translate_to_chinese(self, english_result: str) -> str:
+        """将英文股价信息翻译为中文格式"""
+        try:
+            # 使用LLM进行翻译
+            translation_prompt = f"""请将以下英文股价信息翻译为标准的中文格式：
+
+{english_result}
+
+要求：
+1. 使用中文表述
+2. 价格保留到小数点后两位，加上"元"单位
+3. 格式：公司名称（股票代码）在YYYY年MM月DD日的股价为：开盘价xxx元，最高价xxx元，最低价xxx元，收盘价xxx元
+4. 只返回翻译后的中文内容，不要其他解释
+
+中文回答："""
+            
+            chinese_result = self.llm.invoke(translation_prompt).content
+            return chinese_result.strip()
+            
+        except Exception as e:
+            self.logger.warning(f"中文翻译失败，返回原结果: {e}")
+            return english_result
     
     def execute_direct_sql(self, sql: str) -> Dict[str, Any]:
         """

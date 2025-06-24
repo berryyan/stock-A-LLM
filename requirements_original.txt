@@ -1,0 +1,51 @@
+# Core LangChain packages
+langchain==0.2.0
+langchain-community>=0.2.10,<0.3.0
+langchain-experimental==0.0.64
+langgraph==0.2.0
+
+# Database connections
+SQLAlchemy==2.0.23
+pymysql==1.1.0
+
+# Vector database
+langchain-milvus==0.1.0
+pymilvus==2.4.0
+
+# PDF processing
+unstructured[pdf]==0.12.0
+pdfplumber==0.10.3
+pypdf==4.0.0
+
+# Chinese NLP and embeddings
+sentence-transformers==2.5.0
+jieba==0.42.1
+
+# API framework
+fastapi==0.109.0
+uvicorn==0.27.0
+python-multipart==0.0.6
+
+# Utilities
+python-dotenv==1.0.0
+pandas==2.1.4
+numpy==1.26.2
+requests==2.31.0
+beautifulsoup4==4.12.2
+
+# LLM providers (choose one)
+# For DeepSeek
+openai==1.12.0
+
+# For DashScope (通义千问)
+# dashscope==1.14.0
+
+# Logging and monitoring
+colorama==0.4.6
+tqdm==4.66.1
+
+# Development tools (optional)
+pytest==7.4.3
+black==23.12.0
+flake8==6.1.0
+pre-commit==3.5.0

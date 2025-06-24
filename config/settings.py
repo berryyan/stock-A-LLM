@@ -90,6 +90,12 @@ class Settings:
     # 处理超时配置（秒）
     DOWNLOAD_TIMEOUT = 30
     PDF_EXTRACT_TIMEOUT = 120  # PDF解析可能需要更长时间
+    
+    # Agent查询超时配置
+    SQL_AGENT_TIMEOUT = 60  # SQL查询超时
+    RAG_AGENT_TIMEOUT = 120  # RAG查询超时（包含向量搜索和LLM生成）
+    FINANCIAL_AGENT_TIMEOUT = 180  # 财务分析超时（包含复杂计算和LLM分析）
+    HYBRID_AGENT_TIMEOUT = 300  # 混合查询超时（可能包含多个子查询）
 
     # 批处理配置
     DEFAULT_BATCH_SIZE = 10
