@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v1.4.2)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v1.4.2-final)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 系统全面修复完成，所有核心功能100%正常运行。Windows兼容性问题已解决，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，Bug修复验证100%通过。Phase 1 深度财务分析系统开发完成, 新增专业财务分析功能, 新增数据驱动的智能日期解析功能。
+**Current Status**: ✅ 系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性问题已解决，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。⚠️ 高级网页界面的WebSocket实时通信功能需要恢复。
 
 ## Development Commands
 
@@ -75,6 +75,11 @@ python scripts/tests/test_simple_stats.py
 
 # Performance testing
 python scripts/tests/performance_test.py
+
+# Web Frontend Testing (NEW v1.4.2)
+# Follow the comprehensive web testing guide:
+# docs/testing/WEB_FUNCTIONAL_TEST_GUIDE.md
+# Test all core functions through web interface at http://localhost:8000
 ```
 
 ### Data Processing
@@ -119,7 +124,8 @@ python scripts/debugging/test_cninfo_pdf.py
 - `HybridAgent`: Smart query router with modern chain composition using `|` operator
 - `SQLAgent`: Handles structured data queries with enhanced input validation
 - `RAGAgent`: Document retrieval with semantic search, query statistics, and modern chains
-- `FinancialAnalysisAgent`: **[v1.4.0 NEW]** 专业财务分析系统，支持四表联合查询和深度财务分析
+- `FinancialAnalysisAgent`: **[v1.4.0]** 专业财务分析系统，支持四表联合查询和深度财务分析
+- `MoneyFlowAgent`: **[v1.4.2]** 资金流向分析系统，支持四级资金分布和主力行为分析
 
 **Database Layer** (`database/`):
 - `MySQLConnector`: Manages connections to MySQL for structured financial data
@@ -175,11 +181,12 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 ## Important Development Notes
 
 ### Query Types
-The system supports five main query types:
+The system supports six main query types:
 - `sql`: For numerical data, rankings, and structured queries
 - `rag`: For document content, explanations, and qualitative analysis  
-- `financial_analysis`: For professional financial analysis and scoring
-- `money_flow`: For capital flow analysis and institutional behavior
+- `financial_analysis`: For professional financial analysis and scoring (Phase 1 ✅)
+- `money_flow`: For capital flow analysis and institutional behavior (Phase 2 ✅)
+- `technical_analysis`: For technical indicators and trend analysis (Phase 2 planned)
 - `hybrid`: Automatically routes or combines multiple approaches
 
 ### Error Handling
@@ -199,6 +206,20 @@ The system supports five main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v1.4.2-final - 系统全面修复 + Phase 2功能验证完成 (2025-06-24)
+
+**系统修复完成状态** ✅:
+- **Windows兼容性修复**: 解决signal.SIGALRM问题，BGE-M3模型采用threading方案
+- **RAG查询完全恢复**: 修复智能日期解析过度干预，RAG成功率100%
+- **SQL/Financial Agent优化**: 修复输出解析错误和NoneType安全检查
+- **数据驱动交易日判断**: 精准识别2025-06-24为最新交易日
+
+**Phase 2功能验证结果** ✅:
+- **资金流向分析系统**: 100%正常运行，茅台资金流向104秒专业报告
+- **智能日期解析v2.0**: 时间点vs时间段精准识别，缓存优化
+- **完整测试覆盖**: TEST_MANUAL_v1.4.1.md (403行) 保留完整
+- **网页界面状态**: ⚠️ 基础版本保留，WebSocket功能需恢复
 
 #### v1.4.0 - Phase 1 深度财务分析系统 (2025-06-22)
 
@@ -318,10 +339,25 @@ The system supports five main query types:
 - Performance and integration testing completed
 
 ### Testing Strategy
+
+**Script Testing (Backend API)**:
 - Use the test-guide.md for comprehensive testing procedures
+- Essential comprehensive tests: `baseline_test.py`, `comprehensive_verification.py`
+- Feature-specific tests: Financial Analysis, Money Flow, Date Intelligence
+- Performance benchmarks in scripts/tests/
+
+**Web Frontend Testing (User Experience)**:
+- **网页版功能测试指南**: `docs/testing/WEB_FUNCTIONAL_TEST_GUIDE.md` ⭐ **[NEW v1.4.2]**
+- 全面覆盖所有核心功能的网页版测试用例
+- 包含功能性测试、破坏性测试、性能测试、用户体验测试
+- 脚本测试vs网页版测试双重验证体系
+- 持续集成测试清单和回归测试基准
+
+**Testing Infrastructure**:
 - API endpoints available at http://localhost:8000/docs
 - Interactive testing via rag_query_interface.py
-- Performance benchmarks in scripts/tests/
+- Web interface testing at http://localhost:8000
+- Automated test execution via dedicated scripts
 
 ### Log Files
 - API logs: `logs/api.log`
@@ -350,9 +386,22 @@ result = qa_chain.invoke({"context": context, "question": question})
 ```
 
 ### Testing Protocol
+
+**Backend API Testing**:
 1. Run `baseline_test.py` for quick functionality check
 2. Run `comprehensive_verification.py` for full system validation
 3. Check specific features with archived tests in `scripts/tests/`
 4. Performance testing via dedicated scripts
+
+**Web Frontend Testing** ⭐ **[NEW v1.4.2]**:
+1. **Quick Verification** (15 minutes): Follow 回归测试清单 in WEB_FUNCTIONAL_TEST_GUIDE.md
+2. **Complete Testing** (60 minutes): Execute all test cases in the web guide
+3. **Cross-Platform Testing**: Test on different browsers and devices  
+4. **Performance Validation**: Verify response times meet web interface standards
+
+**Release Testing Protocol**:
+- Script tests must pass 100% before web testing
+- Web testing validates complete user experience  
+- Both testing layers required for production releases
 
 The system is designed for production use with comprehensive error handling, logging, monitoring capabilities, and full LangChain modernization (v1.3.8).

@@ -325,49 +325,8 @@
     </div>
 
     <script>
-        // WebSocket连接
-        let ws = null;
+        // HTTP API通信（WebSocket功能已移除）
         let messageId = 0;
-
-        // 初始化WebSocket连接
-        function initWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws`;
-            
-            ws = new WebSocket(wsUrl);
-            
-            ws.onopen = function(event) {
-                console.log('WebSocket连接已建立');
-            };
-            
-            ws.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                handleWebSocketMessage(data);
-            };
-            
-            ws.onclose = function(event) {
-                console.log('WebSocket连接已关闭');
-                // 尝试重连
-                setTimeout(initWebSocket, 3000);
-            };
-            
-            ws.onerror = function(error) {
-                console.error('WebSocket错误:', error);
-            };
-        }
-
-        // 处理WebSocket消息
-        function handleWebSocketMessage(data) {
-            hideTypingIndicator();
-            
-            if (data.type === 'analysis_result') {
-                addMessage('assistant', formatAnalysisResult(data.content), true);
-            } else if (data.type === 'error') {
-                addMessage('assistant', `❌ 分析出错：${data.message}`, false);
-            } else {
-                addMessage('assistant', data.content || data.answer, true);
-            }
-        }
 
         // 发送消息
         async function sendMessage() {
@@ -383,22 +342,8 @@
             // 显示打字指示器
             showTypingIndicator();
             
-            try {
-                // 如果WebSocket可用，使用WebSocket发送
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({
-                        type: 'query',
-                        message: message,
-                        id: ++messageId
-                    }));
-                } else {
-                    // 否则使用HTTP API
-                    await sendHttpMessage(message);
-                }
-            } catch (error) {
-                hideTypingIndicator();
-                addMessage('assistant', `❌ 发送失败：${error.message}`, false);
-            }
+            // 使用HTTP API发送消息
+            await sendHttpMessage(message);
         }
 
         // HTTP API发送消息
@@ -536,12 +481,7 @@
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 尝试初始化WebSocket，如果失败则只使用HTTP
-            try {
-                initWebSocket();
-            } catch (error) {
-                console.log('WebSocket不可用，将使用HTTP API');
-            }
+            console.log('智能股票分析系统已就绪，使用HTTP API通信');
         });
     </script>
 </body>

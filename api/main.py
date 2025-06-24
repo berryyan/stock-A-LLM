@@ -9,7 +9,7 @@ import os
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, Query, Request
+from fastapi import FastAPI, HTTPException, Depends, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -26,6 +26,12 @@ from database.mysql_connector import MySQLConnector
 from database.milvus_connector import MilvusConnector
 from config.settings import settings
 from utils.logger import setup_logger
+
+
+# 时间戳生成函数（替代lambda，解决OpenAPI序列化问题）
+def generate_timestamp() -> str:
+    """生成当前时间的ISO格式字符串"""
+    return datetime.now().isoformat()
 
 
 # 创建FastAPI应用
@@ -198,7 +204,7 @@ class QueryResponse(BaseModel):
         description="查询唯一标识符，用于追踪和调试"
     )
     timestamp: str = Field(
-        default_factory=lambda: datetime.now().isoformat(),
+        default_factory=generate_timestamp,
         description="响应时间戳 (ISO 8601格式)"
     )
 
@@ -216,24 +222,18 @@ class CompareRequest(BaseModel):
                 "aspect": "盈利能力",
                 "period": "2024Q1"
             },
-            "examples": {
-                "financial_comparison": {
-                    "summary": "财务能力对比",
-                    "value": {
-                        "companies": ["600519.SH", "000858.SZ"],
-                        "aspect": "盈利能力",
-                        "period": "2024Q1"
-                    }
+            "examples": [
+                {
+                    "companies": ["600519.SH", "000858.SZ"],
+                    "aspect": "盈利能力",
+                    "period": "2024Q1"
                 },
-                "growth_comparison": {
-                    "summary": "成长性对比",
-                    "value": {
-                        "companies": ["600519.SH", "002415.SZ", "000568.SZ"],
-                        "aspect": "成长能力",
-                        "period": "2024年"
-                    }
+                {
+                    "companies": ["600519.SH", "002415.SZ", "000568.SZ"],
+                    "aspect": "成长能力",
+                    "period": "2024年"
                 }
-            }
+            ]
         }
 
 
@@ -248,29 +248,20 @@ class FinancialAnalysisRequest(BaseModel):
                 "ts_code": "600519.SH",
                 "analysis_type": "financial_health"
             },
-            "examples": {
-                "financial_health": {
-                    "summary": "财务健康度评分",
-                    "value": {
-                        "ts_code": "600519.SH",
-                        "analysis_type": "financial_health"
-                    }
+            "examples": [
+                {
+                    "ts_code": "600519.SH",
+                    "analysis_type": "financial_health"
                 },
-                "dupont_analysis": {
-                    "summary": "杜邦分析",
-                    "value": {
-                        "ts_code": "000001.SZ",
-                        "analysis_type": "dupont_analysis"
-                    }
+                {
+                    "ts_code": "000001.SZ",
+                    "analysis_type": "dupont_analysis"
                 },
-                "cash_flow_quality": {
-                    "summary": "现金流质量分析",
-                    "value": {
-                        "ts_code": "000002.SZ",
-                        "analysis_type": "cash_flow_quality"
-                    }
+                {
+                    "ts_code": "000002.SZ",
+                    "analysis_type": "cash_flow_quality"
                 }
-            }
+            ]
         }
 
 
@@ -283,7 +274,7 @@ class FinancialAnalysisResponse(BaseModel):
     financial_data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     processing_time: Optional[float] = None
-    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
+    timestamp: str = Field(default_factory=generate_timestamp)
 
 
 class MoneyFlowAnalysisRequest(BaseModel):
@@ -297,29 +288,20 @@ class MoneyFlowAnalysisRequest(BaseModel):
                 "ts_code": "600519.SH",
                 "days": 30
             },
-            "examples": {
-                "recent_analysis": {
-                    "summary": "最近一个月资金流向",
-                    "value": {
-                        "ts_code": "600519.SH",
-                        "days": 30
-                    }
+            "examples": [
+                {
+                    "ts_code": "600519.SH",
+                    "days": 30
                 },
-                "short_term_analysis": {
-                    "summary": "短期资金流向",
-                    "value": {
-                        "ts_code": "000001.SZ",
-                        "days": 7
-                    }
+                {
+                    "ts_code": "000001.SZ",
+                    "days": 7
                 },
-                "quarterly_analysis": {
-                    "summary": "季度资金流向",
-                    "value": {
-                        "ts_code": "000002.SZ",
-                        "days": 90
-                    }
+                {
+                    "ts_code": "000002.SZ",
+                    "days": 90
                 }
-            }
+            ]
         }
 
 
@@ -332,7 +314,7 @@ class MoneyFlowAnalysisResponse(BaseModel):
     money_flow_data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     processing_time: Optional[float] = None
-    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
+    timestamp: str = Field(default_factory=generate_timestamp)
 
 
 class SystemStatus(BaseModel):
@@ -365,38 +347,8 @@ class SystemStatus(BaseModel):
     )
 
 
-# WebSocket连接管理器
-class ConnectionManager:
-    """WebSocket连接管理器"""
-    def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
-        self.user_sessions: Dict[str, Dict] = {}
-    
-    async def connect(self, websocket: WebSocket, client_id: str):
-        await websocket.accept()
-        self.active_connections[client_id] = websocket
-        self.user_sessions[client_id] = {
-            "connected_at": datetime.now(),
-            "query_count": 0
-        }
-        logger.info(f"客户端 {client_id} 已连接")
-    
-    def disconnect(self, client_id: str):
-        if client_id in self.active_connections:
-            del self.active_connections[client_id]
-            del self.user_sessions[client_id]
-            logger.info(f"客户端 {client_id} 已断开")
-    
-    async def send_personal_message(self, message: str, client_id: str):
-        if client_id in self.active_connections:
-            await self.active_connections[client_id].send_text(message)
-    
-    async def broadcast(self, message: str):
-        for connection in self.active_connections.values():
-            await connection.send_text(message)
-
-
-manager = ConnectionManager()
+# WebSocket功能已暂时移除，以解决OpenAPI文档生成问题
+# 后续开发时将重新添加WebSocket实时通信功能
 
 
 # 启动事件
@@ -964,114 +916,8 @@ async def get_recent_reports(days: int = 7, limit: int = 20):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# WebSocket路由
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket实时通信端点
-    
-    提供WebSocket实时双向通信，支持即时查询和结果推送。
-    主要用于网页版前端的实时交互。
-    
-    支持的消息类型：
-    - **query**: 执行智能查询
-      ```json
-      {
-          "type": "query",
-          "question": "贵州茅台最新股价"
-      }
-      ```
-    
-    - **ping**: 心跳检测
-      ```json
-      {"type": "ping"}
-      ```
-    
-    响应消息类型：
-    - **welcome**: 连接成功欢迎信息
-    - **processing**: 查询处理中提示
-    - **result**: 查询结果返回
-    - **error**: 错误信息返回
-    - **pong**: 心跳响应
-    
-    连接管理：
-    - 自动分配唯一客户端ID
-    - 支持多客户端并发连接
-    - 断线自动清理资源
-    """
-    client_id = str(uuid.uuid4())
-    await manager.connect(websocket, client_id)
-    
-    try:
-        # 发送欢迎消息
-        await manager.send_personal_message(
-            json.dumps({
-                "type": "welcome",
-                "message": "连接成功，可以开始查询",
-                "client_id": client_id
-            }),
-            client_id
-        )
-        
-        while True:
-            # 接收消息
-            data = await websocket.receive_text()
-            message = json.loads(data)
-            
-            # 处理不同类型的消息
-            if message.get("type") == "query":
-                # 执行查询
-                query_id = str(uuid.uuid4())
-                
-                # 发送处理中消息
-                await manager.send_personal_message(
-                    json.dumps({
-                        "type": "processing",
-                        "query_id": query_id,
-                        "message": "正在处理您的查询..."
-                    }),
-                    client_id
-                )
-                
-                # 执行查询
-                try:
-                    result = hybrid_agent.query(message.get("question", ""))
-                    
-                    # 发送结果
-                    await manager.send_personal_message(
-                        json.dumps({
-                            "type": "result",
-                            "query_id": query_id,
-                            "success": result.get("success", False),
-                            "answer": result.get("answer"),
-                            "query_type": result.get("query_type"),
-                            "sources": result.get("sources")
-                        }),
-                        client_id
-                    )
-                except Exception as e:
-                    # 发送错误消息
-                    await manager.send_personal_message(
-                        json.dumps({
-                            "type": "error",
-                            "query_id": query_id,
-                            "error": str(e)
-                        }),
-                        client_id
-                    )
-            
-            elif message.get("type") == "ping":
-                # 心跳响应
-                await manager.send_personal_message(
-                    json.dumps({"type": "pong"}),
-                    client_id
-                )
-            
-    except WebSocketDisconnect:
-        manager.disconnect(client_id)
-        logger.info(f"WebSocket客户端 {client_id} 断开连接")
-    except Exception as e:
-        logger.error(f"WebSocket错误: {e}")
-        manager.disconnect(client_id)
+# WebSocket端点已暂时移除，以解决OpenAPI文档生成问题
+# 后续开发时将重新添加WebSocket实时通信功能
 
 
 # 流式响应端点（用于大型查询）
