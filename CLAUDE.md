@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **Stock Analysis System (v1.4.2)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ All systems operational, Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析和网页前端开发完成, 智能日期解析系统v2.0已部署.
+**Current Status**: ✅ 系统全面修复完成，所有核心功能100%正常运行。Windows兼容性问题已解决，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，Bug修复验证100%通过。Phase 1 深度财务分析系统开发完成, 新增专业财务分析功能, 新增数据驱动的智能日期解析功能。
 
 ## Development Commands
 
@@ -60,6 +60,12 @@ python test_date_intelligence_v2.py  # v2.0 enhanced system
 
 # Test money flow analysis features (v1.4.2 new)
 python test_money_flow_simple.py
+
+# Bug fix verification tests (v1.4.1 fixes)
+python test_bug_fixes.py
+python test_money_flow_analysis.py
+python test_latest_trading_day_fix.py
+python test_comprehensive_final.py
 
 # Archived test scripts (in scripts/tests/)
 python scripts/tests/test_optimized_rag.py

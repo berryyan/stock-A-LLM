@@ -299,6 +299,13 @@ class FinancialAnalysisAgent:
             
             latest_data = financial_data[0]
             
+            # 增加额外的数据完整性检查
+            if latest_data is None:
+                return {
+                    'success': False,
+                    'error': f'股票 {ts_code} 的财务数据无效'
+                }
+            
             # 计算财务健康度评分
             health_score = self._calculate_health_score(latest_data)
             
@@ -513,18 +520,43 @@ class FinancialAnalysisAgent:
             return 'CCC'
     
     def _format_financial_data_for_llm(self, data: FinancialData) -> str:
-        """格式化财务数据用于LLM分析"""
+        """格式化财务数据用于LLM分析，增加None值检查"""
+        # 安全地格式化数值，处理None值
+        def safe_format_billions(value, default="N/A"):
+            if value is None:
+                return default
+            try:
+                return f"{value/100000000:.2f}亿元"
+            except (TypeError, ZeroDivisionError):
+                return default
+        
+        def safe_format_percent(value, default="N/A"):
+            if value is None:
+                return default
+            try:
+                return f"{value:.2f}%"
+            except (TypeError, ValueError):
+                return default
+        
+        def safe_format_ratio(value, default="N/A"):
+            if value is None:
+                return default
+            try:
+                return f"{value:.2f}"
+            except (TypeError, ValueError):
+                return default
+        
         return f"""
-        报告期: {data.end_date}
-        营业总收入: {data.total_revenue/100000000:.2f}亿元
-        净利润: {data.n_income_attr_p/100000000:.2f}亿元
-        总资产: {data.total_assets/100000000:.2f}亿元
-        总负债: {data.total_liab/100000000:.2f}亿元
-        股东权益: {data.total_hldr_eqy_inc_min_int/100000000:.2f}亿元
-        经营现金流: {data.n_cashflow_act/100000000:.2f}亿元
-        ROE: {data.roe:.2f}%
-        资产负债率: {data.debt_to_assets:.2f}%
-        流动比率: {data.current_ratio:.2f}
+        报告期: {data.end_date if data.end_date else "N/A"}
+        营业总收入: {safe_format_billions(data.total_revenue)}
+        净利润: {safe_format_billions(data.n_income_attr_p)}
+        总资产: {safe_format_billions(data.total_assets)}
+        总负债: {safe_format_billions(data.total_liab)}
+        股东权益: {safe_format_billions(data.total_hldr_eqy_inc_min_int)}
+        经营现金流: {safe_format_billions(data.n_cashflow_act)}
+        ROE: {safe_format_percent(data.roe)}
+        资产负债率: {safe_format_percent(data.debt_to_assets)}
+        流动比率: {safe_format_ratio(data.current_ratio)}
         """
     
     def _format_health_metrics(self, health_score: Dict) -> str:

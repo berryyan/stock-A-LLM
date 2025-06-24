@@ -295,16 +295,35 @@ class SQLAgent:
             用户问题：{processed_question}
             """
             
-            # 使用agent执行查询
-            result = self.agent.invoke({"input": contextualized_question})
-            
-            # 处理invoke返回的结果
-            if isinstance(result, dict) and 'output' in result:
-                # invoke返回字典格式，提取output
-                processed_result = self._postprocess_result(result['output'])
-            else:
-                # 直接处理结果
-                processed_result = self._postprocess_result(result)
+            # 使用agent执行查询，增加更好的错误处理
+            try:
+                result = self.agent.invoke({"input": contextualized_question})
+                
+                # 处理invoke返回的结果
+                if isinstance(result, dict) and 'output' in result:
+                    # invoke返回字典格式，提取output
+                    output = result['output']
+                else:
+                    # 直接处理结果
+                    output = result
+                
+                # 检查是否为解析错误（通常包含raw SQL）
+                if isinstance(output, str) and "Could not parse LLM output" in output:
+                    self.logger.warning("LLM输出解析失败，尝试提取有用信息")
+                    # 尝试从错误消息中提取SQL结果
+                    if "Final Answer:" in output:
+                        # 提取Final Answer后的内容
+                        final_answer_start = output.find("Final Answer:") + len("Final Answer:")
+                        processed_result = output[final_answer_start:].strip()
+                    else:
+                        # 如果无法解析，返回友好的错误信息
+                        processed_result = "查询处理过程中遇到格式问题，请尝试重新表述您的问题或使用更具体的查询条件。"
+                else:
+                    processed_result = self._postprocess_result(output)
+                    
+            except Exception as invoke_error:
+                self.logger.error(f"Agent invoke执行失败: {invoke_error}")
+                processed_result = f"查询执行失败: {str(invoke_error)}"
             
             # 转换为字符串
             if isinstance(processed_result, dict):
