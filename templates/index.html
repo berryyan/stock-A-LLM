@@ -408,7 +408,24 @@
             } else if (data.type === 'analysis_result') {
                 // 收到最终结果，隐藏打字指示器并显示结果
                 hideTypingIndicator();
-                addMessage('assistant', formatAnalysisResult(data.content), true);
+                
+                // 检查content是否包含错误
+                if (data.content && typeof data.content === 'object') {
+                    if (data.content.success === false && data.content.error) {
+                        // 显示错误信息
+                        addMessage('assistant', `❌ ${data.content.error}`, false);
+                    } else if (data.content.answer || data.content.content) {
+                        // 正常显示结果
+                        addMessage('assistant', formatAnalysisResult(data.content), true);
+                    } else {
+                        // 其他情况
+                        addMessage('assistant', formatAnalysisResult(data.content), true);
+                    }
+                } else {
+                    // content不是对象，直接格式化
+                    addMessage('assistant', formatAnalysisResult(data.content), true);
+                }
+                
                 // 重置查询状态
                 isQuerying = false;
                 updateUIState();
