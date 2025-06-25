@@ -83,7 +83,7 @@ class FinancialAnalysisAgent:
             'growth': ['成长性', '增长率', '营收增长', '利润增长', '发展速度'],
             'cash_flow': ['现金流', '现金流量', '经营现金流', '现金质量'],
             'dupont': ['杜邦分析', 'ROE分解', '杜邦', '盈利能力分解'],
-            'comparison': ['对比', '比较', '同行', '行业对比', '历史对比']
+            'comparison': ['对比', '比较', '同行', '行业对比', '历史对比', '多期', '财务变化', '财务对比']
         }
         
         self.logger.info("Financial Analysis Agent初始化完成")
@@ -118,6 +118,7 @@ class FinancialAnalysisAgent:
 - 重要数据和结论用**加粗**标注
 - 涉及风险的地方要明确提示
 - 建议要具体可行
+- 如果需要注明报告日期，请使用当前日期
 
 财务分析报告："""
         )
@@ -1395,7 +1396,7 @@ class FinancialAnalysisAgent:
             # 多期对比分析
             self.logger.info(f"正在进行多期对比分析...")
             comparison_analysis = self._perform_multi_period_analysis(financial_data)
-            self.logger.info(f"对比分析完成，包含{len(comparison_analysis['periods'])}期数据")
+            self.logger.info(f"对比分析完成，包含{comparison_analysis['period_count']}期数据")
             
             # 使用LLM生成详细分析
             self.logger.info(f"正在生成多期对比分析报告...")
