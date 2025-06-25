@@ -23,6 +23,7 @@ from langchain_openai import ChatOpenAI
 from database.mysql_connector import MySQLConnector
 from config.settings import settings
 from utils.logger import setup_logger
+from utils.stock_code_mapper import convert_to_ts_code
 
 
 @dataclass
@@ -150,10 +151,12 @@ class FinancialAnalysisAgent:
             final_ts_code = ts_code or extracted_ts_code
             
             if not final_ts_code:
+                self.logger.warning(f"无法从查询中提取股票代码: {question}")
                 return {
                     'success': False,
-                    'error': '请指定要分析的股票代码',
-                    'type': 'financial_query'
+                    'error': f'无法识别股票代码或公司名称。请使用正确的股票代码（如002047、600519.SH）或公司名称（如贵州茅台、国轩高科）',
+                    'type': 'financial_query',
+                    'message': '提示：请确保输入正确的股票代码或公司名称'
                 }
             
             # 根据意图路由到相应的分析功能
@@ -183,15 +186,30 @@ class FinancialAnalysisAgent:
     
     def _parse_query_intent(self, question: str) -> Tuple[str, Optional[str]]:
         """解析查询意图和股票代码"""
-        # 提取股票代码（简单实现）
         import re
+        
+        # 1. 首先尝试提取完整的ts_code格式 (如 600519.SH)
         ts_code_pattern = r'(\d{6}\.[A-Z]{2})'
         ts_codes = re.findall(ts_code_pattern, question)
-        extracted_ts_code = ts_codes[0] if ts_codes else None
+        if ts_codes:
+            extracted_ts_code = ts_codes[0]
+            self.logger.info(f"从查询中提取到ts_code: {extracted_ts_code}")
+        else:
+            extracted_ts_code = None
         
-        # 如果没有找到TS代码，尝试通过股票名称查找
+        # 2. 如果没有找到完整格式，尝试提取纯数字股票代码 (如 002047)
         if not extracted_ts_code:
-            extracted_ts_code = self._find_ts_code_by_name(question)
+            number_pattern = r'(?:^|\s)(\d{6})(?:\s|$|[^\d])'
+            numbers = re.findall(number_pattern, question)
+            if numbers:
+                # 使用股票代码映射器转换
+                extracted_ts_code = convert_to_ts_code(numbers[0])
+                self.logger.info(f"从查询中提取到股票代码 {numbers[0]}，转换为: {extracted_ts_code}")
+        
+        # 3. 如果还没有找到，尝试通过股票名称查找
+        if not extracted_ts_code:
+            # 使用更智能的名称提取逻辑
+            extracted_ts_code = self._extract_stock_by_name(question)
         
         # 匹配查询意图
         intent = 'comprehensive'  # 默认意图
@@ -202,26 +220,51 @@ class FinancialAnalysisAgent:
         
         return intent, extracted_ts_code
     
-    def _find_ts_code_by_name(self, question: str) -> Optional[str]:
+    def _extract_stock_by_name(self, question: str) -> Optional[str]:
         """通过股票名称查找TS代码"""
         try:
-            # 常见股票名称映射
-            name_mappings = {
-                '茅台': '600519.SH', '贵州茅台': '600519.SH',
-                '平安': '000001.SZ', '平安银行': '000001.SZ',
-                '万科': '000002.SZ', '万科A': '000002.SZ',
-                '五粮液': '000858.SZ',
-                '招商银行': '600036.SH',
-                '中国平安': '601318.SH'
-            }
+            # 常见的股票名称模式
+            # 1. 先尝试提取可能的公司名称（2-6个中文字符）
+            import re
+            name_patterns = [
+                r'([一-龥]{2,6}(?:股份|集团|银行|科技|电子|医药|能源|地产|证券|保险|汽车|新材料|新能源))',
+                r'([一-龥]{2,6}[A-Z]?(?=的|财务|分析|怎么样|如何))',  # 如 "万科A的财务"
+                r'分析([一-龥]{2,6})的',  # 如 "分析茅台的"
+                r'([一-龥]{2,4})(?:股价|财务|业绩|年报|公告)'  # 如 "茅台股价"
+            ]
             
-            for name, ts_code in name_mappings.items():
-                if name in question:
+            potential_names = []
+            for pattern in name_patterns:
+                matches = re.findall(pattern, question)
+                potential_names.extend(matches)
+            
+            # 去重并尝试转换
+            seen = set()
+            for name in potential_names:
+                if name not in seen:
+                    seen.add(name)
+                    ts_code = convert_to_ts_code(name)
+                    if ts_code:
+                        self.logger.info(f"从查询中提取到股票名称 '{name}'，转换为: {ts_code}")
+                        return ts_code
+            
+            # 如果没有找到，尝试整个问题作为输入
+            # 去除一些常见的查询词
+            clean_question = question
+            for word in ['分析', '查询', '的', '财务', '健康度', '状况', '怎么样', '如何']:
+                clean_question = clean_question.replace(word, ' ')
+            
+            # 提取剩余的主要词汇
+            words = [w.strip() for w in clean_question.split() if len(w.strip()) >= 2]
+            for word in words:
+                ts_code = convert_to_ts_code(word)
+                if ts_code:
+                    self.logger.info(f"从查询词 '{word}' 转换为: {ts_code}")
                     return ts_code
             
             return None
         except Exception as e:
-            self.logger.warning(f"股票名称查找失败: {e}")
+            self.logger.warning(f"股票名称提取失败: {e}")
             return None
     
     def get_financial_data(self, ts_code: str, periods: int = 4) -> List[FinancialData]:
@@ -289,14 +332,20 @@ class FinancialAnalysisAgent:
     def analyze_financial_health(self, ts_code: str) -> Dict[str, Any]:
         """财务健康度分析"""
         try:
+            self.logger.info(f"开始分析 {ts_code} 的财务健康度")
+            
+            # 获取财务数据
+            self.logger.info(f"正在获取 {ts_code} 的财务数据...")
             financial_data = self.get_financial_data(ts_code, periods=4)
             
             if not financial_data:
+                self.logger.warning(f"未找到股票 {ts_code} 的财务数据")
                 return {
                     'success': False,
-                    'error': f'未找到股票 {ts_code} 的财务数据'
+                    'error': f'未找到股票 {ts_code} 的财务数据。请确认股票代码是否正确。'
                 }
             
+            self.logger.info(f"成功获取 {len(financial_data)} 期财务数据")
             latest_data = financial_data[0]
             
             # 增加额外的数据完整性检查
@@ -307,7 +356,9 @@ class FinancialAnalysisAgent:
                 }
             
             # 计算财务健康度评分
+            self.logger.info(f"正在计算财务健康度评分...")
             health_score = self._calculate_health_score(latest_data)
+            self.logger.info(f"财务健康度评分: {health_score['total_score']} ({health_score['rating']})")
             
             # 生成分析报告
             analysis_data = {
@@ -318,12 +369,15 @@ class FinancialAnalysisAgent:
             }
             
             # 使用LLM生成详细分析
+            self.logger.info(f"正在生成LLM分析报告...")
             analysis_report = self.analysis_chain.invoke({
                 'analysis_type': '财务健康度分析',
                 'financial_data': self._format_financial_data_for_llm(latest_data),
                 'metrics': self._format_health_metrics(health_score),
                 'insights': self._generate_health_insights(health_score, latest_data)
             })
+            
+            self.logger.info(f"财务健康度分析完成: {ts_code}")
             
             return {
                 'success': True,
