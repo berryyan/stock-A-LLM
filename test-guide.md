@@ -163,7 +163,31 @@ curl -X POST http://localhost:8000/api/query \
 # - 完整证券代码：600519.SH、002074.SZ、301120.SZ
 ```
 
-#### 3. 破坏性测试用例（应返回错误）
+#### 3. 多期财务对比分析测试 (v1.4.3新增)
+```bash
+# 测试基础功能
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "分析贵州茅台的多期财务对比",
+    "query_type": "financial"
+  }'
+
+# 支持的查询方式：
+# - "分析XX的多期财务对比"
+# - "XX的财务对比分析"
+# - "XX最近几期的财务变化"
+# - "比较XX不同时期的财务数据"
+
+# 预期返回内容：
+# - 同比增长率（营收、净利润、现金流、总资产、ROE）
+# - 环比增长率（各项指标的季度环比）
+# - 趋势分析（上升/下降/平稳/波动）
+# - 波动性分析（稳定性评级）
+# - 8期财务数据的综合分析报告
+```
+
+#### 4. 破坏性测试用例（应返回错误）
 ```bash
 # 5位数字（应提示"股票代码格式不正确，请输入6位数字"）
 curl -X POST http://localhost:8000/api/query \
@@ -198,10 +222,14 @@ curl -X POST http://localhost:8000/api/query \
   }'
 ```
 
-#### 4. 完整测试脚本
+#### 5. 完整测试脚本
 ```bash
 # 运行完整的财务分析测试（包含正常和破坏性测试）
-source venv/bin/activate && python test_financial_fix.py
+source venv/bin/activate && python test_financial_agent.py
+source venv/bin/activate && python test_advanced_financial_features.py
+
+# 详细的多期对比测试用例参见：
+# docs/test_cases_financial_comparison.md
 ```
 
 ### 六、股票代码映射器测试 (v1.4.3新增)
