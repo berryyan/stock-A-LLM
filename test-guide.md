@@ -368,6 +368,105 @@ python scripts/monitoring/system_monitor.py
 http://localhost:8080/monitoring
 ```
 
+## 系统功能测试优先级 (2025-06-26更新 - v3.1 React前端驱动策略)
+
+### Phase 1: React MVP + 核心功能测试（第1周）
+
+#### Day 1-3: React基础框架搭建
+**开发任务清单**：
+```typescript
+// 必须完成的组件
+- ChatInterface.tsx      // 主聊天界面
+- MessageList.tsx        // 消息列表
+- InputBox.tsx          // 多行输入框
+- SimpleMarkdownRenderer.tsx // 基础Markdown渲染
+- api.ts                // API调用封装
+```
+
+**验证要点**：
+- [ ] 能发送消息到后端API
+- [ ] 能正确显示返回结果
+- [ ] Markdown基础格式正确渲染
+- [ ] 错误处理机制完善
+
+#### Day 4: SQL查询功能测试
+**测试用例**：
+```javascript
+// 使用React界面测试
+const sqlTestQueries = [
+  "贵州茅台最新股价",
+  "A股市值排名前10",
+  "今日涨幅最大的10只股票",
+  "平安银行最近5日股价"
+];
+```
+
+#### Day 5: RAG和财务分析测试
+**测试用例**：
+```javascript
+const ragFinancialQueries = [
+  "贵州茅台最新公告",
+  "分析茅台的财务健康度",
+  "平安银行杜邦分析",
+  "万科现金流质量分析",
+  "比较茅台不同时期的财务数据"
+];
+```
+
+#### Day 6: 资金流向和混合查询测试
+**测试用例**：
+```javascript
+const moneyFlowQueries = [
+  "茅台最近30天资金流向",
+  "对比茅台和五粮液资金流向",
+  "分析茅台的投资价值"  // 混合查询
+];
+```
+
+#### Day 7: 问题汇总和修复
+**问题分类模板**：
+- 🔴 P0: 阻塞性问题（功能无法使用）
+- 🟡 P1: 功能性问题（结果不正确）
+- 🟢 P2: 体验性问题（可优化）
+
+### 测试环境快速启动
+
+#### 后端API启动
+```bash
+# Windows环境
+venv\Scripts\activate
+python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### React前端启动
+```bash
+cd stock-analysis-frontend
+npm install  # 首次运行
+npm run dev  # 启动开发服务器
+```
+
+### React测试重点关注
+
+1. **API通信测试**
+   - 请求发送是否正确
+   - 响应处理是否完整
+   - 错误状态码处理
+
+2. **数据展示测试**
+   - 表格数据格式化
+   - 长文本换行显示
+   - Markdown渲染效果
+
+3. **交互体验测试**
+   - Loading状态显示
+   - 错误提示友好性
+   - 输入框自适应高度
+
+4. **性能表现测试**
+   - 大数据量渲染
+   - 连续查询响应
+   - 内存使用情况
+
 ---
 
 **注意事项**：
@@ -375,3 +474,4 @@ http://localhost:8080/monitoring
 2. 首次测试可能需要加载模型，耗时较长
 3. 建议在非生产环境进行压力测试
 4. 保留测试日志用于问题排查
+5. 测试过程中发现的问题应立即记录到开发任务中

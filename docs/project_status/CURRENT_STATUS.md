@@ -504,10 +504,57 @@ Stock Analysis System 是一个基于 LangChain 框架的智能股票分析系�
 - v1.4.2 (2025-06-24): Windows兼容性修复，系统全面恢复
 - v1.4.3 (2025-06-25): RAG深度优化，WebSocket功能恢复，股票代码映射器上线
 
+## 开发任务优先级 (2025-06-26更新 - v3.1 React前端驱动策略)
+
+### Phase 1: React MVP + 核心功能测试（第1周）
+#### Day 1-3: React基础框架搭建 🚀
+- [ ] 项目初始化（React + TypeScript + Vite）
+- [ ] 基础组件开发
+  - [ ] ChatInterface.tsx - 主聊天界面
+  - [ ] MessageList.tsx - 消息列表
+  - [ ] InputBox.tsx - 多行输入框
+  - [ ] SimpleMarkdownRenderer.tsx - 基础Markdown
+- [ ] API服务集成（http://localhost:8000）
+- [ ] 基础样式（仿Claude.ai）
+
+#### Day 4-7: 使用React界面测试所有功能 🧪
+- [ ] Day 4: SQL查询功能测试
+- [ ] Day 5: RAG和财务分析测试
+- [ ] Day 6: 资金流向和混合查询测试
+- [ ] Day 7: 问题汇总和修复
+
+### Phase 2: 高优先级后端优化（第2-3周）
+#### Week 2: 数据库Schema中文映射系统 ❌
+- [ ] 创建映射配置文件 `config/db_schema_mapping.py`
+- [ ] 实现缓存管理器 `utils/schema_cache_manager.py`
+- [ ] 集成到Hybrid Agent
+- [ ] 预期：减少50%数据库查询，提升路由准确率
+
+#### Week 3: RAG查询智能降级机制 ❌
+- [ ] 创建降级处理器 `rag/fallback_handler.py`
+- [ ] 实现4级降级策略
+- [ ] 失败日志分析系统
+
+### Phase 3: 前端增强 + 技术分析（第4-6周）
+#### Week 4: React前端完善 🎨
+- [ ] 升级到完整MarkdownRenderer
+- [ ] 添加数据可视化组件
+- [ ] 实现文档查看区
+- [ ] 性能优化
+
+#### Week 5-6: Phase 2技术分析系统 📊
+- [ ] Week 5: 技术指标计算模块
+- [ ] Week 6: TechnicalAnalysisAgent开发
+
+### Git版本管理待执行
+- [ ] 创建v1.4.3-stable标签
+- [ ] 合并到main分支
+- [ ] 创建dev-react-frontend-v2分支
+
 ---
 
 **项目维护者**: AI Development Team  
-**最后更新**: 2025-06-25 09:30  
+**最后更新**: 2025-06-26  
 **下一次评审**: 2025-06-28  
 
 ## 联系方式

@@ -482,4 +482,37 @@ ts_code = convert_to_ts_code("诺德股份")        # Returns: "600110.SH"
 - Web testing validates complete user experience  
 - Both testing layers required for production releases
 
+## Next Development Priority (v3.1 - React前端驱动策略)
+
+### Phase 1: React MVP + 核心功能测试（第1周）
+- **Day 1-3**: React基础框架搭建
+  - 项目初始化（React + TypeScript + Vite）
+  - 基础组件开发（ChatInterface, MessageList, InputBox, SimpleMarkdownRenderer）
+  - API集成（复用现有调用逻辑）
+- **Day 4-7**: 使用新React界面进行完整测试
+  - SQL查询、RAG查询、财务分析、资金流向测试
+  - 问题记录和即时修复
+
+### Phase 2: 高优先级后端优化（第2-3周）
+- **Week 2**: 数据库Schema中文映射系统
+  - 建立表结构缓存机制
+  - 创建字段中文含义映射
+  - 减少50%数据库查询，提升路由准确率
+- **Week 3**: RAG查询智能降级机制
+  - 多级降级策略
+  - 失败模式记录
+
+### Phase 3: 前端增强 + 技术分析（第4-6周）
+- **Week 4**: React前端完善（完整MarkdownRenderer、数据可视化）
+- **Week 5-6**: Phase 2技术分析系统
+
+### Git版本管理
+```bash
+# 当前: dev-phase2-technical-analysis
+# 目标: main → dev-react-frontend-v2
+git tag -a v1.4.3-stable -m "稳定版本"
+git checkout main && git merge dev-phase2-technical-analysis
+git checkout -b dev-react-frontend-v2
+```
+
 The system is designed for production use with comprehensive error handling, logging, monitoring capabilities, and full LangChain modernization (v1.3.8).
