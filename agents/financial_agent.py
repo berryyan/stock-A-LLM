@@ -150,13 +150,25 @@ class FinancialAnalysisAgent:
             intent, extracted_ts_code = self._parse_query_intent(question)
             final_ts_code = ts_code or extracted_ts_code
             
-            if not final_ts_code:
+            # 处理特殊错误码
+            if final_ts_code == 'INVALID_FORMAT':
+                return {
+                    'success': False,
+                    'error': '证券代码格式不正确，后缀应为.SZ/.SH/.BJ',
+                    'type': 'financial_query'
+                }
+            elif final_ts_code == 'INVALID_LENGTH':
+                return {
+                    'success': False,
+                    'error': '股票代码格式不正确，请输入6位数字',
+                    'type': 'financial_query'
+                }
+            elif not final_ts_code:
                 self.logger.warning(f"无法从查询中提取股票代码: {question}")
                 return {
                     'success': False,
-                    'error': f'无法识别股票代码或公司名称。请使用正确的股票代码（如002047、600519.SH）或公司名称（如贵州茅台、国轩高科）',
-                    'type': 'financial_query',
-                    'message': '提示：请确保输入正确的股票代码或公司名称'
+                    'error': '无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）',
+                    'type': 'financial_query'
                 }
             
             # 根据意图路由到相应的分析功能
@@ -189,22 +201,45 @@ class FinancialAnalysisAgent:
         import re
         
         # 1. 首先尝试提取完整的ts_code格式 (如 600519.SH)
-        ts_code_pattern = r'(\d{6}\.[A-Z]{2})'
+        ts_code_pattern = r'(\d{6}\.(SZ|SH|BJ))'
         ts_codes = re.findall(ts_code_pattern, question)
         if ts_codes:
-            extracted_ts_code = ts_codes[0]
+            extracted_ts_code = ts_codes[0][0] + '.' + ts_codes[0][1]  # 重组匹配结果
             self.logger.info(f"从查询中提取到ts_code: {extracted_ts_code}")
+            # 验证ts_code格式
+            if not self._validate_ts_code(extracted_ts_code):
+                self.logger.warning(f"证券代码格式不正确: {extracted_ts_code}")
+                # 先确定intent再返回
+                intent = 'comprehensive'
+                for pattern_type, patterns in self.query_patterns.items():
+                    if any(pattern in question for pattern in patterns):
+                        intent = pattern_type
+                        break
+                return intent, 'INVALID_FORMAT'
         else:
             extracted_ts_code = None
         
-        # 2. 如果没有找到完整格式，尝试提取纯数字股票代码 (如 002047)
+        # 2. 如果没有找到完整格式，尝试提取纯数字股票代码
         if not extracted_ts_code:
-            number_pattern = r'(?:^|\s)(\d{6})(?:\s|$|[^\d])'
+            # 更严格的数字提取，避免提取到其他数字
+            number_pattern = r'(?:^|[\s\u4e00-\u9fa5])(\d+)(?:[\s\u4e00-\u9fa5]|$)'
             numbers = re.findall(number_pattern, question)
-            if numbers:
-                # 使用股票代码映射器转换
-                extracted_ts_code = convert_to_ts_code(numbers[0])
-                self.logger.info(f"从查询中提取到股票代码 {numbers[0]}，转换为: {extracted_ts_code}")
+            for number in numbers:
+                if len(number) == 6:  # 只接受6位数字
+                    # 使用股票代码映射器转换
+                    extracted_ts_code = convert_to_ts_code(number)
+                    if extracted_ts_code:
+                        self.logger.info(f"从查询中提取到股票代码 {number}，转换为: {extracted_ts_code}")
+                        break
+                elif len(number) != 6 and len(number) >= 3:  # 可能是错误的股票代码
+                    self.logger.warning(f"股票代码长度不正确: {number} (应为6位)")
+                    # 先确定intent再返回
+                    intent = 'comprehensive'
+                    for pattern_type, patterns in self.query_patterns.items():
+                        if any(pattern in question for pattern in patterns):
+                            intent = pattern_type
+                            break
+                    return intent, 'INVALID_LENGTH'
         
         # 3. 如果还没有找到，尝试通过股票名称查找
         if not extracted_ts_code:
@@ -219,6 +254,13 @@ class FinancialAnalysisAgent:
                 break
         
         return intent, extracted_ts_code
+    
+    def _validate_ts_code(self, ts_code: str) -> bool:
+        """验证证券代码格式是否正确"""
+        import re
+        # 验证格式：6位数字.SZ/SH/BJ
+        pattern = r'^\d{6}\.(SZ|SH|BJ)$'
+        return bool(re.match(pattern, ts_code))
     
     def _extract_stock_by_name(self, question: str) -> Optional[str]:
         """通过股票名称查找TS代码"""
@@ -257,10 +299,17 @@ class FinancialAnalysisAgent:
             # 提取剩余的主要词汇
             words = [w.strip() for w in clean_question.split() if len(w.strip()) >= 2]
             for word in words:
+                # 跳过纯数字，因为已经在前面处理过了
+                if word.isdigit():
+                    continue
                 ts_code = convert_to_ts_code(word)
                 if ts_code:
                     self.logger.info(f"从查询词 '{word}' 转换为: {ts_code}")
                     return ts_code
+            
+            # 如果尝试了但没找到，记录尝试的名称
+            if words:
+                self.logger.warning(f"未找到股票名称匹配: {', '.join(words)}")
             
             return None
         except Exception as e:

@@ -5,10 +5,10 @@
 ### 1. 环境激活
 ```bash
 # Windows
-stock_analysis_env\Scripts\activate
+venv\Scripts\activate
 
 # Linux/Mac
-source stock_analysis_env/bin/activate
+source venv/bin/activate
 ```
 
 ### 2. 确认服务状态
@@ -120,7 +120,72 @@ curl -X POST http://localhost:8000/api/query \
   }'
 ```
 
-### 五、股票代码映射器测试 (v1.4.3新增)
+### 五、财务分析功能测试 (v1.4.0+)
+
+#### 1. 基础财务健康度分析
+```bash
+# 激活虚拟环境后运行
+source venv/bin/activate && python test_financial_agent.py
+```
+
+#### 2. 正常测试用例
+```bash
+# 使用API测试
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "分析贵州茅台的财务健康度",
+    "query_type": "financial"
+  }'
+
+# 支持的输入格式：
+# - 公司名称：贵州茅台、国轩高科、药明康德
+# - 6位股票代码：002047、301120
+# - 完整证券代码：600519.SH、002074.SZ、301120.SZ
+```
+
+#### 3. 破坏性测试用例（应返回错误）
+```bash
+# 5位数字（应提示"股票代码格式不正确，请输入6位数字"）
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "分析02359的财务健康度",
+    "query_type": "financial"
+  }'
+
+# 错误的后缀（应提示"证券代码格式不正确，后缀应为.SZ/.SH/.BJ"）
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "分析000000.SX的财务健康度",
+    "query_type": "financial"
+  }'
+
+# 无效输入（应提示"无法识别输入内容"）
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "分析就不告诉你的财务健康度",
+    "query_type": "financial"
+  }'
+
+# 不存在的股票（应提示"未找到财务数据"）
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "分析999999.BJ的财务健康度",
+    "query_type": "financial"
+  }'
+```
+
+#### 4. 完整测试脚本
+```bash
+# 运行完整的财务分析测试（包含正常和破坏性测试）
+source venv/bin/activate && python test_financial_fix.py
+```
+
+### 六、股票代码映射器测试 (v1.4.3新增)
 
 #### 1. 测试映射器基础功能
 ```bash
