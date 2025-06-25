@@ -26,6 +26,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 from config.settings import settings
 from utils.logger import setup_logger
+from utils.stock_code_mapper import convert_to_ts_code
 
 
 class QueryType(str, Enum):
@@ -785,55 +786,15 @@ class HybridAgent:
     
     def _convert_entity_to_stock_code(self, entity: str) -> Optional[str]:
         """将实体（公司名称或代码）转换为标准股票代码"""
-        if not entity:
-            return None
+        # 使用新的股票代码映射器
+        result = convert_to_ts_code(entity)
         
-        # 如果已经是股票代码格式，直接返回
-        if re.match(r'^\d{6}\.[SH|SZ]{2}$', entity):
+        # 如果映射失败，记录日志并返回原始实体
+        if not result:
+            self.logger.warning(f"无法转换实体到ts_code: {entity}，保留原始值")
             return entity
-        
-        # 扩展公司名称映射
-        company_mapping = {
-            '茅台': '600519.SH',
-            '贵州茅台': '600519.SH',
-            '五粮液': '000858.SZ',
-            '宁德时代': '300750.SZ',
-            '比亚迪': '002594.SZ',
-            '招商银行': '600036.SH',
-            '平安银行': '000001.SZ',
-            '万科A': '000002.SZ',
-            '万科': '000002.SZ',
-            '中国平安': '601318.SH',
-            '工商银行': '601398.SH',
-            '建设银行': '601939.SH',
-            '农业银行': '601288.SH',
-            '中国银行': '601988.SH',
-            '中石油': '601857.SH',
-            '中石化': '600028.SH',
-            '腾讯控股': '700.HK',  # 港股，但保留映射
-            '阿里巴巴': '9988.HK',   # 港股，但保留映射
-            # 新增常见股票映射
-            '诺德股份': '600110.SH',
-            '诺德新材料股份有限公司': '600110.SH',
-            '诺德新材料': '600110.SH',
-            '同花顺': '300033.SZ',
-            '秦川机床': '000837.SZ',
-            '中油资本': '000617.SZ',
-            '美的集团': '000333.SZ',
-            '同方股份': '600100.SH'
-        }
-        
-        # 精确匹配
-        if entity in company_mapping:
-            return company_mapping[entity]
-        
-        # 模糊匹配（包含关系）
-        for name, code in company_mapping.items():
-            if name in entity or entity in name:
-                return code
-        
-        # 如果没有匹配到，返回原始实体（可能是其他股票代码）
-        return entity
+            
+        return result
     
     def _extract_time_range(self, question: str) -> Optional[str]:
         """提取时间范围"""
