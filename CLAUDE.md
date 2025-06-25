@@ -74,6 +74,9 @@ source venv/bin/activate && python test_date_intelligence_v2.py  # v2.0 enhanced
 # Test money flow analysis features (v1.4.2 new)
 source venv/bin/activate && python test_money_flow_simple.py
 
+# Test stock code mapper (v1.4.3 new)
+source venv/bin/activate && python utils/stock_code_mapper.py
+
 # Bug fix verification tests (v1.4.1 fixes)
 source venv/bin/activate && python test_bug_fixes.py
 source venv/bin/activate && python test_money_flow_analysis.py
@@ -156,6 +159,12 @@ python scripts/debugging/test_cninfo_pdf.py
 - Text extraction and chunking with BGE-M3 embeddings
 - Intelligent content filtering and metadata extraction
 
+**Stock Code Mapping** (`utils/stock_code_mapper.py`) - *[v1.4.3 NEW]*:
+- Dynamic mapping from company names/symbols to ts_code format
+- Cache-based architecture with 60-minute TTL
+- Thread-safe singleton pattern for global access
+- Supports 21,000+ stock mappings from tu_stock_basic table
+
 ### Data Flow
 
 1. **Query Processing**: User queries are received by the API layer
@@ -226,6 +235,20 @@ The system supports six main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v1.4.3 - RAG系统优化与股票代码映射器实现 (2025-06-25)
+
+**RAG查询系统修复** ✅:
+- **QueryType枚举修复**: 解决SQL_FIRST/RAG_FIRST等路由混乱问题
+- **RAG容错机制**: 过滤条件无结果时自动降级到无过滤搜索
+- **路由调试增强**: 添加详细的路由决策日志追踪
+
+**股票代码映射器（新增）** ✅:
+- **缓存+数据库架构**: 基于tu_stock_basic表的动态查询
+- **统一映射标准**: 股票名称/代码→ts_code格式
+- **高性能设计**: 60分钟TTL缓存 + LRU二级缓存
+- **智能处理**: 自动去除公司后缀，支持常见简称
+- **线程安全**: 单例模式确保全局唯一实例
 
 #### v1.4.2-final - 系统全面修复 + Phase 2功能验证完成 (2025-06-24)
 
@@ -403,6 +426,15 @@ The system supports six main query types:
 # Example: Modern LangChain pattern in agents
 qa_chain = qa_prompt | self.llm | StrOutputParser()
 result = qa_chain.invoke({"context": context, "question": question})
+
+# Example: Using stock code mapper (v1.4.3)
+from utils.stock_code_mapper import convert_to_ts_code
+
+# Convert various formats to ts_code
+ts_code = convert_to_ts_code("茅台")           # Returns: "600519.SH"
+ts_code = convert_to_ts_code("600519")         # Returns: "600519.SH"
+ts_code = convert_to_ts_code("贵州茅台")        # Returns: "600519.SH"
+ts_code = convert_to_ts_code("诺德股份")        # Returns: "600110.SH"
 ```
 
 ### Testing Protocol

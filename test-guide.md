@@ -120,7 +120,35 @@ curl -X POST http://localhost:8000/api/query \
   }'
 ```
 
-### 五、文档处理功能测试
+### 五、股票代码映射器测试 (v1.4.3新增)
+
+#### 1. 测试映射器基础功能
+```bash
+# 运行映射器测试
+source venv/bin/activate && python utils/stock_code_mapper.py
+```
+
+预期输出：
+```
+股票代码映射测试:
+600519               -> 600519.SH
+贵州茅台             -> 600519.SH
+茅台                 -> 600519.SH
+诺德股份             -> 600110.SH
+```
+
+#### 2. 测试API中的映射功能
+```bash
+# 测试使用公司名称的RAG查询
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "分析诺德股份的2024年年报",
+    "query_type": "rag"
+  }'
+```
+
+### 六、文档处理功能测试
 
 #### 1. 测试PDF下载功能
 ```bash
