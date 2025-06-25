@@ -91,9 +91,10 @@ class FinancialAnalysisAgent:
     def _create_analysis_chain(self):
         """创建财务分析链"""
         analysis_prompt = PromptTemplate(
-            input_variables=["analysis_type", "financial_data", "metrics", "insights"],
+            input_variables=["stock_info", "analysis_type", "financial_data", "metrics", "insights"],
             template="""你是一位资深的财务分析师，请基于提供的财务数据进行专业分析。
 
+股票信息：{stock_info}
 分析类型：{analysis_type}
 
 财务数据：
@@ -112,6 +113,7 @@ class FinancialAnalysisAgent:
 4. **投资建议** (基于分析结果的建议)
 
 注意：
+- 在分析开头标明股票名称和代码，方便阅读和分享
 - 分析要客观专业，避免过度乐观或悲观
 - 重要数据和结论用**加粗**标注
 - 涉及风险的地方要明确提示
@@ -273,6 +275,18 @@ class FinancialAnalysisAgent:
         pattern = r'^\d{6}\.(SZ|SH|BJ)$'
         return bool(re.match(pattern, ts_code))
     
+    def _get_stock_name(self, ts_code: str) -> str:
+        """根据ts_code获取股票名称"""
+        try:
+            # 使用stock_code_mapper的缓存机制
+            from utils.stock_code_mapper import get_stock_mapper
+            mapper = get_stock_mapper()
+            return mapper.get_stock_name(ts_code)
+            
+        except Exception as e:
+            self.logger.warning(f"获取股票名称失败: {e}")
+            return ts_code
+    
     def _extract_stock_by_name(self, question: str) -> Optional[str]:
         """通过股票名称查找TS代码"""
         try:
@@ -430,7 +444,9 @@ class FinancialAnalysisAgent:
             
             # 使用LLM生成详细分析
             self.logger.info(f"正在生成LLM分析报告...")
+            stock_name = self._get_stock_name(ts_code)
             analysis_report = self.analysis_chain.invoke({
+                'stock_info': f"{stock_name} ({ts_code})",
                 'analysis_type': '财务健康度分析',
                 'financial_data': self._format_financial_data_for_llm(latest_data),
                 'metrics': self._format_health_metrics(health_score),
@@ -1269,7 +1285,9 @@ class FinancialAnalysisAgent:
                 })
             
             # 使用LLM生成详细分析
+            stock_name = self._get_stock_name(ts_code)
             analysis_report = self.analysis_chain.invoke({
+                'stock_info': f"{stock_name} ({ts_code})",
                 'analysis_type': '杜邦分析 - ROE分解',
                 'financial_data': self._format_financial_data_for_llm(latest_data),
                 'metrics': self._format_dupont_metrics(dupont_metrics),
@@ -1310,7 +1328,9 @@ class FinancialAnalysisAgent:
             quality_analysis = self._analyze_cash_flow_quality(financial_data)
             
             # 使用LLM生成详细分析
+            stock_name = self._get_stock_name(ts_code)
             analysis_report = self.analysis_chain.invoke({
+                'stock_info': f"{stock_name} ({ts_code})",
                 'analysis_type': '现金流质量分析',
                 'financial_data': self._format_financial_data_for_llm(financial_data[0]),
                 'metrics': self._format_cash_flow_metrics(quality_analysis),
@@ -1349,7 +1369,9 @@ class FinancialAnalysisAgent:
             comparison_analysis = self._perform_multi_period_analysis(financial_data)
             
             # 使用LLM生成详细分析
+            stock_name = self._get_stock_name(ts_code)
             analysis_report = self.analysis_chain.invoke({
+                'stock_info': f"{stock_name} ({ts_code})",
                 'analysis_type': '多期财务对比分析',
                 'financial_data': self._format_multi_period_data(financial_data[:4]),
                 'metrics': self._format_comparison_metrics(comparison_analysis),

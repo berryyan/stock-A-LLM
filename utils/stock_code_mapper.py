@@ -37,6 +37,7 @@ class StockCodeMapper:
         
         # 缓存数据
         self._cache: Dict[str, str] = {}
+        self._reverse_cache: Dict[str, str] = {}  # ts_code -> name的反向映射
         self._cache_time: Optional[datetime] = None
         self._cache_lock = threading.Lock()
         
@@ -63,11 +64,16 @@ class StockCodeMapper:
                 
             # 构建映射缓存
             new_cache = {}
+            new_reverse_cache = {}
             
             for row in results:
                 ts_code = row['ts_code']
                 symbol = row['symbol']
                 name = row['name']
+                
+                # 构建反向映射（ts_code -> name）
+                if name:
+                    new_reverse_cache[ts_code] = name
                 
                 # ts_code映射到自己
                 new_cache[ts_code.lower()] = ts_code
@@ -100,6 +106,7 @@ class StockCodeMapper:
             # 原子性更新缓存
             with self._cache_lock:
                 self._cache = new_cache
+                self._reverse_cache = new_reverse_cache
                 self._cache_time = datetime.now()
                 
             self.logger.info(f"股票代码缓存刷新完成，共缓存{len(self._cache)}个映射")
@@ -211,6 +218,27 @@ class StockCodeMapper:
     def force_refresh(self) -> None:
         """强制刷新缓存"""
         self._refresh_cache()
+    
+    def get_stock_name(self, ts_code: str) -> str:
+        """
+        根据ts_code获取股票名称
+        
+        Args:
+            ts_code: 证券代码（如600519.SH）
+            
+        Returns:
+            股票名称，如果找不到则返回ts_code本身
+        """
+        if not ts_code:
+            return ts_code
+            
+        # 检查并刷新缓存
+        if self._is_cache_expired():
+            self._refresh_cache()
+            
+        # 从反向缓存查找
+        with self._cache_lock:
+            return self._reverse_cache.get(ts_code, ts_code)
 
 
 # 单例实例

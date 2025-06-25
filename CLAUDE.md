@@ -236,6 +236,20 @@ The system supports six main query types:
 
 ### Recent Updates
 
+#### v1.4.3+ - 财务分析用户体验优化 (2025-06-25 晚)
+
+**财务分析报告优化** ✅:
+- **股票信息标注**: 所有财务分析报告开头明确显示股票名称和代码
+- **StockCodeMapper增强**: 新增反向映射缓存（ts_code→name）
+- **性能优化**: 利用现有缓存机制，避免重复数据库查询
+- **错误处理完善**: 前端WebSocket消息智能检测错误响应
+
+**技术实现** ✅:
+- 扩展`utils/stock_code_mapper.py`添加`get_stock_name()`方法
+- 更新`agents/financial_agent.py`的分析链提示词模板
+- 修复前端`templates/index.html`的错误消息显示逻辑
+- 所有4个财务分析方法统一添加股票信息参数
+
 #### v1.4.3 - RAG系统优化与股票代码映射器实现 (2025-06-25)
 
 **RAG查询系统修复** ✅:
