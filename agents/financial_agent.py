@@ -202,9 +202,9 @@ class FinancialAnalysisAgent:
         
         # 1. 首先尝试提取完整的ts_code格式 (如 600519.SH)
         ts_code_pattern = r'(\d{6}\.(SZ|SH|BJ))'
-        ts_codes = re.findall(ts_code_pattern, question)
-        if ts_codes:
-            extracted_ts_code = ts_codes[0][0] + '.' + ts_codes[0][1]  # 重组匹配结果
+        ts_code_match = re.search(ts_code_pattern, question)
+        if ts_code_match:
+            extracted_ts_code = ts_code_match.group(0)  # 直接使用完整匹配
             self.logger.info(f"从查询中提取到ts_code: {extracted_ts_code}")
             # 验证ts_code格式
             if not self._validate_ts_code(extracted_ts_code):
@@ -245,6 +245,17 @@ class FinancialAnalysisAgent:
         if not extracted_ts_code:
             # 使用更智能的名称提取逻辑
             extracted_ts_code = self._extract_stock_by_name(question)
+            
+        # 4. 验证提取到的ts_code格式
+        if extracted_ts_code and not self._validate_ts_code(extracted_ts_code):
+            self.logger.warning(f"证券代码格式不正确: {extracted_ts_code}")
+            # 先确定intent再返回
+            intent = 'comprehensive'
+            for pattern_type, patterns in self.query_patterns.items():
+                if any(pattern in question for pattern in patterns):
+                    intent = pattern_type
+                    break
+            return intent, 'INVALID_FORMAT'
         
         # 匹配查询意图
         intent = 'comprehensive'  # 默认意图
