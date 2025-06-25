@@ -188,12 +188,41 @@ class RAGAgent:
                 raise
             
             if not search_results or len(search_results[0]) == 0:
-                self.logger.warning("未找到相关文档")
-                return {
-                    'success': False,
-                    'message': '未找到相关文档',
-                    'question': question
-                }
+                self.logger.warning(f"未找到相关文档，过滤条件：{filter_expr}")
+                # 如果有过滤条件导致无结果，尝试不使用过滤条件重新搜索
+                if filter_expr:
+                    self.logger.info("尝试不使用过滤条件重新搜索")
+                    try:
+                        search_results = self.milvus.search(
+                            query_vectors=[query_vector],
+                            top_k=top_k,
+                            filter_expr=None
+                        )
+                        if search_results and len(search_results[0]) > 0:
+                            self.logger.info(f"无过滤条件搜索成功: 找到{len(search_results[0])}个结果")
+                        else:
+                            self.logger.warning("即使无过滤条件也未找到相关文档")
+                            return {
+                                'success': False,
+                                'message': '未找到相关文档，建议检查查询内容或联系管理员',
+                                'question': question,
+                                'error': 'no_documents_found'
+                            }
+                    except Exception as e:
+                        self.logger.error(f"无过滤条件搜索也失败: {e}")
+                        return {
+                            'success': False,
+                            'message': f'文档搜索失败: {str(e)}',
+                            'question': question,
+                            'error': 'search_failed'
+                        }
+                else:
+                    return {
+                        'success': False,
+                        'message': '未找到相关文档，建议检查查询内容',
+                        'question': question,
+                        'error': 'no_documents_found'
+                    }
             
             # 4. 提取文档内容
             self.logger.info("步骤5: 提取文档内容")

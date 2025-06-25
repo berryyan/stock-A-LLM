@@ -34,10 +34,10 @@ class QueryType(str, Enum):
     RAG_ONLY = "rag"          # 仅需RAG查询
     FINANCIAL = "financial"   # 财务分析查询
     MONEY_FLOW = "money_flow" # 资金流向分析查询
-    SQL_FIRST = "hybrid"      # 先SQL后RAG
-    RAG_FIRST = "hybrid"      # 先RAG后SQL
-    PARALLEL = "hybrid"       # 并行查询
-    COMPLEX = "hybrid"        # 复杂查询需要多步骤
+    SQL_FIRST = "sql_first"   # 先SQL后RAG
+    RAG_FIRST = "rag_first"   # 先RAG后SQL
+    PARALLEL = "parallel"     # 并行查询
+    COMPLEX = "complex"       # 复杂查询需要多步骤
     
     # 添加小写别名以便兼容
     sql = "sql"
@@ -60,17 +60,18 @@ class QueryType(str, Enum):
             'sql_only': cls.SQL_ONLY,
             'rag_only': cls.RAG_ONLY,
             'financial': cls.FINANCIAL,
+            'money_flow': cls.MONEY_FLOW,
             'sql': cls.sql,
             'rag': cls.rag,
-            'financial': cls.financial,
-            'hybrid': cls.hybrid,
             'complex': cls.COMPLEX,
             'sql_first': cls.SQL_FIRST,
             'rag_first': cls.RAG_FIRST,
             'parallel': cls.PARALLEL,
+            # 保持向后兼容
+            'hybrid': cls.COMPLEX,
         }
         
-        return mappings.get(value_lower, cls.hybrid)
+        return mappings.get(value_lower, cls.COMPLEX)
 
 
 class HybridAgent:
@@ -255,6 +256,7 @@ class HybridAgent:
             
             # 2. 根据决策执行查询
             query_type = QueryType(routing_decision['query_type'])
+            self.logger.info(f"解析后的查询类型: {query_type}, 原始决策: {routing_decision['query_type']}")
             
             if query_type == QueryType.SQL_ONLY:
                 return self._handle_sql_only(question, routing_decision)
@@ -809,7 +811,16 @@ class HybridAgent:
             '中石油': '601857.SH',
             '中石化': '600028.SH',
             '腾讯控股': '700.HK',  # 港股，但保留映射
-            '阿里巴巴': '9988.HK'   # 港股，但保留映射
+            '阿里巴巴': '9988.HK',   # 港股，但保留映射
+            # 新增常见股票映射
+            '诺德股份': '600110.SH',
+            '诺德新材料股份有限公司': '600110.SH',
+            '诺德新材料': '600110.SH',
+            '同花顺': '300033.SZ',
+            '秦川机床': '000837.SZ',
+            '中油资本': '000617.SZ',
+            '美的集团': '000333.SZ',
+            '同方股份': '600100.SH'
         }
         
         # 精确匹配
