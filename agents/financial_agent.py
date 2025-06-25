@@ -1262,9 +1262,12 @@ class FinancialAnalysisAgent:
     def dupont_analysis(self, ts_code: str) -> Dict[str, Any]:
         """杜邦分析 - ROE分解"""
         try:
+            self.logger.info(f"开始对 {ts_code} 进行杜邦分析")
+            self.logger.info(f"正在获取 {ts_code} 的财务数据...")
             financial_data = self.get_financial_data(ts_code, periods=4)
             
             if not financial_data:
+                self.logger.warning(f"未找到股票 {ts_code} 的财务数据")
                 return {
                     'success': False,
                     'error': f'未找到股票 {ts_code} 的财务数据'
@@ -1273,9 +1276,12 @@ class FinancialAnalysisAgent:
             latest_data = financial_data[0]
             
             # 杜邦分析：ROE = 净利率 × 总资产周转率 × 权益乘数
+            self.logger.info(f"正在计算杜邦分析指标...")
             dupont_metrics = self._calculate_dupont_metrics(latest_data)
+            self.logger.info(f"ROE分解: 净利率={dupont_metrics['net_profit_margin']:.2f}%, 资产周转率={dupont_metrics['asset_turnover']:.2f}, 权益乘数={dupont_metrics['equity_multiplier']:.2f}")
             
             # 多期杜邦分析趋势
+            self.logger.info(f"正在分析杜邦指标趋势...")
             trend_analysis = []
             for data in financial_data:
                 period_dupont = self._calculate_dupont_metrics(data)
@@ -1285,6 +1291,7 @@ class FinancialAnalysisAgent:
                 })
             
             # 使用LLM生成详细分析
+            self.logger.info(f"正在生成杜邦分析报告...")
             stock_name = self._get_stock_name(ts_code)
             analysis_report = self.analysis_chain.invoke({
                 'stock_info': f"{stock_name} ({ts_code})",
@@ -1294,6 +1301,7 @@ class FinancialAnalysisAgent:
                 'insights': self._generate_dupont_insights(dupont_metrics, trend_analysis)
             })
             
+            self.logger.info(f"杜邦分析完成: {ts_code}")
             return {
                 'success': True,
                 'ts_code': ts_code,
@@ -1306,7 +1314,7 @@ class FinancialAnalysisAgent:
             }
             
         except Exception as e:
-            self.logger.error(f"杜邦分析失败: {e}")
+            self.logger.error(f"杜邦分析失败 ({ts_code}): {e}")
             return {
                 'success': False,
                 'error': str(e),
@@ -1315,19 +1323,34 @@ class FinancialAnalysisAgent:
     
     def cash_flow_quality_analysis(self, ts_code: str) -> Dict[str, Any]:
         """现金流质量分析"""
+        # 检查是否为北交所股票
+        if ts_code.endswith('.BJ'):
+            self.logger.info(f"检测到北交所股票 {ts_code}，暂不支持现金流分析")
+            return {
+                'success': False,
+                'error': '抱歉，由于北交所股票财务数据多数有缺失，暂不支持现金流分析',
+                'type': 'financial_analysis'
+            }
+        
         try:
+            self.logger.info(f"开始对 {ts_code} 进行现金流质量分析")
+            self.logger.info(f"正在获取 {ts_code} 的8期财务数据...")
             financial_data = self.get_financial_data(ts_code, periods=8)  # 获取更多期数据用于趋势分析
             
             if not financial_data:
+                self.logger.warning(f"未找到股票 {ts_code} 的财务数据")
                 return {
                     'success': False,
                     'error': f'未找到股票 {ts_code} 的财务数据'
                 }
             
             # 现金流质量分析
+            self.logger.info(f"正在分析现金流质量指标...")
             quality_analysis = self._analyze_cash_flow_quality(financial_data)
+            self.logger.info(f"现金流质量评级: {quality_analysis['overall_rating']}, 平均现金含量: {quality_analysis['average_cash_content']}")
             
             # 使用LLM生成详细分析
+            self.logger.info(f"正在生成现金流质量分析报告...")
             stock_name = self._get_stock_name(ts_code)
             analysis_report = self.analysis_chain.invoke({
                 'stock_info': f"{stock_name} ({ts_code})",
@@ -1337,6 +1360,7 @@ class FinancialAnalysisAgent:
                 'insights': self._generate_cash_flow_insights(quality_analysis)
             })
             
+            self.logger.info(f"现金流质量分析完成: {ts_code}")
             return {
                 'success': True,
                 'ts_code': ts_code,
@@ -1347,7 +1371,7 @@ class FinancialAnalysisAgent:
             }
             
         except Exception as e:
-            self.logger.error(f"现金流质量分析失败: {e}")
+            self.logger.error(f"现金流质量分析失败 ({ts_code}): {e}")
             return {
                 'success': False,
                 'error': str(e),
@@ -1357,18 +1381,24 @@ class FinancialAnalysisAgent:
     def multi_period_comparison(self, ts_code: str) -> Dict[str, Any]:
         """多期财务对比分析"""
         try:
+            self.logger.info(f"开始对 {ts_code} 进行多期财务对比分析")
+            self.logger.info(f"正在获取 {ts_code} 的8期财务数据...")
             financial_data = self.get_financial_data(ts_code, periods=8)  # 获取8期数据进行对比
             
             if len(financial_data) < 2:
+                self.logger.warning(f"股票 {ts_code} 的历史数据不足")
                 return {
                     'success': False,
                     'error': f'股票 {ts_code} 的历史数据不足，无法进行多期对比'
                 }
             
             # 多期对比分析
+            self.logger.info(f"正在进行多期对比分析...")
             comparison_analysis = self._perform_multi_period_analysis(financial_data)
+            self.logger.info(f"对比分析完成，包含{len(comparison_analysis['periods'])}期数据")
             
             # 使用LLM生成详细分析
+            self.logger.info(f"正在生成多期对比分析报告...")
             stock_name = self._get_stock_name(ts_code)
             analysis_report = self.analysis_chain.invoke({
                 'stock_info': f"{stock_name} ({ts_code})",
@@ -1378,6 +1408,7 @@ class FinancialAnalysisAgent:
                 'insights': self._generate_comparison_insights(comparison_analysis)
             })
             
+            self.logger.info(f"多期财务对比分析完成: {ts_code}")
             return {
                 'success': True,
                 'ts_code': ts_code,
@@ -1388,7 +1419,7 @@ class FinancialAnalysisAgent:
             }
             
         except Exception as e:
-            self.logger.error(f"多期财务对比分析失败: {e}")
+            self.logger.error(f"多期财务对比分析失败 ({ts_code}): {e}")
             return {
                 'success': False,
                 'error': str(e),
