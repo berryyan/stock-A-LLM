@@ -9,7 +9,7 @@ import os
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, HTTPException, Depends, Query, Request
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -345,10 +345,100 @@ class SystemStatus(BaseModel):
     last_update: Optional[str] = Field(
         description="最后更新时间 (ISO 8601格式)"
     )
+    websocket_connections: Optional[int] = Field(
+        0,
+        description="当前WebSocket活跃连接数"
+    )
+    websocket_stats: Optional[Dict[str, Any]] = Field(
+        None,
+        description="WebSocket连接详细统计"
+    )
 
 
-# WebSocket功能已暂时移除，以解决OpenAPI文档生成问题
-# 后续开发时将重新添加WebSocket实时通信功能
+# WebSocket连接管理器
+class ConnectionManager:
+    """WebSocket连接管理器
+    
+    管理多个WebSocket连接，提供连接生命周期管理、消息发送和广播功能。
+    重点关注稳定性和可靠性。
+    """
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+        self.user_sessions: Dict[str, Dict] = {}
+    
+    async def connect(self, websocket: WebSocket, client_id: str):
+        """建立WebSocket连接"""
+        try:
+            await websocket.accept()
+            self.active_connections[client_id] = websocket
+            self.user_sessions[client_id] = {
+                "connected_at": datetime.now(),
+                "query_count": 0,
+                "last_activity": datetime.now()
+            }
+            logger.info(f"客户端 {client_id} 已连接")
+        except Exception as e:
+            logger.error(f"WebSocket连接失败 {client_id}: {e}")
+            raise
+    
+    def disconnect(self, client_id: str):
+        """断开WebSocket连接并清理资源"""
+        try:
+            if client_id in self.active_connections:
+                del self.active_connections[client_id]
+            if client_id in self.user_sessions:
+                session_duration = datetime.now() - self.user_sessions[client_id]["connected_at"]
+                logger.info(f"客户端 {client_id} 断开连接，会话时长: {session_duration}")
+                del self.user_sessions[client_id]
+        except Exception as e:
+            logger.error(f"断开连接时出错 {client_id}: {e}")
+    
+    async def send_personal_message(self, message: str, client_id: str):
+        """发送个人消息（增强错误处理）"""
+        if client_id in self.active_connections:
+            try:
+                websocket = self.active_connections[client_id]
+                await websocket.send_text(message)
+                # 更新活动时间
+                if client_id in self.user_sessions:
+                    self.user_sessions[client_id]["last_activity"] = datetime.now()
+            except Exception as e:
+                logger.error(f"发送消息失败 {client_id}: {e}")
+                # 连接已断开，清理资源
+                self.disconnect(client_id)
+                raise
+    
+    async def broadcast(self, message: str):
+        """广播消息给所有连接的客户端"""
+        disconnected_clients = []
+        for client_id, websocket in self.active_connections.items():
+            try:
+                await websocket.send_text(message)
+            except Exception as e:
+                logger.error(f"广播消息失败 {client_id}: {e}")
+                disconnected_clients.append(client_id)
+        
+        # 清理断开的连接
+        for client_id in disconnected_clients:
+            self.disconnect(client_id)
+    
+    def get_connection_stats(self) -> Dict[str, Any]:
+        """获取连接统计信息"""
+        return {
+            "active_connections": len(self.active_connections),
+            "total_queries": sum(session.get("query_count", 0) for session in self.user_sessions.values()),
+            "connection_details": {
+                client_id: {
+                    "connected_at": session["connected_at"].isoformat(),
+                    "query_count": session["query_count"],
+                    "last_activity": session["last_activity"].isoformat()
+                }
+                for client_id, session in self.user_sessions.items()
+            }
+        }
+
+
+manager = ConnectionManager()
 
 
 # 启动事件
@@ -504,13 +594,18 @@ async def get_system_status():
             except:
                 pass
         
+        # 获取WebSocket连接统计
+        websocket_stats = manager.get_connection_stats()
+        
         return SystemStatus(
             status="operational",
             mysql_connected=mysql_ok,
             milvus_connected=bool(milvus_stats),
             documents_count=milvus_stats.get('row_count', 0),
             processed_companies=processed_companies,
-            last_update=datetime.now().isoformat()
+            last_update=datetime.now().isoformat(),
+            websocket_connections=websocket_stats["active_connections"],
+            websocket_stats=websocket_stats
         )
     except Exception as e:
         logger.error(f"获取系统状态失败: {e}")
@@ -916,8 +1011,153 @@ async def get_recent_reports(days: int = 7, limit: int = 20):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# WebSocket端点已暂时移除，以解决OpenAPI文档生成问题
-# 后续开发时将重新添加WebSocket实时通信功能
+# WebSocket路由
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket实时通信端点
+    
+    提供WebSocket实时双向通信，支持即时查询和结果推送。
+    主要用于网页版前端的实时交互。
+    
+    支持的消息类型：
+    - **query**: 执行智能查询
+      ```json
+      {
+          "type": "query",
+          "question": "贵州茅台最新股价"
+      }
+      ```
+    
+    - **ping**: 心跳检测
+      ```json
+      {
+          "type": "ping"
+      }
+      ```
+    
+    连接特性：
+    - 自动分配唯一客户端ID
+    - 支持多客户端并发连接
+    - 断线自动清理资源
+    - 增强错误处理和稳定性保障
+    """
+    client_id = str(uuid.uuid4())
+    
+    try:
+        await manager.connect(websocket, client_id)
+        
+        # 发送欢迎消息
+        await manager.send_personal_message(
+            json.dumps({
+                "type": "welcome",
+                "message": "WebSocket连接成功，可以开始查询",
+                "client_id": client_id,
+                "timestamp": datetime.now().isoformat()
+            }),
+            client_id
+        )
+        
+        while True:
+            try:
+                # 接收消息
+                data = await websocket.receive_text()
+                message = json.loads(data)
+                
+                # 更新查询计数
+                if client_id in manager.user_sessions:
+                    manager.user_sessions[client_id]["query_count"] += 1
+                
+                # 处理不同类型的消息
+                if message.get("type") == "query":
+                    # 执行查询
+                    query_id = str(uuid.uuid4())
+                    question = message.get("question", "").strip()
+                    
+                    if not question:
+                        await manager.send_personal_message(
+                            json.dumps({
+                                "type": "error",
+                                "error": "查询内容不能为空",
+                                "query_id": query_id
+                            }),
+                            client_id
+                        )
+                        continue
+                    
+                    # 发送处理中消息
+                    await manager.send_personal_message(
+                        json.dumps({
+                            "type": "processing",
+                            "query_id": query_id,
+                            "message": "正在处理您的查询..."
+                        }),
+                        client_id
+                    )
+                    
+                    try:
+                        # 执行查询
+                        result = hybrid_agent.query(question)
+                        
+                        # 发送结果
+                        await manager.send_personal_message(
+                            json.dumps({
+                                "type": "analysis_result",
+                                "query_id": query_id,
+                                "content": result,
+                                "timestamp": datetime.now().isoformat()
+                            }),
+                            client_id
+                        )
+                        
+                    except Exception as e:
+                        logger.error(f"查询执行失败 {client_id}: {e}")
+                        await manager.send_personal_message(
+                            json.dumps({
+                                "type": "error",
+                                "query_id": query_id,
+                                "error": f"查询执行失败: {str(e)}"
+                            }),
+                            client_id
+                        )
+                
+                elif message.get("type") == "ping":
+                    # 心跳检测响应
+                    await manager.send_personal_message(
+                        json.dumps({
+                            "type": "pong",
+                            "timestamp": datetime.now().isoformat()
+                        }),
+                        client_id
+                    )
+                
+                else:
+                    # 未知消息类型
+                    await manager.send_personal_message(
+                        json.dumps({
+                            "type": "error",
+                            "error": f"未知消息类型: {message.get('type')}"
+                        }),
+                        client_id
+                    )
+                    
+            except json.JSONDecodeError:
+                await manager.send_personal_message(
+                    json.dumps({
+                        "type": "error",
+                        "error": "消息格式错误，请发送有效的JSON"
+                    }),
+                    client_id
+                )
+            except Exception as e:
+                logger.error(f"WebSocket消息处理错误 {client_id}: {e}")
+                break
+                
+    except WebSocketDisconnect:
+        manager.disconnect(client_id)
+        logger.info(f"WebSocket客户端 {client_id} 主动断开连接")
+    except Exception as e:
+        logger.error(f"WebSocket错误 {client_id}: {e}")
+        manager.disconnect(client_id)
 
 
 # 流式响应端点（用于大型查询）

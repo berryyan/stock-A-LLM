@@ -325,15 +325,123 @@
     </div>
 
     <script>
-        // HTTP API通信（WebSocket功能已移除）
+        // WebSocket + HTTP混合通信（稳定性优先）
+        let ws = null;
         let messageId = 0;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const reconnectDelay = 3000;
+        let isQuerying = false; // 查询状态标志
 
-        // 发送消息
+        // 更新UI状态
+        function updateUIState() {
+            const sendButton = document.getElementById('sendButton');
+            const messageInput = document.getElementById('messageInput');
+            
+            if (isQuerying) {
+                sendButton.disabled = true;
+                sendButton.style.opacity = '0.5';
+                messageInput.placeholder = '正在处理查询中，请稍候...';
+                messageInput.disabled = true;
+            } else {
+                sendButton.disabled = false;
+                sendButton.style.opacity = '1';
+                messageInput.placeholder = '请输入您的问题...';
+                messageInput.disabled = false;
+            }
+        }
+
+        // 初始化WebSocket连接（稳定性优先）
+        function initWebSocket() {
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws`;
+                
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = function(event) {
+                    console.log('WebSocket连接已建立');
+                    reconnectAttempts = 0; // 重置重连计数
+                };
+                
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleWebSocketMessage(data);
+                    } catch (e) {
+                        console.error('WebSocket消息解析失败:', e);
+                    }
+                };
+                
+                ws.onclose = function(event) {
+                    console.log('WebSocket连接已关闭');
+                    // 自动重连机制（稳定性保障）
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        console.log(`尝试重连 (${reconnectAttempts}/${maxReconnectAttempts})...`);
+                        setTimeout(initWebSocket, reconnectDelay * reconnectAttempts);
+                    } else {
+                        console.log('WebSocket重连失败，切换到HTTP模式');
+                    }
+                };
+                
+                ws.onerror = function(error) {
+                    console.error('WebSocket错误:', error);
+                };
+                
+            } catch (error) {
+                console.error('WebSocket初始化失败:', error);
+            }
+        }
+
+        // 处理WebSocket消息
+        function handleWebSocketMessage(data) {
+            if (data.type === 'welcome') {
+                console.log('WebSocket欢迎消息:', data.message);
+            } else if (data.type === 'processing') {
+                // 显示处理中消息，保持打字指示器
+                console.log('查询处理中...', data.message);
+                // 确保查询状态为true
+                isQuerying = true;
+                updateUIState();
+                // 不调用 hideTypingIndicator()，让指示器继续显示
+            } else if (data.type === 'analysis_result') {
+                // 收到最终结果，隐藏打字指示器并显示结果
+                hideTypingIndicator();
+                addMessage('assistant', formatAnalysisResult(data.content), true);
+                // 重置查询状态
+                isQuerying = false;
+                updateUIState();
+            } else if (data.type === 'error') {
+                // 收到错误，隐藏打字指示器并显示错误
+                hideTypingIndicator();
+                addMessage('assistant', `❌ 分析失败：${data.error}`, false);
+                // 重置查询状态
+                isQuerying = false;
+                updateUIState();
+            } else {
+                // 其他类型消息不影响打字指示器
+                console.log('收到WebSocket消息:', data.type, data);
+            }
+        }
+
+        // 发送消息（智能通信回退机制）
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
             
             if (!message) return;
+            
+            // 检查是否正在查询中
+            if (isQuerying) {
+                // 给用户提示，不允许连续提问
+                console.log('正在处理查询中，请等待当前查询完成');
+                return;
+            }
+            
+            // 设置查询状态
+            isQuerying = true;
+            updateUIState();
             
             // 添加用户消息
             addMessage('user', message, false);
@@ -342,8 +450,24 @@
             // 显示打字指示器
             showTypingIndicator();
             
-            // 使用HTTP API发送消息
-            await sendHttpMessage(message);
+            // 优先使用WebSocket，失败时回退到HTTP
+            try {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    // WebSocket模式
+                    ws.send(JSON.stringify({
+                        type: 'query',
+                        question: message,
+                        id: ++messageId
+                    }));
+                } else {
+                    // HTTP回退模式
+                    console.log('WebSocket不可用，使用HTTP API');
+                    await sendHttpMessage(message);
+                }
+            } catch (error) {
+                console.error('WebSocket发送失败，回退到HTTP:', error);
+                await sendHttpMessage(message);
+            }
         }
 
         // HTTP API发送消息
@@ -371,15 +495,33 @@
                 } else {
                     addMessage('assistant', `❌ 分析失败：${data.error || '未知错误'}`, false);
                 }
+                
+                // 重置查询状态
+                isQuerying = false;
+                updateUIState();
+                
             } catch (error) {
                 hideTypingIndicator();
                 addMessage('assistant', `❌ 连接失败：${error.message}`, false);
+                
+                // 重置查询状态
+                isQuerying = false;
+                updateUIState();
             }
         }
 
         // 格式化分析结果
         function formatAnalysisResult(data) {
             let content = data.answer || data.content || '';
+            
+            // 处理换行符：将\n转换为<br>标签，提升阅读体验
+            content = content.replace(/\n/g, '<br>');
+            
+            // 处理特殊格式：将**text**转换为<strong>text</strong>
+            content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // 处理列表项：将以-开头的行转换为项目符号
+            content = content.replace(/^- (.+)$/gm, '• $1');
             
             // 如果包含财务分析数据，添加特殊格式
             if (data.sources && data.sources.financial) {
@@ -437,8 +579,11 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // 显示打字指示器
+        // 显示打字指示器（防止重复显示）
         function showTypingIndicator() {
+            // 先隐藏已存在的指示器，防止重复
+            hideTypingIndicator();
+            
             const chatMessages = document.getElementById('chatMessages');
             const typingDiv = document.createElement('div');
             typingDiv.className = 'message assistant';
@@ -475,13 +620,20 @@
         // 键盘事件处理
         document.getElementById('messageInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
+                e.preventDefault(); // 防止表单提交
                 sendMessage();
             }
         });
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('智能股票分析系统已就绪，使用HTTP API通信');
+            console.log('智能股票分析系统已就绪，初始化WebSocket连接...');
+            // 尝试初始化WebSocket，失败时自动回退到HTTP
+            try {
+                initWebSocket();
+            } catch (error) {
+                console.log('WebSocket初始化失败，将使用HTTP API:', error);
+            }
         });
     </script>
 </body>
