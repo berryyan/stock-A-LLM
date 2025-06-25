@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v1.4.2-final)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v1.4.3)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性问题已解决，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。⚠️ 高级网页界面的WebSocket实时通信功能需要恢复。
+**Current Status**: ✅ RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
 ## Development Commands
 
@@ -380,6 +380,13 @@ The system supports six main query types:
 - Test script organization: essential tests in root, archived tests in `scripts/tests/`
 - Baseline functionality verification with `baseline_test.py`
 - Performance and integration testing completed
+
+### Core Documentation
+
+When updating project documentation, always update all three core documents:
+1. **CLAUDE.md** (this file) - Development guidance and technical overview
+2. **test-guide.md** - Comprehensive testing procedures and test cases
+3. **docs/project_status/CURRENT_STATUS.md** - Project status, version history, and known issues
 
 ### Testing Strategy
 
