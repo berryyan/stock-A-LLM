@@ -46,6 +46,11 @@ python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 #    npm run dev
 
 # 重要：前端可以在WSL2开发以提高效率，但最终测试必须在Windows环境
+
+# ⚠️ WSL2开发限制（Claude必须遵守）：
+# - 仅用于：文件操作、Git管理、简单连通性测试
+# - 禁止在WSL2：执行超过30秒的查询测试、性能测试、完整功能验证
+# - 所有长时间运行的测试必须在Windows环境手动执行
 ```
 
 #### 其他工具

@@ -174,7 +174,7 @@ function App() {
             {messages.length === 0 ? (
               <div className="text-center text-claude-text-secondary py-20">
                 <h1 className="text-2xl font-semibold mb-2">
-                  Stock Analysis System
+                  智能股票分析系统
                 </h1>
                 <p>Ask me about stock prices, financial reports, or market analysis</p>
                 <div className="mt-8 space-y-2 text-sm">

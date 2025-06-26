@@ -115,7 +115,7 @@ export const SmartInput: React.FC<SmartInputProps> = ({
             ? 'bg-claude-primary hover:bg-claude-primary-hover text-white'
             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
         }`}
-        title={canSend ? "发送消息 (Enter)" : "请输入内容"}
+        title={canSend ? "发送查询 (Enter)" : "请输入查询内容"}
       >
         {isLoading ? (
           <div className="flex items-center gap-1.5">
@@ -146,7 +146,7 @@ export const SmartInput: React.FC<SmartInputProps> = ({
         </button>
         
         <div className="text-xs text-gray-500">
-          按 Enter 发送，Shift+Enter 换行
+          按 Enter 发送查询，Shift+Enter 换行
         </div>
       </div>
     </div>

@@ -3,12 +3,26 @@
 ## 前置准备
 
 ### 1. 环境激活
-```bash
-# Windows
-venv\Scripts\activate
 
-# Linux/Mac
-source venv/bin/activate
+#### 后端环境（Windows推荐）
+```bash
+# Windows Anaconda Prompt
+conda activate stock-frontend
+
+# 或使用venv
+venv\Scripts\activate
+```
+
+#### 前端环境（双环境支持）
+```bash
+# 检查当前环境
+cat frontend/.frontend-env
+
+# WSL2开发环境
+cd frontend && ./auto-switch-to-wsl2.sh
+
+# Windows测试环境
+cd frontend && switch-env.bat
 ```
 
 ### 2. 确认服务状态
