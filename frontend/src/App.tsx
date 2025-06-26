@@ -1,15 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Message } from './components/chat/Message';
+import { Message as MessageType } from './types';
+import stockAPI from './services/api';
 
 function App() {
-  const [messages, setMessages] = useState<Array<{role: string; content: string}>>([]);
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (input.trim()) {
-      setMessages([...messages, { role: 'user', content: input }]);
-      // TODO: Call API
-      setMessages(prev => [...prev, { role: 'assistant', content: 'This is a demo response. The API integration is coming soon!' }]);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (input.trim() && !isLoading) {
+      const userMessage: MessageType = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: input.trim(),
+        timestamp: new Date().toISOString(),
+      };
+
+      setMessages(prev => [...prev, userMessage]);
       setInput('');
+      setIsLoading(true);
+
+      try {
+        const response = await stockAPI.query(userMessage.content);
+        
+        const assistantMessage: MessageType = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: response.answer,
+          timestamp: new Date().toISOString(),
+          sources: response.sources,
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+      } catch (error) {
+        console.error('Query failed:', error);
+        const errorMessage: MessageType = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: '抱歉，查询失败。请检查API服务器是否正在运行。',
+          timestamp: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
@@ -18,7 +69,12 @@ function App() {
       {/* Sidebar */}
       <aside className="w-sidebar bg-claude-surface border-r border-claude-border">
         <div className="p-4">
-          <button className="w-full px-4 py-3 bg-claude-primary hover:bg-claude-primary-hover text-white rounded-lg transition-colors">
+          <button 
+            onClick={() => {
+              setMessages([]);
+            }}
+            className="w-full px-4 py-3 bg-claude-primary hover:bg-claude-primary-hover text-white rounded-lg transition-colors"
+          >
             New Chat
           </button>
         </div>
@@ -40,48 +96,72 @@ function App() {
                   Stock Analysis System
                 </h1>
                 <p>Ask me about stock prices, financial reports, or market analysis</p>
+                <div className="mt-8 space-y-2 text-sm">
+                  <p className="font-semibold">Try asking:</p>
+                  <p>"贵州茅台最新股价是多少？"</p>
+                  <p>"分析一下茅台的财务健康度"</p>
+                  <p>"查询贵州茅台最新的公告"</p>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((msg, idx) => (
-                  <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                    <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-semibold ${
-                      msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-claude-primary text-white'
-                    }`}>
-                      {msg.role === 'user' ? 'U' : 'AI'}
+                {messages.map((msg) => (
+                  <Message key={msg.id} message={msg} />
+                ))}
+                {isLoading && (
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-claude-primary text-white flex items-center justify-center text-sm font-semibold">
+                      AI
                     </div>
-                    <div className={`flex-1 ${msg.role === 'user' ? 'flex justify-end' : ''}`}>
-                      <div className={`inline-block max-w-[70%] px-4 py-2 rounded-lg ${
-                        msg.role === 'user' ? 'bg-claude-surface border border-claude-border' : 'bg-white border border-claude-border'
-                      }`}>
-                        <p className="text-sm">{msg.content}</p>
+                    <div className="flex-1">
+                      <div className="inline-block px-4 py-2 rounded-lg bg-white border border-claude-border">
+                        <span className="inline-flex gap-1">
+                          <span className="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                          <span className="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                          <span className="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                        </span>
                       </div>
                     </div>
                   </div>
-                ))}
+                )}
+                <div ref={messagesEndRef} />
               </div>
             )}
           </div>
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-claude-border p-4">
+        <div className="border-t border-claude-border p-4 bg-white">
           <div className="max-w-3xl mx-auto">
             <div className="flex gap-2">
-              <input
-                type="text"
+              <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Type your question..."
-                className="flex-1 px-4 py-3 border border-claude-border rounded-lg focus:outline-none focus:ring-2 focus:ring-claude-primary"
+                onKeyDown={handleKeyPress}
+                placeholder="输入你的问题..."
+                disabled={isLoading}
+                rows={1}
+                className="flex-1 px-4 py-3 border border-claude-border rounded-lg focus:outline-none focus:ring-2 focus:ring-claude-primary resize-none"
+                style={{
+                  minHeight: '48px',
+                  maxHeight: '200px',
+                  overflowY: input.split('\n').length > 4 ? 'auto' : 'hidden',
+                }}
               />
               <button 
                 onClick={handleSend}
-                className="px-6 py-3 bg-claude-primary hover:bg-claude-primary-hover text-white rounded-lg transition-colors"
+                disabled={!input.trim() || isLoading}
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                  input.trim() && !isLoading
+                    ? 'bg-claude-primary hover:bg-claude-primary-hover text-white'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
               >
                 Send
               </button>
+            </div>
+            <div className="mt-2 text-xs text-claude-text-secondary text-center">
+              Press Enter to send, Shift+Enter for new line
             </div>
           </div>
         </div>
