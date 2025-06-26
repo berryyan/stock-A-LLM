@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v1.4.3)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v1.5.0)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
+**Current Status**: ✅ React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
 ## Development Commands
 
@@ -240,6 +240,36 @@ The system supports six main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v1.5.0 - React前端初版实现 (2025-06-26)
+
+**React前端开发完成** ✅:
+- **Claude.ai风格界面**: 260px侧边栏、主聊天区、底部输入框
+- **完整Markdown渲染**: 支持代码高亮、表格美化、数学公式、引用块
+- **API集成完成**: 与后端/query接口对接，支持所有查询类型
+- **双环境架构确立**: Windows运行前端和API服务，WSL2用于Claude Code开发
+
+**技术栈实现** ✅:
+- React + TypeScript + Vite构建系统
+- Tailwind CSS实现Claude.ai配色方案
+- react-markdown + remark/rehype插件链
+- react-syntax-highlighter代码高亮
+
+**已修复问题** ✅:
+- react-markdown v9 className属性兼容性问题
+- PostCSS配置与Tailwind CSS版本匹配
+- Node.js版本兼容性（v18与Vite 5.2.0）
+
+**前端运行指南** ✅:
+```bash
+# Windows环境运行前端
+cd E:\PycharmProjects\stock_analysis_system\frontend
+npm run dev
+
+# Windows环境运行API
+cd E:\PycharmProjects\stock_analysis_system
+python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+```
 
 #### v1.4.3+ - 财务分析用户体验优化 (2025-06-25 晚)
 

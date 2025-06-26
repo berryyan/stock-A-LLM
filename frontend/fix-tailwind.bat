@@ -1,0 +1,9 @@
+@echo off
+echo Fixing Tailwind CSS PostCSS compatibility...
+
+echo Installing @tailwindcss/postcss...
+call npm install -D @tailwindcss/postcss
+
+echo Updating postcss.config.js...
+echo Done! Please restart the dev server.
+pause

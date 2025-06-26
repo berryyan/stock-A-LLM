@@ -13,11 +13,11 @@ interface MarkdownRendererProps {
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   return (
-    <ReactMarkdown
-      className="prose prose-sm max-w-none prose-pre:p-0 prose-pre:bg-transparent"
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex]}
-      components={{
+    <div className="prose prose-sm max-w-none prose-pre:p-0 prose-pre:bg-transparent">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={{
         code({ node, inline, className, children, ...props }) {
           const match = /language-(\w+)/.exec(className || '');
           const language = match ? match[1] : '';
@@ -124,5 +124,6 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
     >
       {content}
     </ReactMarkdown>
+    </div>
   );
 };
