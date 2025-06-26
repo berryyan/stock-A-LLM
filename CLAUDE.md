@@ -23,20 +23,38 @@ pip install -r requirements.txt
 ```
 
 ### Running the System
+
+#### 后端API服务器（必须在Windows环境）
 ```bash
-# Start the API server (推荐在Windows Anaconda环境运行以获得更好性能)
+# Windows Anaconda Prompt:
+conda activate stock-frontend
 python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
+# 注意：由于WSL2的I/O性能限制，API服务器必须在Windows原生环境运行
+```
+
+#### 前端开发服务器（双环境支持）
+```bash
+# 方案：开发在WSL2，测试在Windows
+# 1. 检查/切换环境：
+#    WSL2: ./switch-env.sh
+#    Windows: switch-env.bat
+
+# 2. 在对应环境安装依赖并运行：
+#    cd frontend
+#    npm install  # 每个环境需要单独安装
+#    npm run dev
+
+# 重要：前端可以在WSL2开发以提高效率，但最终测试必须在Windows环境
+```
+
+#### 其他工具
+```bash
 # Start interactive RAG interface
 python rag_query_interface.py
 
 # Run system health check
 python scripts/utils/system_check.py
-
-# 注意：由于WSL2的I/O性能限制，建议在Windows原生环境运行API服务器
-# 在Windows Anaconda Prompt中：
-# conda activate stock-frontend
-# python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Testing
