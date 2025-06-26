@@ -18,9 +18,10 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={{
-        code({ node, inline, className, children, ...props }) {
+        code({ node, className, children, ...props }: any) {
           const match = /language-(\w+)/.exec(className || '');
           const language = match ? match[1] : '';
+          const inline = !match;
 
           if (!inline && language) {
             return (
@@ -37,7 +38,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
                   </button>
                 </div>
                 <SyntaxHighlighter
-                  style={oneDark}
+                  style={oneDark as any}
                   language={language}
                   PreTag="div"
                   customStyle={{

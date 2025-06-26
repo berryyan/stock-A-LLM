@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
-import { DocumentViewerProps } from '../../types';
+import type { DocumentViewerProps } from '../../types';
 
 export const DocumentViewer: React.FC<DocumentViewerProps> = ({ content, type, onClose }) => {
   const containerRef = useRef<HTMLDivElement>(null);

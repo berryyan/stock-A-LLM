@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import stockAPI from './services/api';
 
 interface MessageType {

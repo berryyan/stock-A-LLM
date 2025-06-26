@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Message } from './components/chat/Message';
 import { DocumentViewer } from './components/document/DocumentViewer';
-import { Message as MessageType } from './types';
+import { SmartInput } from './components/input/SmartInput';
+import type { Message as MessageType } from './types';
 import stockAPI from './services/api';
 
 function App() {
@@ -12,13 +13,36 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (smooth = true) => {
+    if (messagesEndRef.current) {
+      const chatContainer = messagesEndRef.current.parentElement?.parentElement;
+      if (chatContainer) {
+        const scrollHeight = chatContainer.scrollHeight;
+        const height = chatContainer.clientHeight;
+        const maxScrollTop = scrollHeight - height;
+        chatContainer.scrollTo({
+          top: maxScrollTop,
+          behavior: smooth ? 'smooth' : 'auto'
+        });
+      }
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // 延迟滚动以确保DOM更新完成
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    return () => clearTimeout(timer);
   }, [messages]);
+  
+  // 发送消息时的滚动
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => scrollToBottom(), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   const handleSend = async () => {
     if (input.trim() && !isLoading) {
@@ -35,6 +59,11 @@ function App() {
 
       try {
         const response = await stockAPI.query(userMessage.content);
+        
+        // 检查响应是否包含错误
+        if (!response || response.success === false) {
+          throw new Error(response?.error || 'Invalid response from API');
+        }
         
         const assistantMessage: MessageType = {
           id: (Date.now() + 1).toString(),
@@ -56,14 +85,18 @@ function App() {
         
         let errorContent = '抱歉，查询失败。';
         if (error.response) {
-          errorContent += ` 错误状态: ${error.response.status}`;
-          if (error.response.data?.detail) {
-            errorContent += ` - ${error.response.data.detail}`;
+          // 处理HTTP错误
+          if (error.response.data?.error) {
+            errorContent = error.response.data.error;
+          } else if (error.response.data?.detail) {
+            errorContent = error.response.data.detail;
+          } else {
+            errorContent += ` 错误状态: ${error.response.status}`;
           }
         } else if (error.request) {
-          errorContent += ' 无法连接到API服务器。';
+          errorContent = '无法连接到API服务器，请检查网络连接或确认服务是否启动。';
         } else {
-          errorContent += ` ${error.message}`;
+          errorContent = error.message || '未知错误';
         }
         
         const errorMessage: MessageType = {
@@ -79,12 +112,6 @@ function App() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
 
   return (
     <div className="flex h-screen bg-claude-background">
@@ -141,9 +168,9 @@ function App() {
 
       {/* Main Content */}
       <main className={`flex-1 flex flex-col transition-all duration-300 ${documentView ? 'mr-[50%]' : ''}`}>
-        {/* Chat Area - 调整最大宽度和内边距 */}
-        <div className="flex-1 overflow-y-auto px-4 py-6">
-          <div className={`mx-auto ${documentView ? 'max-w-full px-6' : 'max-w-4xl'}`}>
+        {/* Chat Area - Claude.ai风格的内容区域 */}
+        <div className="flex-1 overflow-y-auto" style={{ paddingBottom: '200px' }}>
+          <div className="max-w-3xl mx-auto px-6 py-8">
             {messages.length === 0 ? (
               <div className="text-center text-claude-text-secondary py-20">
                 <h1 className="text-2xl font-semibold mb-2">
@@ -158,33 +185,32 @@ function App() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                {messages.map((msg) => (
-                  <Message 
-                    key={msg.id} 
-                    message={msg}
-                    onViewSource={(content, type) => {
-                      setDocumentView({ content, type });
-                      // 打开文档时自动折叠侧边栏
-                      if (!sidebarCollapsed) {
-                        setSidebarCollapsed(true);
-                      }
-                    }}
-                  />
-                ))}
+              <div>
+                {messages.map((msg, index) => {
+                  // 判断是否为相同发言者的连续消息
+                  const isLastFromSameSpeaker = index > 0 && messages[index - 1].role === msg.role;
+                  
+                  return (
+                    <Message 
+                      key={msg.id} 
+                      message={msg}
+                      isLastFromSameSpeaker={isLastFromSameSpeaker}
+                      onViewSource={(content, type) => {
+                        setDocumentView({ content, type });
+                        // 打开文档时自动折叠侧边栏
+                        if (!sidebarCollapsed) {
+                          setSidebarCollapsed(true);
+                        }
+                      }}
+                    />
+                  );
+                })}
                 {isLoading && (
-                  <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-claude-primary text-white flex items-center justify-center text-sm font-semibold">
-                      AI
-                    </div>
-                    <div className="flex-1">
-                      <div className="inline-block px-4 py-2 rounded-lg bg-white border border-claude-border">
-                        <span className="inline-flex gap-1">
-                          <span className="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
-                          <span className="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
-                          <span className="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
-                        </span>
-                      </div>
+                  <div className="mb-5">
+                    <div className="inline-flex items-center gap-1 px-2 py-1">
+                      <span className="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                      <span className="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+                      <span className="typing-dot w-2 h-2 bg-gray-400 rounded-full"></span>
                     </div>
                   </div>
                 )}
@@ -194,38 +220,31 @@ function App() {
           </div>
         </div>
 
-        {/* Input Area - 调整布局以适应分屏 */}
-        <div className="border-t border-claude-border p-4 bg-white">
-          <div className={`mx-auto ${documentView ? 'max-w-full px-6' : 'max-w-4xl'}`}>
-            <div className="flex gap-2">
-              <textarea
+        {/* Input Area - 无缝融合设计 */}
+        <div className={`input-container fixed bottom-0 right-0 z-10 transition-all duration-300 ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${documentView ? 'pr-[52%]' : ''}`}>
+          {/* 顶部渐变背景创造融合效果 */}
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'linear-gradient(to top, rgb(250,250,250) 0%, rgb(250,250,250) 70%, rgba(250,250,250,0.9) 85%, rgba(250,250,250,0.7) 95%, transparent 100%)',
+              height: '150px'
+            }}
+          />
+          
+          {/* 输入框包装器 */}
+          <div className="relative mx-auto max-w-3xl px-6 pb-6">
+            <div 
+              className="input-wrapper bg-white rounded-lg"
+              style={{
+                boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05), 0 4px 8px rgba(0, 0, 0, 0.02)'
+              }}
+            >
+              <SmartInput
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="输入你的问题..."
-                disabled={isLoading}
-                rows={1}
-                className="flex-1 px-4 py-3 border border-claude-border rounded-lg focus:outline-none focus:ring-2 focus:ring-claude-primary resize-none"
-                style={{
-                  minHeight: '48px',
-                  maxHeight: '200px',
-                  overflowY: input.split('\n').length > 4 ? 'auto' : 'hidden',
-                }}
+                onChange={setInput}
+                onSend={handleSend}
+                isLoading={isLoading}
               />
-              <button 
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                  input.trim() && !isLoading
-                    ? 'bg-claude-primary hover:bg-claude-primary-hover text-white'
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                Send
-              </button>
-            </div>
-            <div className="mt-2 text-xs text-claude-text-secondary text-center">
-              Press Enter to send, Shift+Enter for new line
             </div>
           </div>
         </div>

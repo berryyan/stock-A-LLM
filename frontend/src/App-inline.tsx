@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 function App() {
   const [messages, setMessages] = useState<Array<{role: string; content: string}>>([]);

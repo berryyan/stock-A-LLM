@@ -4,10 +4,22 @@
 
 /* Custom global styles */
 @layer base {
+  :root {
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
+                 "Helvetica Neue", Arial, "Noto Sans", sans-serif, 
+                 "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", 
+                 "Noto Color Emoji";
+    --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", 
+                 Consolas, "Courier New", monospace;
+  }
+  
   body {
     @apply text-claude-text-primary m-0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 
-                 'Noto Sans', 'Helvetica', 'Arial', sans-serif;
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   /* Scrollbar styling */
@@ -60,4 +72,207 @@
 
 .typing-dot:nth-child(3) {
   animation-delay: 0.4s;
+}
+
+/* Copy button hover effect */
+.copy-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.copy-button:hover {
+  transform: scale(1.05);
+}
+
+/* Message hover effects */
+.message-actions {
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Smart input styles */
+.smart-input-wrapper {
+  position: relative;
+}
+
+/* Smooth textarea resizing */
+textarea {
+  transition: height 0.1s ease-out;
+}
+
+/* Send button pulse animation when active */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 163, 127, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 163, 127, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 163, 127, 0);
+  }
+}
+
+/* Subtle pulse for send button */
+@keyframes subtlePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Response footer styles */
+.response-footer {
+  border-top: 1px solid #f3f3f6;
+}
+
+/* Action button styles */
+.action-button {
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  transform: translateY(-1px);
+}
+
+.action-button:active {
+  transform: translateY(0);
+}
+
+/* Input container styles */
+.input-container {
+  /* 考虑侧边栏宽度 */
+  left: 260px;
+  background-color: transparent;
+}
+
+.input-container.sidebar-collapsed {
+  left: 48px;
+}
+
+/* AI消息样式 */
+.ai-message {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #2d2d30;
+}
+
+/* Prose 样式调整 - Claude.ai风格 */
+.prose {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #2d2d30;
+}
+
+.prose p {
+  margin-bottom: 1em;
+}
+
+.prose h1 {
+  font-size: 1.75em;
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  line-height: 1.3;
+}
+
+.prose h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.prose h3 {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  line-height: 1.4;
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+}
+
+.prose pre {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 1em;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.prose pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+
+.prose ul, .prose ol {
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.prose li {
+  margin-bottom: 0.25em;
+}
+
+.prose blockquote {
+  border-left: 3px solid #e1e4e8;
+  padding-left: 1em;
+  margin-left: 0;
+  margin-bottom: 1em;
+  color: #6a737d;
+}
+
+.prose table {
+  width: 100%;
+  margin-bottom: 1em;
+  border-collapse: collapse;
+}
+
+.prose th, .prose td {
+  padding: 8px 12px;
+  border: 1px solid #e1e4e8;
+}
+
+.prose th {
+  background-color: #f6f8fa;
+  font-weight: 600;
+}
+
+/* Input wrapper focus styles */
+.input-wrapper {
+  transition: all 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+  background-color: white;
+  box-shadow: 
+    0 0 0 2px #10a37f,
+    0 2px 8px rgba(16, 163, 127, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .input-container {
+    left: 0;
+    padding: 16px;
+  }
+  
+  .input-container.sidebar-collapsed {
+    left: 0;
+  }
 }
