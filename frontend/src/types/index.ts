@@ -4,6 +4,28 @@ export interface QueryResponse {
   answer: string;
   query_type: 'sql' | 'rag' | 'financial_analysis' | 'money_flow' | 'hybrid';
   sources?: {
+    // 新的API响应格式
+    sql?: {
+      result: any;
+      sql?: string;
+      error?: string;
+    };
+    rag?: {
+      documents?: Document[];
+      answer?: string;
+      error?: string;
+    };
+    financial?: {
+      analysis_report?: string;
+      financial_data?: any;
+      error?: string;
+    };
+    money_flow?: {
+      analysis?: string;
+      data?: any;
+      error?: string;
+    };
+    // 兼容旧格式
     sql_data?: any[];
     documents?: Document[];
     table_data?: any[];

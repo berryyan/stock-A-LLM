@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message } from './components/chat/Message';
+import { DocumentViewer } from './components/document/DocumentViewer';
 import { Message as MessageType } from './types';
 import stockAPI from './services/api';
 
@@ -7,6 +8,7 @@ function App() {
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [documentView, setDocumentView] = useState<{content: any; type: string} | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -42,12 +44,31 @@ function App() {
         };
 
         setMessages(prev => [...prev, assistantMessage]);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Query failed:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          config: error.config
+        });
+        
+        let errorContent = '抱歉，查询失败。';
+        if (error.response) {
+          errorContent += ` 错误状态: ${error.response.status}`;
+          if (error.response.data?.detail) {
+            errorContent += ` - ${error.response.data.detail}`;
+          }
+        } else if (error.request) {
+          errorContent += ' 无法连接到API服务器。';
+        } else {
+          errorContent += ` ${error.message}`;
+        }
+        
         const errorMessage: MessageType = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: '抱歉，查询失败。请检查API服务器是否正在运行。',
+          content: errorContent,
           timestamp: new Date().toISOString(),
         };
         setMessages(prev => [...prev, errorMessage]);
@@ -86,7 +107,7 @@ function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
+      <main className={`flex-1 flex flex-col transition-all duration-300 ${documentView ? 'mr-[50%]' : ''}`}>
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="max-w-3xl mx-auto">
@@ -106,7 +127,11 @@ function App() {
             ) : (
               <div className="space-y-4">
                 {messages.map((msg) => (
-                  <Message key={msg.id} message={msg} />
+                  <Message 
+                    key={msg.id} 
+                    message={msg}
+                    onViewSource={(content, type) => setDocumentView({ content, type })}
+                  />
                 ))}
                 {isLoading && (
                   <div className="flex gap-3">
@@ -166,6 +191,15 @@ function App() {
           </div>
         </div>
       </main>
+      
+      {/* Document Viewer */}
+      {documentView && (
+        <DocumentViewer
+          content={documentView.content}
+          type={documentView.type as any}
+          onClose={() => setDocumentView(null)}
+        />
+      )}
     </div>
   );
 }
