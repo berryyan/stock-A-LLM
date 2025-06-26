@@ -482,37 +482,79 @@ ts_code = convert_to_ts_code("诺德股份")        # Returns: "600110.SH"
 - Web testing validates complete user experience  
 - Both testing layers required for production releases
 
-## Next Development Priority (v3.1 - React前端驱动策略)
+## Next Development Priority (v3.1 - Claude.ai风格React前端改版)
 
-### Phase 1: React MVP + 核心功能测试（第1周）
-- **Day 1-3**: React基础框架搭建
-  - 项目初始化（React + TypeScript + Vite）
-  - 基础组件开发（ChatInterface, MessageList, InputBox, SimpleMarkdownRenderer）
-  - API集成（复用现有调用逻辑）
-- **Day 4-7**: 使用新React界面进行完整测试
-  - SQL查询、RAG查询、财务分析、资金流向测试
-  - 问题记录和即时修复
+### 环境架构设计 (NEW)
+```
+开发环境架构：
+┌─────────────────────────────────────────────────┐
+│                 Windows 系统                     │
+│  ┌─────────────────────┬──────────────────────┐ │
+│  │   Anaconda环境       │    开发工具           │ │
+│  │  - Node.js 18+      │  - PyCharm           │ │
+│  │  - npm/yarn         │  - VS Code           │ │
+│  │  - React开发服务器   │  - Git               │ │
+│  └─────────────────────┴──────────────────────┘ │
+│                                                 │
+│  ┌─────────────────────────────────────────┐   │
+│  │              WSL2 (Ubuntu)               │   │
+│  │  ┌──────────────┬───────────────────┐   │   │
+│  │  │  venv环境    │   Node.js环境      │   │   │
+│  │  │ - Python 3.10│  - nvm管理         │   │   │
+│  │  │ - FastAPI    │  - Node.js 18+     │   │   │
+│  │  │ - LangChain  │  - npm包管理       │   │   │
+│  │  └──────────────┴───────────────────┘   │   │
+│  └─────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────┘
+```
 
-### Phase 2: 高优先级后端优化（第2-3周）
-- **Week 2**: 数据库Schema中文映射系统
-  - 建立表结构缓存机制
-  - 创建字段中文含义映射
-  - 减少50%数据库查询，提升路由准确率
-- **Week 3**: RAG查询智能降级机制
-  - 多级降级策略
-  - 失败模式记录
+### Phase 0: 环境准备与备份（第1-2天）NEW
+- **环境备份**: 
+  - WSL2: `pip freeze > requirements_backup_$(date +%Y%m%d).txt`
+  - Anaconda: `conda env export > environment_backup_$(date +%Y%m%d).yml`
+- **前端开发环境搭建**:
+  - Windows Anaconda创建node环境，安装Node.js 18+
+  - WSL2安装nvm和Node.js，保持版本一致
+- **环境同步脚本**: 编写自动化脚本确保两边环境一致
 
-### Phase 3: 前端增强 + 技术分析（第4-6周）
-- **Week 4**: React前端完善（完整MarkdownRenderer、数据可视化）
-- **Week 5-6**: Phase 2技术分析系统
+### Phase 1: Claude.ai风格React MVP（第3-7天）
+- **基础架构**: 
+  - React + TypeScript + Vite项目初始化
+  - 安装react-markdown、remark-gfm、react-syntax-highlighter等依赖
+- **核心组件开发**:
+  - Claude.ai风格布局：260px侧边栏、主内容区、#10a37f主色调
+  - MarkdownRenderer：完整实现代码高亮、表格美化、数学公式等
+  - 左右分屏逻辑：智能判断内容类型，自动显示文档区
+  - 核心组件：Sidebar、ChatArea、MessageList、InputBox、DocumentViewer
+- **API集成**:
+  - 与后端/query接口对接，处理sources数据分发
+  - 支持WebSocket流式响应
+
+### Phase 2: 功能增强与优化（第8-14天）
+- **高级功能**:
+  - 消息流式响应：逐字显示和打字光标效果
+  - 股票数据可视化：K线图、成交量图、资金流向图
+  - 增强表格组件：排序筛选、数值格式化、涨跌颜色
+- **用户体验**:
+  - 亮色/深色主题切换
+  - 快捷键支持（Ctrl+N新建对话等）
+  - 响应式设计适配移动端
+
+### Phase 3: 后端优化与技术分析（第15-21天）
+- **数据库Schema中文映射系统**
+- **RAG查询智能降级机制**
+- **技术面分析系统实现**
 
 ### Git版本管理
 ```bash
-# 当前: dev-phase2-technical-analysis
-# 目标: main → dev-react-frontend-v2
-git tag -a v1.4.3-stable -m "稳定版本"
-git checkout main && git merge dev-phase2-technical-analysis
-git checkout -b dev-react-frontend-v2
+# 当前分支: dev-react-frontend-v2
+# 环境备份完成后开始开发
+git add -A && git commit -m "chore: 环境备份和开发准备"
 ```
+
+### 部署文档要求
+- 详细记录WSL2+Windows双环境配置步骤
+- 创建.env.development和.env.production
+- 编写setup脚本自动化环境配置
 
 The system is designed for production use with comprehensive error handling, logging, monitoring capabilities, and full LangChain modernization (v1.3.8).
