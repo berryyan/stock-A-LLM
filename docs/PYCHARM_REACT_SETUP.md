@@ -108,9 +108,27 @@ File → Settings → Editor → Code Style → JavaScript
 graph LR
     A[PyCharm编辑] --> B[Git提交]
     B --> C[Claude Code审查]
-    C --> D[WSL2测试]
+    C --> D[Windows Anaconda测试]
     D --> A
 ```
+
+### 实际开发流程
+
+由于WSL2的I/O性能限制，推荐在Windows Anaconda环境中同时运行前后端：
+
+```bash
+# 在Windows Anaconda环境 (stock-frontend)
+# 终端1：运行后端API
+python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+
+# 终端2：运行前端开发服务器
+cd frontend
+npm run dev  # 默认端口3000
+```
+
+**性能对比**：
+- WSL2运行API：响应时间可能达到几秒
+- Windows原生运行：响应时间毫秒级
 
 ### 注意事项
 

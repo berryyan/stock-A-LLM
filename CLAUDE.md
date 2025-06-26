@@ -24,7 +24,7 @@ pip install -r requirements.txt
 
 ### Running the System
 ```bash
-# Start the API server
+# Start the API server (推荐在Windows Anaconda环境运行以获得更好性能)
 python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
 # Start interactive RAG interface
@@ -32,6 +32,11 @@ python rag_query_interface.py
 
 # Run system health check
 python scripts/utils/system_check.py
+
+# 注意：由于WSL2的I/O性能限制，建议在Windows原生环境运行API服务器
+# 在Windows Anaconda Prompt中：
+# conda activate stock-frontend
+# python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Testing

@@ -116,12 +116,12 @@ npm config set registry https://registry.npmmirror.com/
    ```
    PyCharm (Windows) → 编辑代码
                     ↓
-   Anaconda环境 → 运行前端开发服务器
+   Anaconda环境 → 运行前端开发服务器 + 后端API服务器
                     ↓
-   WSL2 → 运行后端API服务器
-                    ↓
-   Claude Code → 代码审查和协助
+   Claude Code (WSL2) → 代码审查和协助
    ```
+   
+   **注意**：由于WSL2的I/O性能限制，建议在Windows原生环境运行API服务器以获得更好的响应速度
 
 3. **环境隔离的好处**：
    - 前端环境崩溃不影响后端
