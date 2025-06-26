@@ -23,29 +23,25 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource }) => {
   );
 
   return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
-      {/* Avatar */}
-      <div
-        className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-semibold ${
-          isUser ? 'bg-blue-500 text-white' : 'bg-claude-primary text-white'
-        }`}
-      >
-        {isUser ? 'U' : 'AI'}
-      </div>
-
-      {/* Message Content */}
-      <div className={`flex-1 ${isUser ? 'flex justify-end' : ''}`}>
-        <div
-          className={`inline-block max-w-[70%] px-4 py-2 rounded-lg ${
-            isUser
-              ? 'bg-claude-surface border border-claude-border'
-              : 'bg-white border border-claude-border'
-          }`}
-        >
-          {isUser ? (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-          ) : (
-            <>
+    <div className={`group relative ${isUser ? 'mb-6' : 'mb-4'}`}>
+      {/* 用户消息 - 带背景的样式 */}
+      {isUser ? (
+        <div className="flex justify-end">
+          <div className="max-w-[85%] bg-gray-100 rounded-lg px-4 py-2">
+            <p className="text-sm whitespace-pre-wrap text-gray-900">{message.content}</p>
+          </div>
+        </div>
+      ) : (
+        /* AI消息 - Claude.ai风格，无边框无背景 */
+        <div className="flex gap-3">
+          {/* AI头像 */}
+          <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-semibold bg-claude-primary text-white">
+            AI
+          </div>
+          
+          {/* AI消息内容 - 无边框，直接显示 */}
+          <div className="flex-1 max-w-full">
+            <div className="prose prose-sm max-w-none">
               <MarkdownRenderer content={message.content} />
               {message.isStreaming && (
                 <span className="inline-flex gap-1 ml-2">
@@ -54,13 +50,16 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource }) => {
                   <span className="typing-dot w-1 h-1 bg-gray-400 rounded-full"></span>
                 </span>
               )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-claude-text-secondary mt-1 px-1">
-          <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
-          {hasViewableSource && (
-            <div className="flex gap-2">
+      )}
+      
+      {/* 时间戳和操作按钮 - 调整位置 */}
+      <div className={`flex items-center gap-2 text-xs text-claude-text-secondary mt-1 ${isUser ? 'justify-end' : 'ml-11'}`}>
+        <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+        {hasViewableSource && (
+          <div className="flex gap-2">
               {/* SQL数据 */}
               {message.sources?.sql?.result && (
                 <button
@@ -121,7 +120,6 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource }) => {
               )}
             </div>
           )}
-        </div>
       </div>
     </div>
   );

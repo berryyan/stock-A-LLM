@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v1.5.0)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v1.5.2)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
 **Current Status**: ✅ React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
@@ -240,6 +240,26 @@ The system supports six main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v1.5.2 - 前端样式优化与分屏体验改进 (2025-06-26)
+
+**Claude.ai风格优化** ✅:
+- **消息显示改进**: AI回复采用无边框直接显示，用户消息简化样式
+- **布局宽度优化**: 分屏时充分利用空间，减少两侧留白
+- **侧边栏折叠功能**: 支持手动和自动折叠，节省显示空间
+- **分屏体验提升**: 打开文档时自动折叠侧边栏，优化空间利用
+
+**技术改进** ✅:
+- 超时时间增加到10分钟（600秒）
+- Message组件重构，更接近Claude.ai体验
+- 响应式布局优化，分屏/非分屏自适应
+- 添加平滑过渡动画效果
+
+**用户体验提升** ✅:
+- 对话内容显示更清晰，减少视觉干扰
+- 分屏模式下阅读体验显著改善
+- 侧边栏智能折叠，最大化内容显示区域
+- 支持查看数据、文档、财务详情等多种源数据
 
 #### v1.5.0 - React前端初版实现 (2025-06-26)
 
