@@ -1,92 +1,69 @@
-# Stock Analysis System - React Frontend
+# React + TypeScript + Vite
 
-基于Claude.ai界面设计的股票分析系统前端。
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## 项目初始化
+Currently, two official plugins are available:
 
-### Windows环境（推荐）
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-1. 打开Anaconda Prompt
-2. 激活环境：
-   ```bash
-   conda activate stock-frontend
-   ```
-3. 进入frontend目录：
-   ```bash
-   cd E:\PycharmProjects\stock_analysis_system\frontend
-   ```
-4. 运行初始化脚本：
-   ```bash
-   init-react-project.bat
-   ```
+## Expanding the ESLint configuration
 
-### 手动初始化（如果脚本失败）
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-```bash
-# 创建Vite项目
-npm create vite@latest . -- --template react-ts
+```js
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-# 安装依赖
-npm install
+      // Remove tseslint.configs.recommended and replace with this
+      ...tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      ...tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      ...tseslint.configs.stylisticTypeChecked,
 
-# 安装额外依赖
-npm install react-markdown remark-gfm rehype-katex remark-math katex
-npm install react-syntax-highlighter @types/react-syntax-highlighter
-npm install axios react-router-dom clsx
-
-# 安装Tailwind CSS
-npm install -D tailwindcss postcss autoprefixer @tailwindcss/typography
-npx tailwindcss init -p
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-## 开发
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-```bash
-# 启动开发服务器
-npm run dev
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-# 构建生产版本
-npm run build
-
-# 预览生产构建
-npm run preview
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-
-## 项目结构
-
-```
-frontend/
-├── src/
-│   ├── components/     # React组件
-│   │   ├── layout/     # 布局组件
-│   │   ├── chat/       # 聊天相关组件
-│   │   ├── document/   # 文档查看组件
-│   │   └── common/     # 通用组件
-│   ├── services/       # API服务
-│   ├── hooks/          # 自定义Hooks
-│   ├── types/          # TypeScript类型定义
-│   ├── utils/          # 工具函数
-│   └── styles/         # 样式文件
-├── public/             # 静态资源
-└── package.json        # 项目配置
-```
-
-## 技术栈
-
-- **框架**: React 18 + TypeScript
-- **构建工具**: Vite
-- **样式**: Tailwind CSS
-- **Markdown**: react-markdown + 插件
-- **代码高亮**: react-syntax-highlighter
-- **HTTP客户端**: Axios
-- **路由**: React Router v6
-
-## Claude.ai风格特性
-
-- 260px固定宽度侧边栏
-- 左右分屏显示（对话区/文档区）
-- 完整的Markdown渲染支持
-- 代码块语法高亮
-- 数学公式支持（KaTeX）
-- 流式响应效果
-- 亮色/深色主题切换
