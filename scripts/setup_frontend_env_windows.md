@@ -68,14 +68,65 @@ npm --version   # 应显示 9.x.x
 npm config set registry https://registry.npmmirror.com/
 ```
 
-### 4. 安装VS Code扩展
+### 4. 配置开发工具
 
-推荐安装以下VS Code扩展：
+#### 4.1 PyCharm配置（推荐）
+
+由于你使用PyCharm作为主要IDE，需要安装以下插件：
+
+**必装插件**：
+- **JavaScript and TypeScript** (通常已内置)
+- **React** (用于JSX语法支持)
+- **Prettier** (代码格式化)
+- **ESLint** (代码检查)
+
+**安装方法**：
+1. File → Settings → Plugins
+2. 搜索并安装上述插件
+3. 重启PyCharm
+
+**配置Node.js解释器**：
+1. File → Settings → Languages & Frameworks → Node.js
+2. Node interpreter: 选择 `E:\anaconda3\envs\stock-frontend\Scripts\node.exe`
+3. Package manager: npm或yarn
+
+**配置React项目**：
+1. File → Settings → Languages & Frameworks → JavaScript
+2. JavaScript language version: ECMAScript 6+
+3. 勾选 "JSX Harmony"
+
+#### 4.2 VS Code配置（可选）
+
+如果你偶尔使用VS Code，安装以下扩展：
 - ES7+ React/Redux/React-Native snippets
 - Prettier - Code formatter
 - ESLint
-- TypeScript Vue Plugin (Volar)
 - Tailwind CSS IntelliSense
+
+#### 4.3 Claude Code集成注意事项
+
+**关于环境切换的影响**：
+
+1. **不会影响Claude Code集成**，因为：
+   - Claude Code主要通过WSL2访问你的代码
+   - 文件系统是共享的，不受Anaconda环境影响
+   - Git操作独立于Python/Node环境
+
+2. **开发工作流**：
+   ```
+   PyCharm (Windows) → 编辑代码
+                    ↓
+   Anaconda环境 → 运行前端开发服务器
+                    ↓
+   WSL2 → 运行后端API服务器
+                    ↓
+   Claude Code → 代码审查和协助
+   ```
+
+3. **环境隔离的好处**：
+   - 前端环境崩溃不影响后端
+   - 可以独立升级Node.js版本
+   - 避免包冲突
 
 ### 5. 环境变量配置
 
