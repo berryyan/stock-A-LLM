@@ -92,6 +92,11 @@ backup/
 *.temp
 *.old
 *.orig
+*.tar.gz
+*.tar
+*.zip
+backups/environment/*.tar.gz
+backups/environment/*.zip
 
 # Large model files
 *.bin
