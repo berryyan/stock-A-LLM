@@ -5,18 +5,53 @@
 - 已安装Git Bash或PowerShell
 - 管理员权限
 
+## 环境策略说明
+
+### 为什么推荐复制现有环境？
+
+1. **保持开发一致性**：前端开发时可能需要运行Python脚本（如API测试、数据处理）
+2. **避免重复安装**：继承所有已配置好的Python包和设置
+3. **简化调试流程**：在同一环境中可以同时调试前后端代码
+4. **配置继承**：保留原有的pip源、conda源等配置
+
+### 什么时候选择全新环境？
+
+- 当前环境特别大（>5GB）
+- 存在已知的包冲突
+- 只做纯前端开发，不涉及Python
+
 ## 设置步骤
 
 ### 1. 创建Node.js环境
 
 打开Anaconda Prompt (以管理员身份运行):
 
+#### 选项A：复制现有环境（推荐）
 ```powershell
-# 创建新的conda环境
-conda create -n stock-frontend python=3.10
+# 假设你的现有环境名为 'stock-analysis' 或 'base'
+# 首先列出所有环境确认名称
+conda env list
+
+# 复制现有环境
+conda create -n stock-frontend --clone stock-analysis
+# 或者如果使用base环境
+conda create -n stock-frontend --clone base
+
+# 激活新环境
 conda activate stock-frontend
 
 # 安装Node.js
+conda install -c conda-forge nodejs=18
+
+# 安装前端开发特定工具
+conda install -c conda-forge yarn  # 可选，yarn包管理器
+```
+
+#### 选项B：创建全新环境（轻量级）
+```powershell
+# 如果你确定不需要Python依赖，可以创建干净环境
+conda create -n stock-frontend-minimal python=3.10
+conda activate stock-frontend-minimal
 conda install -c conda-forge nodejs=18
 ```
 
