@@ -138,7 +138,7 @@ function App() {
         {/* 折叠按钮 */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute -right-3 top-6 w-6 h-6 bg-white border border-claude-border rounded-full flex items-center justify-center hover:bg-gray-50 z-10"
+          className="absolute -right-3 top-6 w-6 h-6 bg-[#303030] border border-[#404040] rounded-full flex items-center justify-center hover:bg-[#3a3a3a] z-10 transition-all duration-200 text-gray-400 hover:text-white shadow-md"
           title={sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'}
         >
           <svg className={`w-3 h-3 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">

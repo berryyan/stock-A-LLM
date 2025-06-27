@@ -117,7 +117,7 @@ export const SmartInput: React.FC<SmartInputProps> = ({
         className={`px-3 py-2 rounded-lg transition-all duration-200 flex items-center justify-center min-w-[80px] ${
           canSend
             ? 'bg-claude-primary hover:bg-claude-primary-hover text-white'
-            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-[#0d4a3f] text-[#6b9b8f] cursor-not-allowed'
         }`}
         title={canSend ? "发送查询 (Enter)" : "请输入查询内容"}
       >

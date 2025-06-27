@@ -11,19 +11,24 @@ export const Avatar: React.FC<AvatarProps> = ({ role, size = 32 }) => {
   return (
     <div 
       className={`
-        flex-shrink-0 flex items-center justify-center font-semibold
-        ${!isUser && 'bg-claude-primary text-white'}
+        flex-shrink-0 flex items-center justify-center
+        ${!isUser && 'bg-claude-primary text-white font-semibold'}
       `}
       style={{
         width: `${size}px`,
         height: `${size}px`,
         borderRadius: '50%',           // 圆形头像
-        fontSize: `${size * 0.4}px`,   // 字体大小为头像大小的40%
+        fontSize: isUser ? `${size * 0.65}px` : `${size * 0.4}px`,   // 用户头像字体更大(65%)，AI保持40%
+        fontWeight: isUser ? '900' : '600',                          // 用户使用最粗的字重
         backgroundColor: isUser ? '#C2C0B6' : undefined,  // 深色主题：用户头像背景色（浅灰棕）
         color: isUser ? '#262626' : undefined,            // 深色主题：用户头像文字颜色（深灰）
+        lineHeight: '1',                                  // 确保文字垂直居中
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}
     >
-      {isUser ? '用' : 'AI'}
+      {isUser ? 'Q' : 'AI'}
     </div>
   );
 };

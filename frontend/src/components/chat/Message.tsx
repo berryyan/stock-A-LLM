@@ -62,21 +62,25 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
       {isUser ? (
         <div className="inline-block" style={{ maxWidth: '95%' }}>
           <div 
-            className="user-message-bubble flex items-start gap-2.5"
+            className="user-message-bubble flex gap-2.5"
             style={{
               width: 'fit-content',
               backgroundColor: '#141413',     // 深色主题：气泡背景色（深黑）
-              padding: '8px 14px 8px 8px',
+              padding: '10px 16px 10px 10px',
               borderRadius: '8px',
               wordBreak: 'normal',
-              overflowWrap: 'break-word'
+              overflowWrap: 'break-word',
+              alignItems: 'flex-start'        // 确保顶部对齐
             }}
           >
-            {/* 用户头像容器 - mt-0.5用于微调垂直对齐 */}
-            <div className="flex-shrink-0 mt-0.5">
-              <Avatar role="user" size={24} /> {/* 头像大小24px，可调整 */}
+            {/* 用户头像容器 */}
+            <div className="flex-shrink-0 flex items-center" style={{ 
+              height: '24px',     // 与单行文字高度一致
+              marginTop: '0'      // 确保无额外间距
+            }}>
+              <Avatar role="user" size={26} /> {/* 头像大小26px，标准型 */}
             </div>
-            <div className="flex-grow">
+            <div className="flex-grow flex items-center" style={{ minHeight: '24px' }}>
               <p className="text-[15px] leading-relaxed m-0 text-left" style={{ 
                 color: '#F5F5F5',     // 深色主题：气泡文字颜色（浅白）
                 wordBreak: 'normal',   // 正常换行，避免过早换行
