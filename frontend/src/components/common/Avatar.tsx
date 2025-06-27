@@ -11,17 +11,15 @@ export const Avatar: React.FC<AvatarProps> = ({ role, size = 32 }) => {
   return (
     <div 
       className={`
-        flex-shrink-0 flex items-center justify-center font-semibold
-        ${isUser 
-          ? 'bg-gray-500 text-white' 
-          : 'bg-claude-primary text-white'
-        }
+        flex-shrink-0 flex items-center justify-center font-semibold text-white
+        ${!isUser && 'bg-claude-primary'}
       `}
       style={{
         width: `${size}px`,
         height: `${size}px`,
         borderRadius: '50%',
         fontSize: `${size * 0.4}px`,
+        backgroundColor: isUser ? '#4A4A4A' : undefined,
       }}
     >
       {isUser ? '用' : 'AI'}

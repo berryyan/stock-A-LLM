@@ -55,23 +55,23 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
           <div 
             className="user-message-bubble flex items-start gap-2.5"
             style={{
-              maxWidth: '85%',
+              maxWidth: '70%',
               width: 'fit-content',
-              backgroundColor: '#2d2d30',
-              color: '#ececf1',
+              backgroundColor: '#F5F5DC',
+              color: '#333333',
               padding: '8px 14px 8px 8px',
               borderRadius: '18px',
-              wordWrap: 'break-word',
               wordBreak: 'break-word',
-              whiteSpace: 'pre-wrap',
-              overflowWrap: 'anywhere'
+              overflowWrap: 'break-word'
             }}
           >
             <div className="flex-shrink-0 mt-0.5">
               <Avatar role="user" size={24} />
             </div>
-            <div className="flex-grow min-w-0">
-              <p className="text-[15px] leading-relaxed m-0 text-left">{message.content}</p>
+            <div className="flex-grow" style={{ minWidth: 0 }}>
+              <p className="text-[15px] leading-relaxed m-0 text-left" style={{ color: '#333333' }}>
+                {message.content}
+              </p>
             </div>
           </div>
         </div>
