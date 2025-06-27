@@ -141,16 +141,15 @@ textarea {
   transform: translateY(0);
 }
 
-/* Input container styles */
-.input-container {
-  /* 考虑侧边栏宽度 */
+/* Input container styles - 现在使用内联样式控制位置 */
+/* .input-container {
   left: 260px;
   background-color: transparent;
 }
 
 .input-container.sidebar-collapsed {
   left: 48px;
-}
+} */
 
 /* AI消息样式 - 深色主题 */
 .ai-message {

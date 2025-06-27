@@ -188,7 +188,11 @@ function App() {
       <main className={`flex-1 flex flex-col transition-all duration-300 ${documentView ? 'mr-[50%]' : ''}`}>
         {/* Chat Area - Claude.ai风格的内容区域 */}
         <div className="flex-1 overflow-y-auto" style={{ paddingBottom: '200px' }}>
-          <div className="max-w-3xl mx-auto py-8" style={{ paddingLeft: '3%', paddingRight: '3%' }}>
+          <div className="mx-auto py-8" style={{ 
+            maxWidth: '48rem',
+            paddingLeft: '48px',
+            paddingRight: '48px'
+          }}>
             {messages.length === 0 ? (
               <div className="text-center text-claude-text-secondary py-20">
                 <h1 className="text-2xl font-semibold mb-2">
@@ -239,7 +243,11 @@ function App() {
         </div>
 
         {/* Input Area - 无缝融合设计 */}
-        <div className={`input-container fixed bottom-0 right-0 z-10 transition-all duration-300 ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${documentView ? 'pr-[52%]' : ''}`}>
+        <div className={`input-container fixed bottom-0 z-10 transition-all duration-300 ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} 
+             style={{ 
+               left: sidebarCollapsed ? '48px' : '260px',
+               right: documentView ? '50%' : '0'
+             }}>
           {/* 
             顶部渐变背景创造融合效果 - 左右完全透明
             渐变高度：120px
@@ -254,7 +262,7 @@ function App() {
           />
           
           {/* 输入框包装器 - 减少底部留空 */}
-          <div className="relative mx-auto max-w-3xl px-6 pb-1">
+          <div className="relative mx-auto px-6 pb-1" style={{ maxWidth: '48rem' }}>
             <div 
               className="input-wrapper rounded-2xl"
               style={{
