@@ -199,9 +199,15 @@ const ChatInterface: React.FC = () => {
 
     // 清理函数
     return () => {
+      // 清理流式显示定时器
+      if (streamingIntervalRef.current) {
+        clearInterval(streamingIntervalRef.current);
+        streamingIntervalRef.current = null;
+      }
+      // 断开WebSocket连接
       wsService.disconnect();
     };
-  }, [simulateStreaming, handleStreamMessage, handleCompleteMessage, handleErrorMessage]);
+  }, []); // 移除不必要的依赖，避免重复初始化
 
   // 初始化欢迎消息
   useEffect(() => {

@@ -51,19 +51,25 @@ export class ApiService {
 // WebSocket服务类
 export class WebSocketService {
   private ws: WebSocket | null = null;
+  private url: string;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 3000;
   private messageHandlers: ((data: any) => void)[] = [];
+  private reconnectTimer: NodeJS.Timeout | null = null;
+
+  constructor(url?: string) {
+    // 使用环境变量或动态构建URL
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = import.meta.env.VITE_WS_HOST || window.location.hostname;
+    const port = import.meta.env.VITE_WS_PORT || '8000';
+    this.url = url || `${protocol}//${host}:${port}/ws`;
+  }
 
   // 连接WebSocket
-  connect(onMessage: (data: any) => void) {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.hostname}:8000/ws`;
-
+  connect() {
     try {
-      this.ws = new WebSocket(wsUrl);
-      this.messageHandlers.push(onMessage);
+      this.ws = new WebSocket(this.url);
 
       this.ws.onopen = () => {
         console.log('WebSocket连接已建立');
@@ -101,13 +107,28 @@ export class WebSocketService {
     }
   }
 
+  // 检查连接状态
+  isConnected(): boolean {
+    return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+  }
+
+  // 添加消息处理器
+  onMessage(handler: (data: any) => void): void {
+    this.messageHandlers.push(handler);
+  }
+
   // 断开连接
   disconnect() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
     this.messageHandlers = [];
+    this.reconnectAttempts = 0;
   }
 
   // 尝试重连
@@ -115,10 +136,8 @@ export class WebSocketService {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       console.log(`尝试重连 (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-      setTimeout(() => {
-        this.messageHandlers.forEach(handler => {
-          this.connect(handler);
-        });
+      this.reconnectTimer = setTimeout(() => {
+        this.connect();
       }, this.reconnectDelay * this.reconnectAttempts);
     }
   }
