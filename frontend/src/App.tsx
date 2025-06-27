@@ -125,8 +125,8 @@ function App() {
 
 
   return (
-    {/* 主容器 - 使用flex布局，背景色#FAF9F5 */}
     <div className="flex h-screen bg-claude-background">
+      {/* 主容器 - 使用flex布局，背景色#262626（深色主题） */}
       {/* 
         侧边栏 - 支持折叠
         展开宽度：w-sidebar (260px)
