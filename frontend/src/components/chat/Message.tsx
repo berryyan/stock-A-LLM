@@ -51,14 +51,14 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
     >
       {/* 用户消息 - Claude.ai风格，头像和文本在同一个气泡内 */}
       {isUser ? (
-        <div className="inline-block" style={{ maxWidth: '85%' }}>
+        <div className="inline-block" style={{ maxWidth: '95%' }}>
           <div 
             className="user-message-bubble flex items-start gap-2.5"
             style={{
               width: 'fit-content',
               backgroundColor: '#F0EEE6',
               padding: '8px 14px 8px 8px',
-              borderRadius: '18px',
+              borderRadius: '8px',
               wordBreak: 'normal',
               overflowWrap: 'break-word'
             }}
