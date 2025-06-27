@@ -12,34 +12,55 @@ const ChatInterface: React.FC = () => {
   const wsServiceRef = useRef<WebSocketService | null>(null);
   const streamingContentRef = useRef<string>('');
 
-  // 初始化WebSocket连接
-  useEffect(() => {
-    // 创建WebSocket服务实例
-    const wsService = new WebSocketService('ws://localhost:8000/ws');
-    wsServiceRef.current = wsService;
-
-    // 设置消息处理器
-    wsService.onMessage((data) => {
-      if (data.type === 'stream') {
-        handleStreamMessage(data);
-      } else if (data.type === 'complete') {
-        handleCompleteMessage(data);
-      } else if (data.type === 'error') {
-        handleErrorMessage(data);
+  // 模拟流式显示效果
+  const simulateStreaming = useCallback((messageId: string, fullContent: string) => {
+    let currentIndex = 0;
+    const charsPerInterval = 2; // 每次显示的字符数
+    const intervalMs = 30; // 间隔时间（毫秒）
+    
+    streamingContentRef.current = '';
+    
+    const streamInterval = setInterval(() => {
+      if (currentIndex < fullContent.length) {
+        const endIndex = Math.min(currentIndex + charsPerInterval, fullContent.length);
+        streamingContentRef.current = fullContent.substring(0, endIndex);
+        currentIndex = endIndex;
+        
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastIndex = newMessages.length - 1;
+          if (lastIndex >= 0 && newMessages[lastIndex].id === messageId) {
+            newMessages[lastIndex] = {
+              ...newMessages[lastIndex],
+              content: streamingContentRef.current,
+              isStreaming: true,
+            };
+          }
+          return newMessages;
+        });
+      } else {
+        // 流式显示完成
+        clearInterval(streamInterval);
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastIndex = newMessages.length - 1;
+          if (lastIndex >= 0 && newMessages[lastIndex].id === messageId) {
+            newMessages[lastIndex] = {
+              ...newMessages[lastIndex],
+              isStreaming: false,
+            };
+          }
+          return newMessages;
+        });
+        setCurrentStreamingId(null);
+        setIsLoading(false);
       }
-    });
-
-    // 连接WebSocket
-    wsService.connect();
-
-    // 清理函数
-    return () => {
-      wsService.disconnect();
-    };
+    }, intervalMs);
   }, []);
 
   // 处理流式消息
   const handleStreamMessage = useCallback((data: any) => {
+    // 保留原有逻辑，以备后端支持真正的流式响应
     if (data.message_id && currentStreamingId === data.message_id) {
       streamingContentRef.current += data.content || '';
       
@@ -101,6 +122,45 @@ const ChatInterface: React.FC = () => {
       setIsLoading(false);
     }
   }, [currentStreamingId]);
+
+  // 初始化WebSocket连接
+  useEffect(() => {
+    // 创建WebSocket服务实例
+    const wsService = new WebSocketService('ws://localhost:8000/ws');
+    wsServiceRef.current = wsService;
+
+    // 设置消息处理器
+    wsService.onMessage((data) => {
+      if (data.type === 'stream') {
+        handleStreamMessage(data);
+      } else if (data.type === 'complete') {
+        handleCompleteMessage(data);
+      } else if (data.type === 'error') {
+        handleErrorMessage(data);
+      } else if (data.type === 'analysis_result' && data.content) {
+        // 处理完整的分析结果，使用模拟流式显示
+        const messageId = data.query_id || currentStreamingId;
+        if (messageId && data.content.success) {
+          const fullContent = data.content.answer || data.content.content || '';
+          simulateStreaming(messageId, fullContent);
+        } else if (messageId) {
+          // 错误情况
+          handleErrorMessage({
+            message_id: messageId,
+            error: data.content.error || '查询失败'
+          });
+        }
+      }
+    });
+
+    // 连接WebSocket
+    wsService.connect();
+
+    // 清理函数
+    return () => {
+      wsService.disconnect();
+    };
+  }, [simulateStreaming, handleStreamMessage, handleCompleteMessage, handleErrorMessage]);
 
   // 初始化欢迎消息
   useEffect(() => {
@@ -234,9 +294,7 @@ const ChatInterface: React.FC = () => {
       // 发送WebSocket消息
       wsServiceRef.current.send({
         type: 'query',
-        message_id: messageId,
         question: content,
-        query_type: queryType,
       });
     }
   };
