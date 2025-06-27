@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Message, QueryType } from '../types';
-import { ApiService } from '../services/api';
+import { ApiService, WebSocketService } from '../services/api';
 import MessageList from './MessageList';
 import InputBox from './InputBox';
 
@@ -8,6 +8,99 @@ const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isHealthy, setIsHealthy] = useState(true);
+  const [currentStreamingId, setCurrentStreamingId] = useState<string | null>(null);
+  const wsServiceRef = useRef<WebSocketService | null>(null);
+  const streamingContentRef = useRef<string>('');
+
+  // 初始化WebSocket连接
+  useEffect(() => {
+    // 创建WebSocket服务实例
+    const wsService = new WebSocketService('ws://localhost:8000/ws');
+    wsServiceRef.current = wsService;
+
+    // 设置消息处理器
+    wsService.onMessage((data) => {
+      if (data.type === 'stream') {
+        handleStreamMessage(data);
+      } else if (data.type === 'complete') {
+        handleCompleteMessage(data);
+      } else if (data.type === 'error') {
+        handleErrorMessage(data);
+      }
+    });
+
+    // 连接WebSocket
+    wsService.connect();
+
+    // 清理函数
+    return () => {
+      wsService.disconnect();
+    };
+  }, []);
+
+  // 处理流式消息
+  const handleStreamMessage = useCallback((data: any) => {
+    if (data.message_id && currentStreamingId === data.message_id) {
+      streamingContentRef.current += data.content || '';
+      
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastIndex = newMessages.length - 1;
+        if (lastIndex >= 0 && newMessages[lastIndex].id === data.message_id) {
+          newMessages[lastIndex] = {
+            ...newMessages[lastIndex],
+            content: streamingContentRef.current,
+            isStreaming: true,
+          };
+        }
+        return newMessages;
+      });
+    }
+  }, [currentStreamingId]);
+
+  // 处理完成消息
+  const handleCompleteMessage = useCallback((data: any) => {
+    if (data.message_id && currentStreamingId === data.message_id) {
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastIndex = newMessages.length - 1;
+        if (lastIndex >= 0 && newMessages[lastIndex].id === data.message_id) {
+          newMessages[lastIndex] = {
+            ...newMessages[lastIndex],
+            isStreaming: false,
+          };
+        }
+        return newMessages;
+      });
+      
+      setCurrentStreamingId(null);
+      streamingContentRef.current = '';
+      setIsLoading(false);
+    }
+  }, [currentStreamingId]);
+
+  // 处理错误消息
+  const handleErrorMessage = useCallback((data: any) => {
+    if (data.message_id && currentStreamingId === data.message_id) {
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastIndex = newMessages.length - 1;
+        if (lastIndex >= 0 && newMessages[lastIndex].id === data.message_id) {
+          newMessages[lastIndex] = {
+            ...newMessages[lastIndex],
+            content: `❌ ${data.error || '查询失败，请稍后重试。'}`,
+            isError: true,
+            isStreaming: false,
+          };
+        }
+        return newMessages;
+      });
+      
+      setCurrentStreamingId(null);
+      streamingContentRef.current = '';
+      setIsLoading(false);
+    }
+  }, [currentStreamingId]);
 
   // 初始化欢迎消息
   useEffect(() => {
@@ -89,37 +182,62 @@ const ChatInterface: React.FC = () => {
     // 设置加载状态
     setIsLoading(true);
 
-    try {
+    // 检查WebSocket连接状态
+    if (!wsServiceRef.current || !wsServiceRef.current.isConnected()) {
+      // 如果WebSocket未连接，使用传统HTTP方式
+      try {
+        const queryType = detectQueryType(content);
+        const response = await ApiService.query(content, queryType);
+        
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: response.success 
+            ? (response.answer || response.content || '抱歉，未获取到有效回复。')
+            : `❌ ${response.error || '查询失败，请稍后重试。'}`,
+          timestamp: new Date(),
+          isError: !response.success,
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+      } catch (error) {
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: '❌ 网络错误，请检查网络连接并重试。',
+          timestamp: new Date(),
+          isError: true,
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // 使用WebSocket流式响应
+      const messageId = (Date.now() + 1).toString();
+      setCurrentStreamingId(messageId);
+      streamingContentRef.current = '';
+      
+      // 添加空的助手消息占位符
+      const assistantMessage: Message = {
+        id: messageId,
+        type: 'assistant',
+        content: '',
+        timestamp: new Date(),
+        isStreaming: true,
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+      
       // 自动检测查询类型
       const queryType = detectQueryType(content);
       
-      // 发送API请求
-      const response = await ApiService.query(content, queryType);
-      
-      // 处理响应
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: response.success 
-          ? (response.answer || response.content || '抱歉，未获取到有效回复。')
-          : `❌ ${response.error || '查询失败，请稍后重试。'}`,
-        timestamp: new Date(),
-        isError: !response.success,
-      };
-      
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      // 错误处理
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: '❌ 网络错误，请检查网络连接并重试。',
-        timestamp: new Date(),
-        isError: true,
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
+      // 发送WebSocket消息
+      wsServiceRef.current.send({
+        type: 'query',
+        message_id: messageId,
+        question: content,
+        query_type: queryType,
+      });
     }
   };
 

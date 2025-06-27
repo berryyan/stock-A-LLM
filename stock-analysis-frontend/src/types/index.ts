@@ -15,6 +15,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   isError?: boolean;
+  isStreaming?: boolean;
 }
 
 // 查询类型

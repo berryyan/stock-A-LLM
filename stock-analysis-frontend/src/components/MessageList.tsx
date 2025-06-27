@@ -33,13 +33,18 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
             {message.type === 'user' ? (
               <p>{message.content}</p>
             ) : (
-              <SimpleMarkdownRenderer content={message.content} />
+              <>
+                <SimpleMarkdownRenderer content={message.content} />
+                {message.isStreaming && (
+                  <span className="typing-cursor"></span>
+                )}
+              </>
             )}
           </div>
         </div>
       ))}
       
-      {isLoading && (
+      {isLoading && messages[messages.length - 1]?.isStreaming !== true && (
         <div className="message assistant">
           <div className="message-avatar">🤖</div>
           <div className="message-content">
