@@ -152,18 +152,18 @@ textarea {
   left: 48px;
 }
 
-/* AI消息样式 */
+/* AI消息样式 - 深色主题 */
 .ai-message {
   font-size: 15px;
   line-height: 1.6;
-  color: #2d2d30;
+  color: #FFFFFF;  /* 深色主题：白色文字 */
 }
 
-/* Prose 样式调整 - Claude.ai风格 */
+/* Prose 样式调整 - 深色主题 */
 .prose {
   font-size: 15px;
   line-height: 1.6;
-  color: #2d2d30;
+  color: #FFFFFF;  /* 深色主题：白色文字 */
 }
 
 .prose p {

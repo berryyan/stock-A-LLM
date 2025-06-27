@@ -154,7 +154,7 @@ function App() {
                 setMessages([]);
                 setSidebarCollapsed(false);
               }}
-              className="w-8 h-8 flex items-center justify-center text-claude-primary hover:bg-gray-100 rounded"
+              className="w-8 h-8 flex items-center justify-center text-claude-primary hover:bg-[#1E1E1E] rounded"
               title="New Chat"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,7 +248,7 @@ function App() {
           <div 
             className="absolute inset-x-0 bottom-0 pointer-events-none"
             style={{
-              background: 'linear-gradient(to top, rgb(250,250,250) 0%, rgb(250,250,250) 60%, transparent 100%)',
+              background: 'linear-gradient(to top, rgb(38,38,38) 0%, rgb(38,38,38) 60%, transparent 100%)',  // 深色主题渐变
               height: '120px'
             }}
           />
@@ -256,10 +256,11 @@ function App() {
           {/* 输入框包装器 - 减少底部留空 */}
           <div className="relative mx-auto max-w-3xl px-6 pb-1">
             <div 
-              className="input-wrapper bg-white rounded-lg"
+              className="input-wrapper rounded-lg"
               style={{
-                // 三层阴影效果：边框线 + 近阴影 + 远阴影
-                boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05), 0 4px 8px rgba(0, 0, 0, 0.02)'
+                backgroundColor: '#303030',  // 深色主题：输入框背景色
+                // 深色主题阴影效果
+                boxShadow: '0 0 0 1px rgba(255, 255, 255, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2)'
               }}
             >
               <SmartInput

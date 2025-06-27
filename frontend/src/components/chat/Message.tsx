@@ -65,7 +65,7 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
             className="user-message-bubble flex items-start gap-2.5"
             style={{
               width: 'fit-content',
-              backgroundColor: '#F0EEE6',
+              backgroundColor: '#141413',     // 深色主题：气泡背景色（深黑）
               padding: '8px 14px 8px 8px',
               borderRadius: '8px',
               wordBreak: 'normal',
@@ -78,7 +78,7 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
             </div>
             <div className="flex-grow">
               <p className="text-[15px] leading-relaxed m-0 text-left" style={{ 
-                color: '#000000',     // 文字颜色：纯黑，可调整
+                color: '#F5F5F5',     // 深色主题：气泡文字颜色（浅白）
                 wordBreak: 'normal',   // 正常换行，避免过早换行
                 overflowWrap: 'break-word'  // 长单词自动换行
               }}>

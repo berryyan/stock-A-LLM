@@ -7,14 +7,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Claude.ai brand colors
+        // Claude.ai brand colors - Dark Theme
         'claude-primary': '#10a37f',
         'claude-primary-hover': '#0d8968',
-        'claude-background': '#FAF9F5',
-        'claude-surface': '#ffffff',
-        'claude-border': '#e5e5e7',
-        'claude-text-primary': '#202123',
-        'claude-text-secondary': '#6e6e80',
+        'claude-background': '#262626',      // 左分屏背景色（深灰）
+        'claude-surface': '#262626',         // 侧边栏背景色（深灰）
+        'claude-border': '#404040',          // 边框色（更深的灰）
+        'claude-text-primary': '#FFFFFF',    // 主文字色（白色）
+        'claude-text-secondary': '#B0B0B0',  // 次要文字色（浅灰）
         // Dark mode colors
         'claude-dark-background': '#2d2d30',
         'claude-dark-surface': '#1e1e1e',

@@ -115,19 +115,23 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ content, type, o
   return (
     <div
       ref={containerRef}
-      className="fixed right-0 top-0 h-full w-1/2 bg-white border-l border-claude-border shadow-xl transform translate-x-full transition-transform duration-300 ease-out z-50"
-      style={{ transform: 'translateX(100%)' }}
+      className="fixed right-0 top-0 h-full w-1/2 border-l border-claude-border shadow-xl transform translate-x-full transition-transform duration-300 ease-out z-50"
+      style={{
+        backgroundColor: '#303030',  // 深色主题：右分屏背景色
+        color: '#FFFFFF',           // 深色主题：右分屏文字颜色
+        transform: 'translateX(100%)'
+      }}
     >
       {/* 头部 */}
       <div className="flex items-center justify-between p-4 border-b border-claude-border">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-white">
           {type === 'table' ? '数据表格' : 
            type === 'document' ? '源文档' : 
            type === 'chart' ? '数据图表' : '详细信息'}
         </h2>
         <button
           onClick={handleClose}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-[#1E1E1E] rounded-lg transition-colors text-gray-300 hover:text-white"
           aria-label="关闭"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
