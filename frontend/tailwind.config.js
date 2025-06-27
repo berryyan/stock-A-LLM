@@ -10,7 +10,7 @@ export default {
         // Claude.ai brand colors
         'claude-primary': '#10a37f',
         'claude-primary-hover': '#0d8968',
-        'claude-background': '#f7f7f8',
+        'claude-background': '#FAF9F5',
         'claude-surface': '#ffffff',
         'claude-border': '#e5e5e7',
         'claude-text-primary': '#202123',

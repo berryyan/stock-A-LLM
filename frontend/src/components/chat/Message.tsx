@@ -51,25 +51,27 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
     >
       {/* 用户消息 - Claude.ai风格，头像和文本在同一个气泡内 */}
       {isUser ? (
-        <div className="inline-block">
+        <div className="inline-block" style={{ maxWidth: '85%' }}>
           <div 
             className="user-message-bubble flex items-start gap-2.5"
             style={{
-              maxWidth: '70%',
               width: 'fit-content',
-              backgroundColor: '#F5F5DC',
-              color: '#333333',
+              backgroundColor: '#F0EEE6',
               padding: '8px 14px 8px 8px',
               borderRadius: '18px',
-              wordBreak: 'break-word',
+              wordBreak: 'normal',
               overflowWrap: 'break-word'
             }}
           >
             <div className="flex-shrink-0 mt-0.5">
               <Avatar role="user" size={24} />
             </div>
-            <div className="flex-grow" style={{ minWidth: 0 }}>
-              <p className="text-[15px] leading-relaxed m-0 text-left" style={{ color: '#333333' }}>
+            <div className="flex-grow">
+              <p className="text-[15px] leading-relaxed m-0 text-left" style={{ 
+                color: '#000000',
+                wordBreak: 'normal',
+                overflowWrap: 'break-word'
+              }}>
                 {message.content}
               </p>
             </div>
