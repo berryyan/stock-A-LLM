@@ -5,9 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:staging": "vite --mode staging",
+    "dev:prod": "vite --mode production",
     "build": "tsc -b && vite build",
+    "build:staging": "tsc -b && vite build --mode staging",
+    "build:dev": "tsc -b && vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:staging": "vite preview --mode staging",
+    "clean": "rm -rf dist node_modules",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@types/react-syntax-highlighter": "^15.5.13",
