@@ -60,14 +60,22 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
         - 内边距：上下8px，右14px，左8px
       */}
       {isUser ? (
-        <div className="inline-block" style={{ maxWidth: '95%' }}>
+        <div style={{ 
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'flex-start'
+        }}>
+        <div className="inline-block" style={{ 
+          maxWidth: '100%',
+          marginLeft: '0'
+        }}>
           <div 
             className="user-message-bubble flex gap-2.5"
             style={{
               width: 'fit-content',
               backgroundColor: '#141413',     // 深色主题：气泡背景色（深黑）
               padding: '10px 16px 10px 10px',
-              borderRadius: '8px',
+              borderRadius: '16px',
               wordBreak: 'normal',
               overflowWrap: 'break-word',
               alignItems: 'flex-start'        // 确保顶部对齐
@@ -91,12 +99,13 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
             </div>
           </div>
         </div>
+        </div>
       ) : (
         /* 
           AI消息 - Claude.ai风格，无头像无背景，像文档一样
-          pl-12 = 3rem (48px) 左侧内边距，与侧边栏图标对齐
+          左侧内边距10px，与用户头像圆圈左边缘对齐
         */
-        <div className="ai-message pl-12">
+        <div className="ai-message" style={{ paddingLeft: '10px' }}>
           <div className="prose prose-sm max-w-none">
             <MarkdownRenderer content={message.content} />
             {message.isStreaming && (
@@ -114,7 +123,7 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
       
       {/* 查看数据按钮和复制按钮 - AI消息底部 */}
       {!isUser && (hasViewableSource || !message.isStreaming) && (
-        <div className="flex items-center gap-3 mt-3 pl-12">
+        <div className="flex items-center gap-3 mt-3" style={{ paddingLeft: '10px' }}>
           {/* 查看数据按钮组 */}
           {hasViewableSource && (
             <div className="flex gap-2">

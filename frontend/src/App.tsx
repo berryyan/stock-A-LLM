@@ -188,7 +188,7 @@ function App() {
       <main className={`flex-1 flex flex-col transition-all duration-300 ${documentView ? 'mr-[50%]' : ''}`}>
         {/* Chat Area - Claude.ai风格的内容区域 */}
         <div className="flex-1 overflow-y-auto" style={{ paddingBottom: '200px' }}>
-          <div className="max-w-3xl mx-auto px-6 py-8">
+          <div className="max-w-3xl mx-auto py-8" style={{ paddingLeft: '3%', paddingRight: '3%' }}>
             {messages.length === 0 ? (
               <div className="text-center text-claude-text-secondary py-20">
                 <h1 className="text-2xl font-semibold mb-2">
@@ -256,7 +256,7 @@ function App() {
           {/* 输入框包装器 - 减少底部留空 */}
           <div className="relative mx-auto max-w-3xl px-6 pb-1">
             <div 
-              className="input-wrapper rounded-lg"
+              className="input-wrapper rounded-2xl"
               style={{
                 backgroundColor: '#303030',  // 深色主题：输入框背景色
                 // 深色主题阴影效果
