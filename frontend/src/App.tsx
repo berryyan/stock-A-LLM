@@ -56,6 +56,17 @@ function App() {
       setMessages(prev => [...prev, userMessage]);
       setInput('');
       setIsLoading(true);
+      
+      // 立即滚动到顶部，为AI回复留出空间
+      setTimeout(() => {
+        const chatContainer = messagesEndRef.current?.parentElement?.parentElement;
+        if (chatContainer) {
+          chatContainer.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
 
       try {
         const response = await stockAPI.query(userMessage.content);
@@ -83,20 +94,20 @@ function App() {
           config: error.config
         });
         
-        let errorContent = '抱歉，查询失败。';
+        let errorContent = '⚠️ 抱歉，查询失败。';
         if (error.response) {
           // 处理HTTP错误
           if (error.response.data?.error) {
-            errorContent = error.response.data.error;
+            errorContent = `⚠️ ${error.response.data.error}`;
           } else if (error.response.data?.detail) {
-            errorContent = error.response.data.detail;
+            errorContent = `⚠️ ${error.response.data.detail}`;
           } else {
             errorContent += ` 错误状态: ${error.response.status}`;
           }
         } else if (error.request) {
-          errorContent = '无法连接到API服务器，请检查网络连接或确认服务是否启动。';
+          errorContent = '⚠️ 无法连接到API服务器，请检查网络连接或确认服务是否启动。';
         } else {
-          errorContent = error.message || '未知错误';
+          errorContent = `⚠️ ${error.message || '未知错误'}`;
         }
         
         const errorMessage: MessageType = {
@@ -222,17 +233,17 @@ function App() {
 
         {/* Input Area - 无缝融合设计 */}
         <div className={`input-container fixed bottom-0 right-0 z-10 transition-all duration-300 ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${documentView ? 'pr-[52%]' : ''}`}>
-          {/* 顶部渐变背景创造融合效果 */}
+          {/* 顶部渐变背景创造融合效果 - 左右完全透明 */}
           <div 
-            className="absolute inset-0 pointer-events-none"
+            className="absolute inset-x-0 bottom-0 pointer-events-none"
             style={{
-              background: 'linear-gradient(to top, rgb(250,250,250) 0%, rgb(250,250,250) 70%, rgba(250,250,250,0.9) 85%, rgba(250,250,250,0.7) 95%, transparent 100%)',
-              height: '150px'
+              background: 'linear-gradient(to top, rgb(250,250,250) 0%, rgb(250,250,250) 60%, transparent 100%)',
+              height: '120px'
             }}
           />
           
-          {/* 输入框包装器 */}
-          <div className="relative mx-auto max-w-3xl px-6 pb-6">
+          {/* 输入框包装器 - 减少底部留空 */}
+          <div className="relative mx-auto max-w-3xl px-6 pb-1">
             <div 
               className="input-wrapper bg-white rounded-lg"
               style={{

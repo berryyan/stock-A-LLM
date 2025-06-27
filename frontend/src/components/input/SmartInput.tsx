@@ -31,7 +31,7 @@ export const SmartInput: React.FC<SmartInputProps> = ({
     textarea.style.height = 'auto';
     
     // 计算新高度
-    const newHeight = Math.min(Math.max(textarea.scrollHeight, 56), 240);
+    const newHeight = Math.min(Math.max(textarea.scrollHeight, 40), 240);
     textarea.style.height = `${newHeight}px`;
     
     // 根据高度决定是否显示滚动条
@@ -90,11 +90,11 @@ export const SmartInput: React.FC<SmartInputProps> = ({
             onCompositionEnd={handleCompositionEnd}
             placeholder={placeholder}
             disabled={isLoading}
-            className="w-full px-4 py-3 bg-transparent border-0 rounded-lg focus:outline-none resize-none transition-all duration-200"
+            className="w-full px-4 py-2 bg-transparent border-0 rounded-lg focus:outline-none resize-none transition-all duration-200"
             style={{
-              minHeight: '56px',
+              minHeight: '40px',
               maxHeight: '240px',
-              lineHeight: '24px'
+              lineHeight: '20px'
             }}
           />
         

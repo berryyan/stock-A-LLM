@@ -52,9 +52,23 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
       {/* 用户消息 - Claude.ai风格，左侧头像，带背景框 */}
       {isUser ? (
         <div className="flex gap-3">
-          <Avatar role="user" size={36} />
-          <div className="flex-1 bg-gray-50 rounded-lg px-4 py-3 max-w-[85%]">
-            <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-gray-900">{message.content}</p>
+          <Avatar role="user" size={32} />
+          <div 
+            className="user-message-bubble"
+            style={{
+              maxWidth: '85%',
+              width: 'fit-content',
+              backgroundColor: '#2d2d30',
+              color: '#ececf1',
+              padding: '12px 16px',
+              borderRadius: '18px 18px 4px 18px',
+              wordWrap: 'break-word',
+              wordBreak: 'break-word',
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'anywhere'
+            }}
+          >
+            <p className="text-[15px] leading-relaxed">{message.content}</p>
           </div>
         </div>
       ) : (
