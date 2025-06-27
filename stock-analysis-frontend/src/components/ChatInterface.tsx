@@ -11,6 +11,7 @@ const ChatInterface: React.FC = () => {
   const [currentStreamingId, setCurrentStreamingId] = useState<string | null>(null);
   const wsServiceRef = useRef<WebSocketService | null>(null);
   const streamingContentRef = useRef<string>('');
+  const streamingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 模拟流式显示效果
   const simulateStreaming = useCallback((messageId: string, fullContent: string) => {
@@ -20,7 +21,7 @@ const ChatInterface: React.FC = () => {
     
     streamingContentRef.current = '';
     
-    const streamInterval = setInterval(() => {
+    streamingIntervalRef.current = setInterval(() => {
       if (currentIndex < fullContent.length) {
         const endIndex = Math.min(currentIndex + charsPerInterval, fullContent.length);
         streamingContentRef.current = fullContent.substring(0, endIndex);
@@ -40,7 +41,10 @@ const ChatInterface: React.FC = () => {
         });
       } else {
         // 流式显示完成
-        clearInterval(streamInterval);
+        if (streamingIntervalRef.current) {
+          clearInterval(streamingIntervalRef.current);
+          streamingIntervalRef.current = null;
+        }
         setMessages(prev => {
           const newMessages = [...prev];
           const lastIndex = newMessages.length - 1;
@@ -119,6 +123,43 @@ const ChatInterface: React.FC = () => {
       
       setCurrentStreamingId(null);
       streamingContentRef.current = '';
+      setIsLoading(false);
+    }
+  }, [currentStreamingId]);
+
+  // 中断查询函数
+  const cancelQuery = useCallback(() => {
+    // 停止流式显示
+    if (streamingIntervalRef.current) {
+      clearInterval(streamingIntervalRef.current);
+      streamingIntervalRef.current = null;
+    }
+    
+    // 清理状态
+    if (currentStreamingId) {
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastIndex = newMessages.length - 1;
+        if (lastIndex >= 0 && newMessages[lastIndex].id === currentStreamingId) {
+          newMessages[lastIndex] = {
+            ...newMessages[lastIndex],
+            content: newMessages[lastIndex].content + '\n\n*(查询已中断)*',
+            isStreaming: false,
+            isError: true,
+          };
+        }
+        return newMessages;
+      });
+      
+      // 如果使用WebSocket，发送取消消息
+      if (wsServiceRef.current && wsServiceRef.current.isConnected()) {
+        wsServiceRef.current.send({
+          type: 'cancel',
+          message_id: currentStreamingId,
+        });
+      }
+      
+      setCurrentStreamingId(null);
       setIsLoading(false);
     }
   }, [currentStreamingId]);
@@ -335,11 +376,25 @@ const ChatInterface: React.FC = () => {
           ))}
         </div>
         
-        <InputBox
-          onSend={handleSend}
-          disabled={isLoading || !isHealthy}
-          placeholder={isLoading ? "正在处理查询中，请稍候..." : "请输入您的问题..."}
-        />
+        <div className="input-wrapper">
+          <InputBox
+            onSend={handleSend}
+            disabled={isLoading || !isHealthy}
+            placeholder={isLoading ? "正在处理查询中，请稍候..." : "请输入您的问题..."}
+          />
+          {isLoading && (
+            <button
+              className="cancel-button"
+              onClick={cancelQuery}
+              title="中断查询"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+              取消
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

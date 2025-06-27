@@ -157,12 +157,20 @@
   cursor: not-allowed;
 }
 
+/* 输入框容器 */
+.input-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 /* 输入框样式 */
 .input-box {
   display: flex;
   align-items: flex-end;
   gap: 10px;
   position: relative;
+  flex: 1;
 }
 
 .input-textarea {
@@ -211,6 +219,32 @@
 .send-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 取消按钮 */
+.cancel-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 20px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.cancel-button:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.cancel-button:active {
+  transform: translateY(0);
 }
 
 /* 打字指示器 */
