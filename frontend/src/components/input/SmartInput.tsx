@@ -98,7 +98,11 @@ export const SmartInput: React.FC<SmartInputProps> = ({
             }}
           />
         
-        {/* 字数统计 */}
+        {/* 
+          字数统计 - 超过1000字后显示
+          位置：右下角
+          样式：text-xs (小字体), text-gray-500 (灰色文字)
+        */}
         {showCharCount && (
           <div className="absolute bottom-2 right-2 text-xs text-gray-500 bg-white px-1">
             {charCount} 字

@@ -27,6 +27,8 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
   );
 
   // 动态计算消息间距
+  // mb-3 = 0.75rem (12px) - 同一发言者的连续消息
+  // mb-6 = 1.5rem (24px) - 不同发言者之间的消息
   const messageSpacing = isLastFromSameSpeaker ? 'mb-3' : 'mb-6';
   
   // 复制内容到剪贴板
@@ -49,7 +51,14 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 用户消息 - Claude.ai风格，头像和文本在同一个气泡内 */}
+      {/* 
+        用户消息 - Claude.ai风格，头像和文本在同一个气泡内
+        样式配置：
+        - 最大宽度：95% (可调整以控制消息最大宽度)
+        - 背景色：#F0EEE6 (米色气泡背景)
+        - 圆角：8px (可调整气泡圆角大小)
+        - 内边距：上下8px，右14px，左8px
+      */}
       {isUser ? (
         <div className="inline-block" style={{ maxWidth: '95%' }}>
           <div 
@@ -63,14 +72,15 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
               overflowWrap: 'break-word'
             }}
           >
+            {/* 用户头像容器 - mt-0.5用于微调垂直对齐 */}
             <div className="flex-shrink-0 mt-0.5">
-              <Avatar role="user" size={24} />
+              <Avatar role="user" size={24} /> {/* 头像大小24px，可调整 */}
             </div>
             <div className="flex-grow">
               <p className="text-[15px] leading-relaxed m-0 text-left" style={{ 
-                color: '#000000',
-                wordBreak: 'normal',
-                overflowWrap: 'break-word'
+                color: '#000000',     // 文字颜色：纯黑，可调整
+                wordBreak: 'normal',   // 正常换行，避免过早换行
+                overflowWrap: 'break-word'  // 长单词自动换行
               }}>
                 {message.content}
               </p>
@@ -78,7 +88,10 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
           </div>
         </div>
       ) : (
-        /* AI消息 - Claude.ai风格，无头像无背景，像文档一样 */
+        /* 
+          AI消息 - Claude.ai风格，无头像无背景，像文档一样
+          pl-12 = 3rem (48px) 左侧内边距，与侧边栏图标对齐
+        */
         <div className="ai-message pl-12">
           <div className="prose prose-sm max-w-none">
             <MarkdownRenderer content={message.content} />

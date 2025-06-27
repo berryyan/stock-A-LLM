@@ -125,8 +125,15 @@ function App() {
 
 
   return (
+    {/* 主容器 - 使用flex布局，背景色#FAF9F5 */}
     <div className="flex h-screen bg-claude-background">
-      {/* Sidebar - 支持折叠 */}
+      {/* 
+        侧边栏 - 支持折叠
+        展开宽度：w-sidebar (260px)
+        折叠宽度：w-12 (48px)
+        背景色：bg-claude-surface (#ffffff)
+        边框：border-claude-border (#e5e5e7)
+      */}
       <aside className={`${sidebarCollapsed ? 'w-12' : 'w-sidebar'} bg-claude-surface border-r border-claude-border transition-all duration-300 relative`}>
         {/* 折叠按钮 */}
         <button
@@ -233,7 +240,11 @@ function App() {
 
         {/* Input Area - 无缝融合设计 */}
         <div className={`input-container fixed bottom-0 right-0 z-10 transition-all duration-300 ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${documentView ? 'pr-[52%]' : ''}`}>
-          {/* 顶部渐变背景创造融合效果 - 左右完全透明 */}
+          {/* 
+            顶部渐变背景创造融合效果 - 左右完全透明
+            渐变高度：120px
+            渐变色：rgb(250,250,250) 到 transparent
+          */}
           <div 
             className="absolute inset-x-0 bottom-0 pointer-events-none"
             style={{
@@ -247,6 +258,7 @@ function App() {
             <div 
               className="input-wrapper bg-white rounded-lg"
               style={{
+                // 三层阴影效果：边框线 + 近阴影 + 远阴影
                 boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05), 0 4px 8px rgba(0, 0, 0, 0.02)'
               }}
             >
