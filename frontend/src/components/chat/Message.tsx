@@ -49,26 +49,30 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 用户消息 - Claude.ai风格，左侧头像，带背景框 */}
+      {/* 用户消息 - Claude.ai风格，头像和文本在同一个气泡内 */}
       {isUser ? (
-        <div className="flex gap-3">
-          <Avatar role="user" size={32} />
+        <div className="inline-block">
           <div 
-            className="user-message-bubble"
+            className="user-message-bubble flex items-start gap-2.5"
             style={{
               maxWidth: '85%',
               width: 'fit-content',
               backgroundColor: '#2d2d30',
               color: '#ececf1',
-              padding: '12px 16px',
-              borderRadius: '18px 18px 4px 18px',
+              padding: '8px 14px 8px 8px',
+              borderRadius: '18px',
               wordWrap: 'break-word',
               wordBreak: 'break-word',
               whiteSpace: 'pre-wrap',
               overflowWrap: 'anywhere'
             }}
           >
-            <p className="text-[15px] leading-relaxed">{message.content}</p>
+            <div className="flex-shrink-0 mt-0.5">
+              <Avatar role="user" size={24} />
+            </div>
+            <div className="flex-grow min-w-0">
+              <p className="text-[15px] leading-relaxed m-0 text-left">{message.content}</p>
+            </div>
           </div>
         </div>
       ) : (
