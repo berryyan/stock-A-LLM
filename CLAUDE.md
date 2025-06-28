@@ -644,127 +644,96 @@ ts_code = convert_to_ts_code("诺德股份")        # Returns: "600110.SH"
 - Web testing validates complete user experience  
 - Both testing layers required for production releases
 
-## Next Development Priority (v3.1 - React前端持续优化)
+## Next Development Priority (v2.0 - 后端性能优化)
 
 ### Phase 1 完成状态总结 ✅
 
-**已完成项目**（第1周）:
+**前端成就回顾**（v1.5.0-v1.5.4）:
 - ✅ React基础框架搭建（100%完成）
-- ✅ 核心组件开发（100%完成）
-  - ChatInterface、MessageList、InputArea
-  - MarkdownRenderer（完整功能）
-  - DocumentViewer（分屏显示）
-  - Sidebar（可折叠）
-- ✅ API集成（100%完成）
-- ✅ 双环境开发方案（100%完成）
-- ✅ UI/UX优化（90%完成）
-  - 深色主题、分屏布局、响应式设计
-  - 待完成：流式响应效果
+- ✅ Claude.ai风格界面完整实现
+- ✅ 流式响应功能（WebSocket + 打字效果 + 停止按钮）
+- ✅ 完整Markdown渲染（代码高亮、表格、公式）
+- ✅ 分屏布局 + 侧边栏折叠
+- ✅ 深色主题优化
+- ✅ 双环境开发方案成熟
 
-**Phase 1 成就**:
-- 从零搭建了完整的React前端
-- 成功复刻Claude.ai界面风格
-- 实现了所有后端功能的前端访问
-- 建立了成熟的双环境开发流程
+**系统现状评估**:
+- 前端功能完整度：95%（待添加数据可视化）
+- 后端功能完整度：100%（但有性能优化空间）
+- 主要性能瓶颈：
+  - SQL查询5-30秒（需要缓存）
+  - 每次查询都重新获取数据库Schema
+  - 缺少中文字段映射缓存
 
-### 下一步优先任务（第2周）
+### v2.0 开发计划概览（8周）
 
-#### 1. 流式响应实现（2-3天）⭐最高优先级
-- **技术方案**: Server-Sent Events (SSE) 或 WebSocket
-- **实现目标**: 
-  - 逐字显示效果
-  - 打字光标动画
-  - 中断查询功能
-- **预期效果**: 完全模拟Claude.ai的流畅响应体验
+#### Phase 1: 数据库Schema中文映射缓存系统（第1-2周）⭐最高优先级
+- **目标**: 建立完整的数据库中英文映射缓存机制
+- **预期效果**: 
+  - 减少50%的数据库结构查询
+  - 响应速度提升30%
+  - 支持纯中文自然语言查询
 
-#### 2. 数据可视化组件（3-4天）
-- **图表库选择**: Recharts或ECharts
-- **核心图表**:
-  - K线图（股价走势）
-  - 成交量图
-  - 资金流向饼图
-  - 财务指标对比图
-- **集成方式**: 作为MarkdownRenderer的扩展
+#### Phase 2: 性能优化与缓存系统（第3-4周）
+- **Redis缓存层**: 热门查询<1秒响应
+- **查询优化器**: 复杂查询性能提升50%
+- **异步任务队列**: Celery + RabbitMQ
 
-#### 3. 性能优化（1-2天）
-- **代码分割**: 按路由懒加载
-- **虚拟滚动**: 长消息列表优化
-- **缓存策略**: API响应缓存
-- **打包优化**: 减小bundle大小
+#### Phase 3: 技术分析系统（第5-6周）
+- **技术指标引擎**: 30+指标实时计算
+- **TechnicalAnalysisAgent**: 趋势分析、买卖信号
+- **K线形态识别**: 自动识别技术形态
 
-### Phase 2: 高优先级后端优化（第3-4周）
+#### Phase 4: 智能分析增强（第7-8周）
+- **综合评分系统**: 基本面+技术面+资金面
+- **监控告警**: Prometheus + Grafana
+- **测试覆盖**: 单元测试>80%
 
-### 环境架构设计 (NEW)
-```
-开发环境架构：
-┌─────────────────────────────────────────────────┐
-│                 Windows 系统                     │
-│  ┌─────────────────────┬──────────────────────┐ │
-│  │   Anaconda环境       │    开发工具           │ │
-│  │  - Node.js 18+      │  - PyCharm           │ │
-│  │  - npm/yarn         │  - VS Code           │ │
-│  │  - React开发服务器   │  - Git               │ │
-│  └─────────────────────┴──────────────────────┘ │
-│                                                 │
-│  ┌─────────────────────────────────────────┐   │
-│  │              WSL2 (Ubuntu)               │   │
-│  │  ┌──────────────┬───────────────────┐   │   │
-│  │  │  venv环境    │   Node.js环境      │   │   │
-│  │  │ - Python 3.10│  - nvm管理         │   │   │
-│  │  │ - FastAPI    │  - Node.js 18+     │   │   │
-│  │  │ - LangChain  │  - npm包管理       │   │   │
-│  │  └──────────────┴───────────────────┘   │   │
-│  └─────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────┘
-```
+### 立即开始：Phase 1 实施细节
 
-### Phase 0: 环境准备与备份（第1-2天）NEW
-- **环境备份**: 
-  - WSL2: `pip freeze > requirements_backup_$(date +%Y%m%d).txt`
-  - Anaconda: `conda env export > environment_backup_$(date +%Y%m%d).yml`
-- **前端开发环境搭建**:
-  - Windows Anaconda创建node环境，安装Node.js 18+
-  - WSL2安装nvm和Node.js，保持版本一致
-- **环境同步脚本**: 编写自动化脚本确保两边环境一致
+#### 1.1 创建Schema映射配置（config/db_schema_chinese_mapping.py）
+包含14个核心表的完整中英文映射：
+- tu_stock_basic（股票基本信息表）
+- tu_daily_detail（股票日线行情表）
+- tu_income（利润表）
+- tu_balancesheet（资产负债表）
+- tu_cashflow（现金流量表）
+- tu_fina_indicator（财务指标表）
+- tu_moneyflow_dc（资金流向表）
+- 等等...
 
-### Phase 1: Claude.ai风格React MVP（第3-7天）
-- **基础架构**: 
-  - React + TypeScript + Vite项目初始化
-  - 安装react-markdown、remark-gfm、react-syntax-highlighter等依赖
-- **核心组件开发**:
-  - Claude.ai风格布局：260px侧边栏、主内容区、#10a37f主色调
-  - MarkdownRenderer：完整实现代码高亮、表格美化、数学公式等
-  - 左右分屏逻辑：智能判断内容类型，自动显示文档区
-  - 核心组件：Sidebar、ChatArea、MessageList、InputBox、DocumentViewer
-- **API集成**:
-  - 与后端/query接口对接，处理sources数据分发
-  - 支持WebSocket流式响应
+#### 1.2 实现缓存管理器（utils/schema_cache_manager.py）
+- 单例模式确保全局唯一
+- 启动时加载所有Schema到内存
+- 支持中文到英文的快速查找
+- 支持模糊匹配和智能推荐
 
-### Phase 2: 功能增强与优化（第8-14天）
-- **高级功能**:
-  - 消息流式响应：逐字显示和打字光标效果
-  - 股票数据可视化：K线图、成交量图、资金流向图
-  - 增强表格组件：排序筛选、数值格式化、涨跌颜色
-- **用户体验**:
-  - 亮色/深色主题切换
-  - 快捷键支持（Ctrl+N新建对话等）
-  - 响应式设计适配移动端
+#### 1.3 开发查询解析器（utils/chinese_query_parser.py）
+- 自然语言查询解析
+- 查询意图识别
+- SQL自动生成
+- 与现有Agent系统集成
 
-### Phase 3: 后端优化与技术分析（第15-21天）
-- **数据库Schema中文映射系统**
-- **RAG查询智能降级机制**
-- **技术面分析系统实现**
+### 技术栈确认
+- **缓存**: Redis 7.0+
+- **任务队列**: Celery + RabbitMQ
+- **技术分析**: TA-Lib + NumPy + Pandas
+- **监控**: Prometheus + Grafana
+- **测试**: pytest + locust
+
+### 成功指标
+- ✅ 中文查询理解准确率 > 95%
+- ✅ 平均查询响应时间 < 5秒
+- ✅ 系统并发用户数 > 100
+- ✅ 缓存命中率 > 70%
 
 ### Git版本管理
 ```bash
 # 当前分支: dev-react-frontend-v2
-# 环境备份完成后开始开发
-git add -A && git commit -m "chore: 环境备份和开发准备"
+# 准备v2.0开发
+git add -A && git commit -m "docs: 添加v2.0后端优化开发计划"
 ```
 
-### 部署文档要求
-- 详细记录WSL2+Windows双环境配置步骤
-- 创建.env.development和.env.production
-- 编写setup脚本自动化环境配置
+**详细开发计划请参考**: [NEXT_DEVELOPMENT_PHASE.md](./NEXT_DEVELOPMENT_PHASE.md)
 
 The system is designed for production use with comprehensive error handling, logging, monitoring capabilities, and full LangChain modernization (v1.3.8).

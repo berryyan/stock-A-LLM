@@ -4,7 +4,8 @@
 **更新日期**: 2025-06-28  
 **状态**: ✅ 流式响应功能完整实现 | 停止查询按钮已添加 | React前端Phase 1基本完成 | 深色主题UI优化完成 | 分屏布局一致性修复 | 双环境前端开发方案实现 | Claude.ai风格UI全面改进 | 前端样式优化 | React前端初版上线 | RAG系统深度优化完成 | WebSocket实时通信已恢复 | 股票代码智能映射上线 | 所有核心功能正常运行  
 **项目名称**: Stock Analysis System (基于LangChain的智能股票分析系统)  
-**当前分支**: dev-react-frontend-v2
+**当前分支**: dev-react-frontend-v2  
+**下一版本**: v2.0 (数据库Schema中文映射缓存系统)
 
 ## 📋 目录
 
@@ -800,51 +801,79 @@ Stock Analysis System 是一个基于 LangChain 框架的智能股票分析系�
    - API响应缓存策略
    - 首屏加载时间优化至<3秒
 
-### 待开发功能（Phase 2）
-#### Week 2: 数据库Schema中文映射系统 ❌
-- [ ] 创建映射配置文件 `config/db_schema_mapping.py`
-- [ ] 实现缓存管理器 `utils/schema_cache_manager.py`
-- [ ] 集成到Hybrid Agent
-- [ ] 预期：减少50%数据库查询，提升路由准确率
+## 🚀 下一步开发计划 (v2.0)
 
-#### Week 3: RAG查询智能降级机制 ❌
-- [ ] 创建降级处理器 `rag/fallback_handler.py`
-- [ ] 实现4级降级策略
-- [ ] 失败日志分析系统
+### v2.0 后端性能优化路线图（8周）
 
-### Phase 2: 高优先级后端优化（第2-3周）
-#### Week 2: 数据库Schema中文映射系统 ❌
-- [ ] 创建映射配置文件 `config/db_schema_mapping.py`
-- [ ] 实现缓存管理器 `utils/schema_cache_manager.py`
-- [ ] 集成到Hybrid Agent
-- [ ] 预期：减少50%数据库查询，提升路由准确率
+#### Phase 1: 数据库Schema中文映射缓存系统（第1-2周）⭐最高优先级
+- [ ] 创建完整映射配置 `config/db_schema_chinese_mapping.py`
+  - 14个核心表的中英文字段映射
+  - 包含字段类型、单位、示例值
+- [ ] 实现Schema缓存管理器 `utils/schema_cache_manager.py`
+  - 单例模式，全局唯一实例
+  - 中文到英文快速索引
+  - 支持模糊匹配
+- [ ] 开发中文查询解析器 `utils/chinese_query_parser.py`
+  - 自然语言查询解析
+  - 查询意图识别
+  - SQL自动生成
+- **预期效果**: 
+  - 减少50%的数据库结构查询
+  - 响应速度提升30%
+  - 支持纯中文自然语言查询
 
-#### Week 3: RAG查询智能降级机制 ❌
-- [ ] 创建降级处理器 `rag/fallback_handler.py`
-- [ ] 实现4级降级策略
-- [ ] 失败日志分析系统
+#### Phase 2: 性能优化与缓存系统（第3-4周）
+- [ ] Redis缓存层集成
+  - 股价数据5分钟TTL
+  - 财务数据24小时TTL
+  - RAG结果1小时TTL
+- [ ] 查询优化器实现
+  - 添加必要索引
+  - 优化复杂JOIN查询
+- [ ] 异步任务队列
+  - Celery + RabbitMQ集成
+  - 长时间任务异步化
 
-### Phase 3: 前端增强 + 技术分析（第4-6周）
-#### Week 4: React前端完善 🎨
-- [ ] 升级到完整MarkdownRenderer
-- [ ] 添加数据可视化组件
-- [ ] 实现文档查看区
-- [ ] 性能优化
+#### Phase 3: 技术分析系统（第5-6周）
+- [ ] 技术指标计算引擎
+  - MA/EMA/MACD等趋势指标
+  - RSI/KDJ等动量指标
+  - 布林带等波动率指标
+- [ ] TechnicalAnalysisAgent开发
+  - 趋势识别（上升/下降/横盘）
+  - K线形态识别
+  - 买卖信号生成
 
-#### Week 5-6: Phase 2技术分析系统 📊
-- [ ] Week 5: 技术指标计算模块
-- [ ] Week 6: TechnicalAnalysisAgent开发
+#### Phase 4: 智能分析增强（第7-8周）
+- [ ] 综合评分系统
+  - 基本面(50%) + 技术面(30%) + 资金面(20%)
+  - 风险等级评估
+  - 个性化投资建议
+- [ ] 监控与告警
+  - Prometheus + Grafana集成
+  - 性能指标实时监控
+- [ ] 测试覆盖提升
+  - 单元测试覆盖率>80%
+  - 集成测试自动化
 
-### Git版本管理待执行
-- [ ] 创建v1.4.3-stable标签
-- [ ] 合并到main分支
-- [ ] 创建dev-react-frontend-v2分支
+### 前端待完成任务
+- [ ] 数据可视化组件（Recharts/ECharts）
+- [ ] 性能优化（代码分割、虚拟滚动）
+- [ ] PWA支持（离线访问）
+
+### 成功指标
+- 中文查询理解准确率 > 95%
+- 平均查询响应时间 < 5秒
+- 系统并发用户数 > 100
+- 缓存命中率 > 70%
+
+详细计划请查看 [NEXT_DEVELOPMENT_PHASE.md v4.0](../../NEXT_DEVELOPMENT_PHASE.md)
 
 ---
 
 **项目维护者**: AI Development Team  
-**最后更新**: 2025-06-26  
-**下一次评审**: 2025-06-28  
+**最后更新**: 2025-06-28  
+**下一次评审**: 2025-06-30  
 
 ## 联系方式
 - GitHub: https://github.com/yuguo10/stock_analysis_system
