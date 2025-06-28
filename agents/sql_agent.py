@@ -370,6 +370,7 @@ class SQLAgent:
                 # 检查是否为解析错误（通常包含raw SQL）
                 if isinstance(output, str) and "Could not parse LLM output" in output:
                     self.logger.warning("LLM输出解析失败，使用灵活解析器")
+                    self.logger.info(f"灵活解析器处理前的输出: {output[:100]}...")
                     # 使用灵活解析器处理
                     try:
                         # 先尝试提取错误中的实际输出
@@ -399,6 +400,7 @@ class SQLAgent:
                 # 特殊处理输出解析错误
                 if "Could not parse LLM output" in error_str:
                     self.logger.info("检测到输出解析错误，使用灵活解析器处理")
+                    self.logger.info(f"错误信息长度: {len(error_str)}, 前100字符: {error_str[:100]}...")
                     # 使用灵活解析器从错误信息中提取结果
                     try:
                         extracted_output = extract_result_from_error(error_str)
