@@ -28,6 +28,7 @@ from config.settings import settings
 from utils.logger import setup_logger
 from utils.stock_code_mapper import convert_to_ts_code
 from utils.chinese_query_parser import ChineseQueryParser
+from utils.routing_monitor import routing_monitor
 
 
 class QueryType(str, Enum):
@@ -254,6 +255,7 @@ class HybridAgent:
         
         try:
             self.logger.info(f"接收查询: {question}")
+            start_time = datetime.now()
             
             # 1. 使用中文查询解析器预处理
             parsed_query = self.chinese_parser.parse_query(question)
@@ -264,43 +266,71 @@ class HybridAgent:
             routing_decision['parsed_query'] = parsed_query  # 添加解析结果到路由决策
             self.logger.info(f"路由决策: {routing_decision['query_type']}")
             
+            # 记录路由决策到监控器
+            query_id = routing_monitor.record_routing_decision(question, routing_decision)
+            
             # 2. 根据决策执行查询
             query_type = QueryType(routing_decision['query_type'])
             self.logger.info(f"解析后的查询类型: {query_type}, 原始决策: {routing_decision['query_type']}")
             
-            if query_type == QueryType.SQL_ONLY:
-                return self._handle_sql_only(question, routing_decision)
+            # 执行查询并记录结果
+            result = None
+            error_msg = None
             
-            elif query_type == QueryType.RAG_ONLY:
-                return self._handle_rag_only(question, routing_decision)
+            try:
+                if query_type == QueryType.SQL_ONLY:
+                    result = self._handle_sql_only(question, routing_decision)
             
-            elif query_type == QueryType.FINANCIAL:
-                return self._handle_financial_analysis(question, routing_decision)
-            
-            elif query_type == QueryType.MONEY_FLOW:
-                return self._handle_money_flow_analysis(question, routing_decision)
-            
-            elif query_type == QueryType.SQL_FIRST:
-                return self._handle_sql_first(question, routing_decision)
-            
-            elif query_type == QueryType.RAG_FIRST:
-                return self._handle_rag_first(question, routing_decision)
-            
-            elif query_type == QueryType.PARALLEL:
-                return self._handle_parallel(question, routing_decision)
-            
-            elif query_type == QueryType.COMPLEX:
-                return self._handle_complex(question, routing_decision)
-            
-            else:
-                raise ValueError(f"未知的查询类型: {query_type}")
+                elif query_type == QueryType.RAG_ONLY:
+                    result = self._handle_rag_only(question, routing_decision)
+                
+                elif query_type == QueryType.FINANCIAL:
+                    result = self._handle_financial_analysis(question, routing_decision)
+                
+                elif query_type == QueryType.MONEY_FLOW:
+                    result = self._handle_money_flow_analysis(question, routing_decision)
+                
+                elif query_type == QueryType.SQL_FIRST:
+                    result = self._handle_sql_first(question, routing_decision)
+                
+                elif query_type == QueryType.RAG_FIRST:
+                    result = self._handle_rag_first(question, routing_decision)
+                
+                elif query_type == QueryType.PARALLEL:
+                    result = self._handle_parallel(question, routing_decision)
+                
+                elif query_type == QueryType.COMPLEX:
+                    result = self._handle_complex(question, routing_decision)
+                
+                else:
+                    raise ValueError(f"未知的查询类型: {query_type}")
+                
+                # 记录成功结果到监控器
+                response_time = (datetime.now() - start_time).total_seconds()
+                routing_monitor.record_query_result(query_id, True, response_time)
+                
+                return result
+                
+            except Exception as e:
+                # 记录查询执行错误
+                error_msg = str(e)
+                response_time = (datetime.now() - start_time).total_seconds()
+                routing_monitor.record_query_result(query_id, False, response_time, error_msg)
+                raise
                 
         except Exception as e:
             self.logger.error(f"混合查询失败: {e}")
+            error_msg = str(e)
+            
+            # 记录失败结果到监控器
+            if 'query_id' in locals():
+                response_time = (datetime.now() - start_time).total_seconds()
+                routing_monitor.record_query_result(query_id, False, response_time, error_msg)
+            
             return {
                 'success': False,
                 'question': question,
-                'error': str(e),
+                'error': error_msg,
                 'type': 'hybrid_query'
             }
     
