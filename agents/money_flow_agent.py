@@ -11,7 +11,7 @@ import logging
 
 from langchain.prompts import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
-from langchain_community.llms import OpenAI
+from langchain_openai import ChatOpenAI
 
 from database.mysql_connector import MySQLConnector
 from utils.money_flow_analyzer import MoneyFlowAnalyzer, format_money_flow_report
@@ -29,14 +29,14 @@ class MoneyFlowAgent:
         self.money_flow_analyzer = MoneyFlowAnalyzer(self.mysql_conn)
         self.logger = setup_logger("money_flow_agent")
         
-        # 初始化LLM
+        # 初始化LLM（使用ChatOpenAI，与其他Agent保持一致）
         try:
-            self.llm = OpenAI(
-                api_key=settings.DEEPSEEK_API_KEY,
-                base_url=settings.DEEPSEEK_BASE_URL,
+            self.llm = ChatOpenAI(
                 model="deepseek-chat",
                 temperature=0.3,
-                max_tokens=2000
+                max_tokens=2000,
+                api_key=settings.DEEPSEEK_API_KEY,
+                base_url=settings.DEEPSEEK_BASE_URL
             )
         except Exception as e:
             self.logger.error(f"LLM初始化失败: {e}")
