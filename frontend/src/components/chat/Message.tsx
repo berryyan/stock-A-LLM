@@ -109,11 +109,7 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
           <div className="prose prose-sm max-w-none">
             <MarkdownRenderer content={message.content} />
             {message.isStreaming && (
-              <span className="inline-flex gap-1 ml-2">
-                <span className="typing-dot w-1 h-1 bg-gray-400 rounded-full"></span>
-                <span className="typing-dot w-1 h-1 bg-gray-400 rounded-full"></span>
-                <span className="typing-dot w-1 h-1 bg-gray-400 rounded-full"></span>
-              </span>
+              <span className="inline-block w-0.5 h-5 bg-claude-text-primary animate-typing ml-0.5 align-text-bottom"></span>
             )}
           </div>
         </div>

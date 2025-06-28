@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Message } from './components/chat/Message';
 import { DocumentViewer } from './components/document/DocumentViewer';
 import { SmartInput } from './components/input/SmartInput';
+import { useStreamingResponse } from './hooks/useStreamingResponse';
 import type { Message as MessageType } from './types';
 import stockAPI from './services/api';
 
@@ -12,6 +13,13 @@ function App() {
   const [documentView, setDocumentView] = useState<{content: any; type: string} | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // 使用流式响应Hook
+  const { isStreaming, startStreaming, stopStreaming } = useStreamingResponse({
+    onComplete: () => {
+      console.log('流式响应完成');
+    }
+  });
 
   const scrollToBottom = (smooth = true) => {
     if (messagesEndRef.current) {
@@ -57,16 +65,20 @@ function App() {
       setInput('');
       setIsLoading(true);
       
-      // 立即滚动到顶部，为AI回复留出空间
-      setTimeout(() => {
-        const chatContainer = messagesEndRef.current?.parentElement?.parentElement;
-        if (chatContainer) {
-          chatContainer.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-          });
-        }
-      }, 100);
+      // 添加空的助手消息作为占位符
+      const assistantMessageId = (Date.now() + 1).toString();
+      const assistantMessage: MessageType = {
+        id: assistantMessageId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date().toISOString(),
+        isStreaming: true,
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      // 立即滚动到底部
+      setTimeout(() => scrollToBottom(), 100);
 
       try {
         const response = await stockAPI.query(userMessage.content);
@@ -76,15 +88,29 @@ function App() {
           throw new Error(response?.error || 'Invalid response from API');
         }
         
-        const assistantMessage: MessageType = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: response.answer,
-          timestamp: new Date().toISOString(),
-          sources: response.sources,
-        };
-
-        setMessages(prev => [...prev, assistantMessage]);
+        // 使用流式显示响应内容
+        const fullContent = response.answer;
+        
+        startStreaming(fullContent, (streamedText) => {
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === assistantMessageId 
+                ? { ...msg, content: streamedText, isStreaming: true }
+                : msg
+            )
+          );
+        });
+        
+        // 流式完成后更新消息状态和sources
+        setTimeout(() => {
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === assistantMessageId 
+                ? { ...msg, sources: response.sources, isStreaming: false }
+                : msg
+            )
+          );
+        }, Math.ceil(fullContent.length / 3) * 30 + 100); // 根据内容长度计算完成时间
       } catch (error: any) {
         console.error('Query failed:', error);
         console.error('Error details:', {
@@ -110,13 +136,14 @@ function App() {
           errorContent = `⚠️ ${error.message || '未知错误'}`;
         }
         
-        const errorMessage: MessageType = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: errorContent,
-          timestamp: new Date().toISOString(),
-        };
-        setMessages(prev => [...prev, errorMessage]);
+        // 更新错误消息
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === assistantMessageId 
+              ? { ...msg, content: errorContent, isStreaming: false }
+              : msg
+          )
+        );
       } finally {
         setIsLoading(false);
       }

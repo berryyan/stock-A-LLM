@@ -53,6 +53,7 @@ export interface Message {
   timestamp: string;
   sources?: QueryResponse['sources'];
   isStreaming?: boolean;
+  isError?: boolean;
 }
 
 export interface Chat {
