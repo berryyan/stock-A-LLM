@@ -33,7 +33,7 @@ class ChineseQueryParser:
                     r'(.+?)的?(?:最新|最近|今天|昨天)?(?:股价|收盘价|开盘价|最高价|最低价)',
                     r'(.+?)(?:最近|过去)?(\d+)天的(?:股价|走势|行情)',
                 ],
-                'default_table': '日线行情',
+                'default_table': 'A股日线行情数据表。接口：daily',  # 使用完整的表注释
                 'default_fields': ['开盘价', '最高价', '最低价', '收盘价', '成交量', '成交额']
             },
             
@@ -44,7 +44,7 @@ class ChineseQueryParser:
                     r'(.+?)的?(?:财务|财报|年报|季报|利润|营收|净利润)',
                     r'分析(.+?)的?(?:财务状况|经营状况|盈利能力)',
                 ],
-                'default_table': '利润表',
+                'default_table': '利润表数据',  # 修改为数据库中的实际表注释
                 'default_fields': ['营业收入', '净利润', '净资产收益率', '总资产']
             },
             
@@ -55,7 +55,7 @@ class ChineseQueryParser:
                     r'(.+?)的?(?:资金流向|主力资金|大单|超大单)',
                     r'(.+?)(?:最近|过去)?(\d+)天的资金流向',
                 ],
-                'default_table': '资金流向',
+                'default_table': '东方财富个股资金流向数据',  # 使用完整的表注释
                 'default_fields': ['特大单买入金额', '特大单卖出金额', '净流入金额']
             },
             
@@ -66,7 +66,7 @@ class ChineseQueryParser:
                     r'(.+?)的?(?:市盈率|市净率|市销率|PE|PB|PS)',
                     r'(.+?)的?(?:估值|总市值|流通市值)',
                 ],
-                'default_table': '每日基本面',
+                'default_table': '每日指标数据表',  # 修改为数据库中的实际表注释
                 'default_fields': ['市盈率', '市净率', '市销率', '总市值', '流通市值']
             },
             
@@ -78,7 +78,7 @@ class ChineseQueryParser:
                     r'(.+?)是?(?:什么时候|何时)上市',
                     r'(.+?)属于什么(?:行业|板块)',
                 ],
-                'default_table': '股票基本信息',
+                'default_table': '股票基础信息表',  # 修改为数据库中的实际表注释
                 'default_fields': ['股票名称', '所属行业', '所在地域', '市场类型', '上市日期']
             }
         }
@@ -211,31 +211,62 @@ class ChineseQueryParser:
     
     def _extract_stock_info(self, query: str) -> Optional[Dict]:
         """提取股票信息"""
-        # 常见的股票提取模式
+        # 先尝试直接使用stock_code_mapper转换整个常见的股票名称模式
+        # 例如：贵州茅台、茅台、平安银行、中国平安等
+        
+        # 移除一些干扰词
+        clean_query = query
+        for word in ['查询', '分析', '的', '最新', '最近', '今天', '昨天']:
+            clean_query = clean_query.replace(word, ' ')
+        
+        # 尝试找到可能的股票名称
+        # 1. 先尝试找到明确的股票代码（6位数字）
+        code_match = re.search(r'(\d{6})(?:\.SH|\.SZ)?', query)
+        if code_match:
+            stock_str = code_match.group(1)
+            ts_code = convert_to_ts_code(stock_str)
+            if ts_code:
+                return {
+                    'ts_code': ts_code,
+                    'name': stock_str,
+                    'original': stock_str
+                }
+        
+        # 2. 尝试从清理后的查询中提取可能的股票名称
+        # 分词并尝试每个可能的组合
+        words = clean_query.strip().split()
+        
+        # 尝试组合词（如"贵州茅台"）
+        for i in range(len(words)):
+            for j in range(i + 1, min(i + 4, len(words) + 1)):  # 最多尝试3个词的组合
+                candidate = ''.join(words[i:j])
+                if len(candidate) >= 2:  # 至少2个字符
+                    ts_code = convert_to_ts_code(candidate)
+                    if ts_code:
+                        return {
+                            'ts_code': ts_code,
+                            'name': candidate,
+                            'original': candidate
+                        }
+        
+        # 3. 如果还是没找到，尝试一些特定的模式
         patterns = [
-            r'([^的\s]+?)(?:的|股票|公司)',  # 茅台的、贵州茅台的
-            r'(\d{6})(?:\.SH|\.SZ)?',  # 600519或600519.SH
-            r'查询(.+?)的',  # 查询XX的
-            r'分析(.+?)的',  # 分析XX的
+            r'([^查询分析的最新最近今天昨天\s]+?)(?:的)?(?:股价|股票|财务|资金|营收|利润)',
+            r'(?:查询|分析)([^的最新最近今天昨天\s]+?)(?:的)?',
         ]
         
         for pattern in patterns:
             match = re.search(pattern, query)
             if match:
-                stock_str = match.group(1)
-                # 过滤掉一些非股票词
-                if stock_str not in ['最新', '今天', '昨天', '最近', '过去']:
+                stock_str = match.group(1).strip()
+                if stock_str and len(stock_str) >= 2:
                     ts_code = convert_to_ts_code(stock_str)
                     if ts_code:
-                        # 获取股票名称
-                        stock_basic = self.schema_manager.get_table_info('tu_stock_basic')
-                        if stock_basic:
-                            # 这里应该查询数据库获取股票名称，暂时返回原始输入
-                            return {
-                                'ts_code': ts_code,
-                                'name': stock_str,
-                                'original': stock_str
-                            }
+                        return {
+                            'ts_code': ts_code,
+                            'name': stock_str,
+                            'original': stock_str
+                        }
         
         return None
     
