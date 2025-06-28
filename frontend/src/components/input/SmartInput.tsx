@@ -4,7 +4,9 @@ interface SmartInputProps {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
+  onStop?: () => void;
   isLoading?: boolean;
+  isStreaming?: boolean;
   placeholder?: string;
 }
 
@@ -12,7 +14,9 @@ export const SmartInput: React.FC<SmartInputProps> = ({
   value,
   onChange,
   onSend,
+  onStop,
   isLoading = false,
+  isStreaming = false,
   placeholder = "输入你的问题..."
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -110,35 +114,51 @@ export const SmartInput: React.FC<SmartInputProps> = ({
         )}
       </div>
       
-      {/* 发送按钮 */}
-      <button 
-        onClick={onSend}
-        disabled={!canSend}
-        className={`px-3 py-2 rounded-lg transition-all duration-200 flex items-center justify-center min-w-[80px] ${
-          canSend
-            ? 'bg-claude-primary hover:bg-claude-primary-hover text-white'
-            : 'bg-[#0d4a3f] text-[#6b9b8f] cursor-not-allowed'
-        }`}
-        title={canSend ? "发送查询 (Enter)" : "请输入查询内容"}
-      >
-        {isLoading ? (
-          <div className="flex items-center gap-1.5">
-            <span className="typing-dot w-1.5 h-1.5 bg-white rounded-full"></span>
-            <span className="typing-dot w-1.5 h-1.5 bg-white rounded-full"></span>
-            <span className="typing-dot w-1.5 h-1.5 bg-white rounded-full"></span>
-          </div>
-        ) : (
+      {/* 发送/停止按钮 */}
+      {isStreaming && onStop ? (
+        <button 
+          onClick={onStop}
+          className="px-3 py-2 rounded-lg transition-all duration-200 flex items-center justify-center min-w-[80px] bg-red-600 hover:bg-red-700 text-white"
+          title="停止查询"
+        >
           <svg 
             className="w-5 h-5" 
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+            fill="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+            <rect x="6" y="6" width="12" height="12" rx="2" />
           </svg>
-        )}
-      </button>
+        </button>
+      ) : (
+        <button 
+          onClick={onSend}
+          disabled={!canSend}
+          className={`px-3 py-2 rounded-lg transition-all duration-200 flex items-center justify-center min-w-[80px] ${
+            canSend
+              ? 'bg-claude-primary hover:bg-claude-primary-hover text-white'
+              : 'bg-[#0d4a3f] text-[#6b9b8f] cursor-not-allowed'
+          }`}
+          title={canSend ? "发送查询 (Enter)" : "请输入查询内容"}
+        >
+          {isLoading ? (
+            <div className="flex items-center gap-1.5">
+              <span className="typing-dot w-1.5 h-1.5 bg-white rounded-full"></span>
+              <span className="typing-dot w-1.5 h-1.5 bg-white rounded-full"></span>
+              <span className="typing-dot w-1.5 h-1.5 bg-white rounded-full"></span>
+            </div>
+          ) : (
+            <svg 
+              className="w-5 h-5" 
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+            </svg>
+          )}
+        </button>
+      )}
       </div>
       
       {/* 工具栏 - Claude.ai风格 */}

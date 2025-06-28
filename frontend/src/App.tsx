@@ -302,7 +302,9 @@ function App() {
                 value={input}
                 onChange={setInput}
                 onSend={handleSend}
+                onStop={stopStreaming}
                 isLoading={isLoading}
+                isStreaming={isStreaming}
               />
             </div>
           </div>
