@@ -67,11 +67,10 @@ class SchemaEnhancedRouter:
         
         # 构建中文字段到表的映射
         self.chinese_to_tables = defaultdict(set)
-        for chinese, english in schema_kb.chinese_mapping.items():
-            # 查找包含该英文字段的表
-            for table_name, table_data in schema_kb.table_knowledge.items():
-                if english in table_data['fields']:
-                    self.chinese_to_tables[chinese].add(table_name)
+        # 遍历每个表的字段映射
+        for table_name, field_mappings in schema_kb.table_field_mappings.items():
+            for chinese, english in field_mappings.items():
+                self.chinese_to_tables[chinese].add(table_name)
     
     def _build_keyword_weights(self):
         """构建关键词权重映射"""

@@ -93,15 +93,9 @@ class StockCodeMapper:
                     if short_name != name:
                         new_cache[short_name] = ts_code
                     
-                    # 特殊处理一些常见简称
-                    if '贵州茅台' in name:
-                        new_cache['茅台'] = ts_code
-                    elif '五粮液' in name:
-                        new_cache['五粮液'] = ts_code
-                    elif '比亚迪' in name:
-                        new_cache['比亚迪'] = ts_code
-                    elif '宁德时代' in name:
-                        new_cache['宁德'] = ts_code
+                    # 注意：不再支持简称映射，用户必须使用完整股票名称
+                    # 这是为了避免歧义和错误匹配
+                    # 例如："茅台"可能指"贵州茅台"也可能指其他含"茅台"的公司
             
             # 原子性更新缓存
             with self._cache_lock:
@@ -267,6 +261,16 @@ def convert_to_ts_code(entity: str) -> Optional[str]:
     """
     mapper = get_stock_mapper()
     return mapper.convert_to_ts_code(entity)
+
+
+@lru_cache(maxsize=1000)
+def get_stock_name(ts_code: str) -> str:
+    """
+    便捷函数：根据ts_code获取股票名称
+    使用LRU缓存进一步提升性能
+    """
+    mapper = get_stock_mapper()
+    return mapper.get_stock_name(ts_code)
 
 
 if __name__ == "__main__":

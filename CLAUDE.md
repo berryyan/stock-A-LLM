@@ -256,6 +256,14 @@ The system supports six main query types:
 - `technical_analysis`: For technical indicators and trend analysis (Phase 2 planned)
 - `hybrid`: Automatically routes or combines multiple approaches
 
+### Important Query Guidelines
+**Stock Entity Recognition**:
+- The system does NOT support fuzzy/partial matching for stock names or codes
+- Users MUST provide exact stock names (e.g., "贵州茅台" not "茅台") 
+- Supported formats: Full company name, 6-digit code (600519), or ts_code (600519.SH)
+- Invalid inputs will result in error messages guiding users to use correct formats
+- All stock entity conversion is handled by `utils.stock_code_mapper` with database validation
+
 ### Error Handling
 - All agents return standardized response format with `success`, `error`, and result fields
 - Input validation prevents empty/whitespace queries from causing errors  

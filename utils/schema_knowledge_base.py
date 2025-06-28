@@ -7,7 +7,7 @@ Version: 2.0
 
 import time
 import json
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Any
 from datetime import datetime, timedelta
 import threading
 from pathlib import Path
@@ -44,6 +44,7 @@ class SchemaKnowledgeBase:
         self.field_knowledge = {}  # 字段级知识
         self.topic_knowledge = {}  # 主题知识（如"财务"、"股价"等）
         self.common_queries = {}   # 常用查询模式
+        self.table_field_mappings = {}  # 每个表的字段中文映射
         
         # 加载知识库
         self._load_knowledge_base()
@@ -110,15 +111,35 @@ class SchemaKnowledgeBase:
             )
             
             # 构建表知识
-            self.table_knowledge[table_name] = {
-                'comment': table['TABLE_COMMENT'],
-                'row_count': table['TABLE_ROWS'],
-                'fields': {f['COLUMN_NAME']: {
-                    'comment': f['COLUMN_COMMENT'],
+            field_dict = {}
+            table_mappings = {}  # 当前表的字段映射
+            
+            for f in fields:
+                field_name = f['COLUMN_NAME']
+                comment = f['COLUMN_COMMENT'] or ''
+                
+                # 从注释中提取中文名称
+                chinese_name = self._extract_chinese_name(comment)
+                
+                field_dict[field_name] = {
+                    'comment': comment,
+                    'chinese_name': chinese_name,
                     'type': f['DATA_TYPE'],
                     'nullable': f['IS_NULLABLE'] == 'YES',
                     'key': f['COLUMN_KEY']
-                } for f in fields},
+                }
+                
+                # 如果有中文名称，建立当前表的映射关系
+                if chinese_name and chinese_name != field_name:
+                    table_mappings[chinese_name] = field_name
+            
+            # 保存当前表的中文映射
+            self.table_field_mappings[table_name] = table_mappings
+            
+            self.table_knowledge[table_name] = {
+                'comment': table['TABLE_COMMENT'],
+                'row_count': table['TABLE_ROWS'],
+                'fields': field_dict,
                 'primary_fields': [],  # 主要字段
                 'common_filters': [],  # 常用过滤条件
                 'join_keys': []       # 关联键
@@ -127,6 +148,108 @@ class SchemaKnowledgeBase:
             # 识别主要字段
             self._identify_primary_fields(table_name)
             
+        # 补充特定表的字段映射（针对注释不完整的情况）
+        self._supplement_table_mappings()
+            
+    def _extract_chinese_name(self, comment: str) -> str:
+        """从字段注释中提取中文名称"""
+        if not comment:
+            return ''
+            
+        # 清理注释文本
+        comment = comment.strip()
+        
+        # 数据库字段注释通常包含中文说明
+        # 例如：
+        # - "证券代码"
+        # - "营业收入（万元）"
+        # - "报告期"
+        # 需要从这些注释中提取有用的中文名称
+        
+        # 移除括号内容
+        import re
+        comment = re.sub(r'[\(（].*?[\)）]', '', comment).strip()
+        
+        # 如果包含英文，尝试提取中文部分
+        if re.search(r'[a-zA-Z_]', comment):
+            # 尝试匹配 "英文 - 中文" 格式
+            match = re.search(r'[-–]\s*(.+?)(?:[,，]|$)', comment)
+            if match:
+                return match.group(1).strip()
+            
+            # 尝试只提取中文部分
+            chinese_parts = re.findall(r'[\u4e00-\u9fa5]+', comment)
+            if chinese_parts:
+                return ''.join(chinese_parts)
+        
+        # 移除标点符号
+        comment = re.sub(r'[,，。.、;；:：].*', '', comment).strip()
+        
+        return comment
+    
+    def _supplement_table_mappings(self):
+        """补充特定表的字段映射（针对数据库注释不完整的情况）"""
+        # 特定表的补充映射
+        table_specific_mappings = {
+            'tu_daily_detail': {
+                '证券代码': 'ts_code',
+                '股票代码': 'ts_code',
+                '开盘价': 'open',
+                '收盘价': 'close',
+                '最高价': 'high',
+                '最低价': 'low',
+                '成交量': 'vol',
+                '成交额': 'amount'
+            },
+            'tu_moneyflow_ind_dc': {
+                '板块代码': 'ts_code',  # 注意：这里ts_code是板块代码而非个股代码
+                '板块名称': 'name',
+                '板块净流入': 'net_mf_amount',
+                '主力净流入': 'net_mf_amount'
+            },
+            'tu_stock_basic': {
+                '证券代码': 'ts_code',
+                '股票代码': 'ts_code',
+                '股票名称': 'name',
+                '上市日期': 'list_date',
+                '所属行业': 'industry'
+            },
+            'tu_income': {
+                '证券代码': 'ts_code',
+                '报告期': 'end_date',
+                '营业收入': 'revenue',
+                '营业总收入': 'total_revenue',
+                '净利润': 'n_income'
+            },
+            'tu_balancesheet': {
+                '证券代码': 'ts_code',
+                '报告期': 'end_date',
+                '总资产': 'total_assets',
+                '总负债': 'total_liab',
+                '股东权益': 'total_hldr_eqy_inc_min_int'
+            },
+            'tu_moneyflow_dc': {
+                '证券代码': 'ts_code',
+                '股票代码': 'ts_code',
+                '特大单买入': 'buy_elg_vol',
+                '特大单卖出': 'sell_elg_vol',
+                '大单买入': 'buy_lg_vol',
+                '大单卖出': 'sell_lg_vol',
+                '主力净流入': 'net_mf_vol'
+            }
+        }
+        
+        # 合并补充映射
+        for table_name, mappings in table_specific_mappings.items():
+            if table_name in self.table_field_mappings:
+                # 只添加不存在的映射，数据库注释优先
+                for chinese, english in mappings.items():
+                    if chinese not in self.table_field_mappings[table_name]:
+                        self.table_field_mappings[table_name][chinese] = english
+            else:
+                # 如果表不存在，可能是新表，直接添加
+                self.table_field_mappings[table_name] = mappings.copy()
+    
     def _identify_primary_fields(self, table_name: str):
         """识别表的主要字段"""
         table_info = self.table_knowledge[table_name]
@@ -192,6 +315,29 @@ class SchemaKnowledgeBase:
             }
         }
         
+    def get_statistics(self) -> Dict[str, Any]:
+        """获取Schema知识库统计信息"""
+        # 计算字段总数
+        field_count = 0
+        for table_info in self.table_knowledge.values():
+            if 'fields' in table_info:
+                field_count += len(table_info['fields'])
+        
+        # 计算中文映射数量
+        chinese_mapping_count = 0
+        for table_name, mappings in self.table_field_mappings.items():
+            chinese_mapping_count += len(mappings)
+        
+        stats = {
+            'table_count': len(self.table_knowledge),
+            'field_count': field_count,
+            'chinese_mapping_count': chinese_mapping_count,
+            'topic_count': len(self.topic_knowledge),
+            'common_query_patterns': len(self.common_queries) if hasattr(self, 'common_queries') else 0,
+            'tables': list(self.table_knowledge.keys())
+        }
+        return stats
+        
     def _load_common_query_patterns(self):
         """加载常用查询模式"""
         self.common_queries = {
@@ -237,69 +383,79 @@ class SchemaKnowledgeBase:
                 if field_name not in self.field_to_tables:
                     self.field_to_tables[field_name] = []
                 self.field_to_tables[field_name].append(table_name)
-                
-        # 中文到英文的映射（核心字段）
-        self.chinese_mapping = {
-            # 股价相关
-            '股票代码': 'ts_code',
-            '交易日期': 'trade_date',
-            '开盘价': 'open',
-            '最高价': 'high',
-            '最低价': 'low',
-            '收盘价': 'close',
-            '成交量': 'vol',
-            '成交额': 'amount',
-            '涨跌幅': 'pct_chg',
-            
-            # 财务相关
-            '报告期': 'end_date',
-            '营业收入': 'revenue',
-            '净利润': 'n_income',
-            '总资产': 'total_assets',
-            '总负债': 'total_liab',
-            '净资产收益率': 'roe',
-            '总资产收益率': 'roa',
-            
-            # 资金流向
-            '特大单买入': 'buy_elg_vol',
-            '特大单卖出': 'sell_elg_vol',
-            '大单买入': 'buy_lg_vol',
-            '大单卖出': 'sell_lg_vol',
-            '净流入': 'net_mf_vol',
-            
-            # 估值相关
-            '市盈率': 'pe',
-            '市净率': 'pb',
-            '市销率': 'ps',
-            '总市值': 'total_mv',
-            '流通市值': 'circ_mv'
-        }
         
     # ========== 核心API：快速数据定位 ==========
     
-    def locate_data(self, data_name: str) -> Optional[Dict]:
+    def locate_data(self, data_name: str, table_hint: str = None) -> Optional[Dict]:
         """
         快速定位数据位置
-        输入：数据名称（中文或英文）
-        输出：{'table': 'tu_xxx', 'field': 'xxx', 'type': 'float', 'comment': 'xxx'}
+        输入：数据名称（中文或英文），可选的表提示
+        输出：{
+            'matches': [
+                {
+                    'table': 'tu_xxx', 
+                    'field': 'xxx', 
+                    'chinese_name': 'xxx',
+                    'type': 'float', 
+                    'comment': 'xxx'
+                }
+            ]
+        }
         """
-        # 尝试中文映射
-        field_name = self.chinese_mapping.get(data_name, data_name)
+        matches = []
         
-        # 查找字段所在的表
-        if field_name in self.field_to_tables:
-            tables = self.field_to_tables[field_name]
-            # 返回第一个匹配的表（通常最常用）
-            table_name = tables[0]
-            field_info = self.table_knowledge[table_name]['fields'].get(field_name, {})
+        # 如果提供了表提示，只在该表中查找
+        if table_hint:
+            tables_to_search = [table_hint] if table_hint in self.table_knowledge else []
+        else:
+            tables_to_search = self.table_knowledge.keys()
+        
+        # 在每个表中查找匹配
+        for table_name in tables_to_search:
+            # 1. 尝试在当前表的中文映射中查找
+            table_mappings = self.table_field_mappings.get(table_name, {})
+            field_name = table_mappings.get(data_name)
             
-            return {
-                'table': table_name,
-                'field': field_name,
-                'type': field_info.get('type', 'unknown'),
-                'comment': field_info.get('comment', ''),
-                'all_tables': tables  # 所有包含此字段的表
-            }
+            # 2. 如果没找到，检查是否是英文字段名
+            if not field_name and data_name in self.table_knowledge[table_name]['fields']:
+                field_name = data_name
+            
+            # 3. 如果找到了字段
+            if field_name and field_name in self.table_knowledge[table_name]['fields']:
+                field_info = self.table_knowledge[table_name]['fields'][field_name]
+                matches.append({
+                    'table': table_name,
+                    'field': field_name,
+                    'chinese_name': field_info.get('chinese_name', ''),
+                    'type': field_info.get('type', ''),
+                    'comment': field_info.get('comment', ''),
+                    'table_comment': self.table_knowledge[table_name].get('comment', '')
+                })
+        
+        if matches:
+            return {'matches': matches}
+        
+        # 尝试模糊匹配（如果精确匹配失败）
+        fuzzy_matches = []
+        for table_name in tables_to_search:
+            table_mappings = self.table_field_mappings.get(table_name, {})
+            
+            # 在中文名称中模糊匹配
+            for chinese_name, field_name in table_mappings.items():
+                if data_name in chinese_name or chinese_name in data_name:
+                    field_info = self.table_knowledge[table_name]['fields'][field_name]
+                    fuzzy_matches.append({
+                        'table': table_name,
+                        'field': field_name,
+                        'chinese_name': chinese_name,
+                        'type': field_info.get('type', ''),
+                        'comment': field_info.get('comment', ''),
+                        'table_comment': self.table_knowledge[table_name].get('comment', ''),
+                        'match_type': 'fuzzy'
+                    })
+        
+        if fuzzy_matches:
+            return {'matches': fuzzy_matches}
         
         return None
         
@@ -319,6 +475,20 @@ class SchemaKnowledgeBase:
         输出：查询模板信息
         """
         return self.common_queries.get(query_type)
+    
+    def get_table_schema(self, table_name: str) -> Optional[Dict]:
+        """获取表的完整Schema信息"""
+        if table_name not in self.table_knowledge:
+            return None
+        
+        table_info = self.table_knowledge[table_name]
+        return {
+            'table_name': table_name,
+            'comment': table_info.get('comment', ''),
+            'row_count': table_info.get('row_count', 0),
+            'fields': table_info.get('fields', {}),
+            'primary_fields': table_info.get('primary_fields', [])
+        }
         
     def get_financial_analysis_tables(self) -> Dict[str, List[str]]:
         """
@@ -402,12 +572,15 @@ class SchemaKnowledgeBase:
         
     def get_performance_stats(self) -> Dict:
         """获取性能统计信息"""
+        # 计算所有表的中文映射总数
+        chinese_mapping_count = sum(len(mappings) for mappings in self.table_field_mappings.values())
+        
         return {
             'table_count': len(self.table_knowledge),
             'field_count': sum(len(t['fields']) for t in self.table_knowledge.values()),
             'topic_count': len(self.topic_knowledge),
             'query_template_count': len(self.common_queries),
-            'chinese_mapping_count': len(self.chinese_mapping)
+            'chinese_mapping_count': chinese_mapping_count
         }
 
 

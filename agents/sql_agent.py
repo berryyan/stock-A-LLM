@@ -32,6 +32,9 @@ from utils.logger import setup_logger
 from utils.date_intelligence import date_intelligence
 from utils.schema_knowledge_base import schema_kb
 from utils.flexible_parser import FlexibleSQLOutputParser, extract_result_from_error
+from utils.sql_templates import SQLTemplates
+from utils.query_templates import match_query_template
+from utils.stock_code_mapper import convert_to_ts_code, get_stock_name
 
 
 
@@ -133,6 +136,60 @@ class SQLAgent:
         except Exception as e:
             self.logger.error(f"降级方法也失败: {e}")
             return {}
+    
+    def _try_quick_query(self, question: str) -> Optional[Dict[str, Any]]:
+        """尝试使用快速查询路径，避免LLM调用"""
+        try:
+            # 模板匹配
+            template_match = match_query_template(question)
+            if not template_match:
+                return None
+                
+            template, params = template_match
+            
+            # 只处理SQL查询类型
+            if template.route_type != 'SQL_ONLY':
+                return None
+                
+            # 检查是否有对应的SQL模板
+            if template.name == '最新股价查询':
+                # 提取股票代码
+                entities = params.get('entities', [])
+                if not entities:
+                    return None
+                    
+                # 转换为ts_code
+                ts_code = convert_to_ts_code(entities[0])
+                if not ts_code:
+                    return None
+                    
+                # 获取股票名称
+                stock_name = get_stock_name(ts_code)
+                
+                # 执行SQL查询
+                sql = SQLTemplates.STOCK_PRICE_LATEST
+                result = self.mysql_connector.execute_query(sql, {'ts_code': ts_code})
+                
+                if result and len(result) > 0:
+                    # 格式化结果
+                    formatted_result = SQLTemplates.format_stock_price_result(
+                        result[0], 
+                        stock_name or ts_code
+                    )
+                    
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': sql,
+                        'quick_path': True
+                    }
+                    
+            # 其他模板类型暂不支持快速路径
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"快速查询路径失败: {e}")
+            return None
     
     def _get_last_trading_date(self) -> str:
         """获取最近的交易日期"""
@@ -330,6 +387,14 @@ class SQLAgent:
                 'cached': True
             }
             
+            # 尝试快速查询路径（避免LLM调用）
+            quick_result = self._try_quick_query(question)
+            if quick_result:
+                self.logger.info("使用快速查询路径")
+                # 缓存结果
+                self._query_cache[cache_key] = quick_result['result']
+                return quick_result
+            
             # 使用智能日期解析预处理问题
             processed_question, parsing_result = date_intelligence.preprocess_question(question)
             
@@ -494,11 +559,13 @@ class SQLAgent:
             # 提取可能的数据字段关键词
             keywords = []
             matched_count = 0
-            for chinese, english in schema_kb.chinese_mapping.items():
-                if chinese in question:
-                    keywords.append(chinese)
-                    matched_count += 1
-                    self.logger.info(f"Schema知识库匹配到字段: {chinese} -> {english}")
+            # 遍历所有表的中文映射
+            for table_name, mappings in schema_kb.table_field_mappings.items():
+                for chinese, english in mappings.items():
+                    if chinese in question:
+                        keywords.append(chinese)
+                        matched_count += 1
+                        self.logger.info(f"Schema知识库匹配到字段: {chinese} -> {english} (表: {table_name})")
             
             if matched_count == 0:
                 self.logger.info("Schema知识库未匹配到任何中文字段")
@@ -514,24 +581,61 @@ class SQLAgent:
         except Exception as e:
             self.logger.warning(f"Schema知识库预处理失败: {e}")
         
-        # 识别并转换股票代码格式
-        stock_name_mapping = {
-            '茅台': '贵州茅台(600519.SH)',
-            '五粮液': '五粮液(000858.SZ)',
-            '平安': '中国平安(601318.SH)',
-            '招行': '招商银行(600036.SH)',
-            '宁德时代': '宁德时代(300750.SZ)',
-            '比亚迪': '比亚迪(002594.SZ)',
-            '中国移动': '中国移动(600941.SH)',
-            '工商银行': '工商银行(601398.SH)',
-            '建设银行': '建设银行(601939.SH)',
-            '农业银行': '农业银行(601288.SH)'
-        }
-        
+        # 使用动态股票代码映射器替换股票名称
         processed = question
-        for name, full_name in stock_name_mapping.items():
-            if name in processed:
-                processed = processed.replace(name, full_name)
+        
+        # 尝试使用stock_code_mapper转换股票实体
+        try:
+            # 提取可能的股票实体（2-8个中文字符或股票代码）
+            # 匹配模式：中文名称、数字代码、ts_code格式
+            patterns = [
+                r'[\u4e00-\u9fa5]{2,8}',  # 中文名称
+                r'\d{6}',                   # 6位数字代码
+                r'\d{6}\.[A-Z]{2}'         # ts_code格式
+            ]
+            
+            potential_entities = []
+            for pattern in patterns:
+                matches = re.findall(pattern, processed)
+                potential_entities.extend(matches)
+            
+            # 去重并过滤常见非股票词汇
+            exclude_words = {'最新', '股价', '价格', '涨幅', '最大', '今天', '昨天', 
+                           '分析', '查询', '比较', '财务', '健康', '资金', '流向',
+                           '年报', '季报', '公告', '数据', '报表', '指标'}
+            
+            stock_converted = False
+            for entity in potential_entities:
+                if entity in exclude_words:
+                    continue
+                
+                # 尝试转换为ts_code
+                ts_code = convert_to_ts_code(entity)
+                if ts_code:
+                    # 获取股票全名
+                    stock_name = get_stock_name(ts_code)
+                    if stock_name:
+                        # 替换为格式：股票名称(ts_code)
+                        replacement = f"{stock_name}({ts_code})"
+                        # 使用精确替换
+                        processed = re.sub(r'\b' + re.escape(entity) + r'\b', replacement, processed)
+                        self.logger.info(f"股票代码转换: {entity} -> {replacement}")
+                        stock_converted = True
+                        break  # 一般一个查询只有一个股票
+            
+            # 如果没有成功转换，记录调试信息
+            if not stock_converted and potential_entities:
+                valid_entities = [e for e in potential_entities if e not in exclude_words]
+                if valid_entities:
+                    self.logger.warning(f"无法识别的股票实体: {valid_entities}")
+                    # 返回错误信息给用户
+                    error_msg = f"无法识别股票名称或代码: {', '.join(valid_entities)}。请使用完整的股票名称（如'贵州茅台'）或标准股票代码（如'600519'或'600519.SH'）。"
+                    self.logger.error(error_msg)
+                    # 注意：这里不应该直接返回错误，应该让查询继续，但记录警告
+                        
+        except Exception as e:
+            self.logger.warning(f"股票代码映射失败: {e}")
+            # 如果映射失败，保持原始查询不变
         
         # 处理时间相关词汇
         time_mappings = {
