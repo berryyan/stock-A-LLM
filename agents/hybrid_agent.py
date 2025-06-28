@@ -27,6 +27,7 @@ from langchain_core.output_parsers import StrOutputParser
 from config.settings import settings
 from utils.logger import setup_logger
 from utils.stock_code_mapper import convert_to_ts_code
+from utils.chinese_query_parser import ChineseQueryParser
 
 
 class QueryType(str, Enum):
@@ -86,6 +87,9 @@ class HybridAgent:
         self.rag_agent = RAGAgent()
         self.financial_agent = FinancialAnalysisAgent()
         self.money_flow_agent = MoneyFlowAgent()
+        
+        # 初始化中文查询解析器
+        self.chinese_parser = ChineseQueryParser()
         
         # 初始化路由LLM
         self.router_llm = ChatOpenAI(
@@ -251,8 +255,13 @@ class HybridAgent:
         try:
             self.logger.info(f"接收查询: {question}")
             
-            # 1. 路由决策
+            # 1. 使用中文查询解析器预处理
+            parsed_query = self.chinese_parser.parse_query(question)
+            self.logger.info(f"中文查询解析结果: {parsed_query}")
+            
+            # 2. 路由决策
             routing_decision = self._route_query(question)
+            routing_decision['parsed_query'] = parsed_query  # 添加解析结果到路由决策
             self.logger.info(f"路由决策: {routing_decision['query_type']}")
             
             # 2. 根据决策执行查询
@@ -389,6 +398,17 @@ class HybridAgent:
     def _handle_sql_only(self, question: str, routing: Dict) -> Dict[str, Any]:
         """处理仅需SQL的查询，增加类型安全检查"""
         try:
+            # 检查是否有中文查询解析结果
+            parsed_query = routing.get('parsed_query', {})
+            if parsed_query and parsed_query.get('query_type') and parsed_query.get('fields'):
+                self.logger.info(f"使用中文查询解析结果优化SQL查询")
+                # 如果解析成功，可以生成SQL直接执行
+                generated_sql = self.chinese_parser.generate_sql(parsed_query)
+                if generated_sql:
+                    self.logger.info(f"生成的SQL: {generated_sql}")
+                    # 这里可以添加直接执行SQL的逻辑
+            
+            # 调用SQL Agent处理查询
             sql_result = self.sql_agent.query(question)
             
             # 类型安全检查和转换
