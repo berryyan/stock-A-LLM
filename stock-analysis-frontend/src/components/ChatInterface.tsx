@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Message, QueryType } from '../types';
-import { ApiService, WebSocketService } from '../services/api';
+import { ApiService } from '../services/api';
 import MessageList from './MessageList';
 import InputBox from './InputBox';
 
@@ -8,246 +8,6 @@ const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isHealthy, setIsHealthy] = useState(true);
-  const [currentStreamingId, setCurrentStreamingId] = useState<string | null>(null);
-  const wsServiceRef = useRef<WebSocketService | null>(null);
-  const streamingContentRef = useRef<string>('');
-  const streamingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // 模拟流式显示效果
-  const simulateStreaming = useCallback((messageId: string, fullContent: string) => {
-    console.log('simulateStreaming 被调用:', { messageId, contentLength: fullContent.length });
-    
-    let currentIndex = 0;
-    const charsPerInterval = 2; // 每次显示的字符数
-    const intervalMs = 30; // 间隔时间（毫秒）
-    
-    streamingContentRef.current = '';
-    
-    streamingIntervalRef.current = setInterval(() => {
-      if (currentIndex < fullContent.length) {
-        const endIndex = Math.min(currentIndex + charsPerInterval, fullContent.length);
-        streamingContentRef.current = fullContent.substring(0, endIndex);
-        currentIndex = endIndex;
-        
-        setMessages(prev => {
-          const newMessages = [...prev];
-          const lastIndex = newMessages.length - 1;
-          if (lastIndex >= 0 && newMessages[lastIndex].id === messageId) {
-            newMessages[lastIndex] = {
-              ...newMessages[lastIndex],
-              content: streamingContentRef.current,
-              isStreaming: true,
-            };
-          }
-          return newMessages;
-        });
-      } else {
-        // 流式显示完成
-        if (streamingIntervalRef.current) {
-          clearInterval(streamingIntervalRef.current);
-          streamingIntervalRef.current = null;
-        }
-        setMessages(prev => {
-          const newMessages = [...prev];
-          const lastIndex = newMessages.length - 1;
-          if (lastIndex >= 0 && newMessages[lastIndex].id === messageId) {
-            newMessages[lastIndex] = {
-              ...newMessages[lastIndex],
-              isStreaming: false,
-            };
-          }
-          return newMessages;
-        });
-        setCurrentStreamingId(null);
-        setIsLoading(false);
-      }
-    }, intervalMs);
-  }, []);
-
-  // 处理流式消息
-  const handleStreamMessage = useCallback((data: any) => {
-    // 保留原有逻辑，以备后端支持真正的流式响应
-    if (data.message_id && currentStreamingId === data.message_id) {
-      streamingContentRef.current += data.content || '';
-      
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const lastIndex = newMessages.length - 1;
-        if (lastIndex >= 0 && newMessages[lastIndex].id === data.message_id) {
-          newMessages[lastIndex] = {
-            ...newMessages[lastIndex],
-            content: streamingContentRef.current,
-            isStreaming: true,
-          };
-        }
-        return newMessages;
-      });
-    }
-  }, [currentStreamingId]);
-
-  // 处理完成消息
-  const handleCompleteMessage = useCallback((data: any) => {
-    if (data.message_id && currentStreamingId === data.message_id) {
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const lastIndex = newMessages.length - 1;
-        if (lastIndex >= 0 && newMessages[lastIndex].id === data.message_id) {
-          newMessages[lastIndex] = {
-            ...newMessages[lastIndex],
-            isStreaming: false,
-          };
-        }
-        return newMessages;
-      });
-      
-      setCurrentStreamingId(null);
-      streamingContentRef.current = '';
-      setIsLoading(false);
-    }
-  }, [currentStreamingId]);
-
-  // 处理错误消息
-  const handleErrorMessage = useCallback((data: any) => {
-    if (data.message_id && currentStreamingId === data.message_id) {
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const lastIndex = newMessages.length - 1;
-        if (lastIndex >= 0 && newMessages[lastIndex].id === data.message_id) {
-          newMessages[lastIndex] = {
-            ...newMessages[lastIndex],
-            content: `❌ ${data.error || '查询失败，请稍后重试。'}`,
-            isError: true,
-            isStreaming: false,
-          };
-        }
-        return newMessages;
-      });
-      
-      setCurrentStreamingId(null);
-      streamingContentRef.current = '';
-      setIsLoading(false);
-    }
-  }, [currentStreamingId]);
-
-  // 中断查询函数
-  const cancelQuery = useCallback(() => {
-    // 停止流式显示
-    if (streamingIntervalRef.current) {
-      clearInterval(streamingIntervalRef.current);
-      streamingIntervalRef.current = null;
-    }
-    
-    // 清理状态
-    if (currentStreamingId) {
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const lastIndex = newMessages.length - 1;
-        if (lastIndex >= 0 && newMessages[lastIndex].id === currentStreamingId) {
-          newMessages[lastIndex] = {
-            ...newMessages[lastIndex],
-            content: newMessages[lastIndex].content + '\n\n*(查询已中断)*',
-            isStreaming: false,
-            isError: true,
-          };
-        }
-        return newMessages;
-      });
-      
-      // 如果使用WebSocket，发送取消消息
-      if (wsServiceRef.current && wsServiceRef.current.isConnected()) {
-        wsServiceRef.current.send({
-          type: 'cancel',
-          message_id: currentStreamingId,
-        });
-      }
-      
-      setCurrentStreamingId(null);
-      setIsLoading(false);
-    }
-  }, [currentStreamingId]);
-
-  // 初始化WebSocket连接
-  useEffect(() => {
-    // 创建WebSocket服务实例
-    const wsService = new WebSocketService('ws://localhost:8000/ws');
-    wsServiceRef.current = wsService;
-
-    // 设置消息处理器
-    wsService.onMessage((data) => {
-      if (data.type === 'stream') {
-        handleStreamMessage(data);
-      } else if (data.type === 'complete') {
-        handleCompleteMessage(data);
-      } else if (data.type === 'error') {
-        handleErrorMessage(data);
-      } else if (data.type === 'analysis_result' && data.content) {
-        // 处理完整的分析结果，使用模拟流式显示
-        console.log('收到 analysis_result:', data);
-        console.log('data.content:', data.content);
-        
-        if (data.content.success) {
-          const fullContent = data.content.answer || data.content.content || '';
-          console.log('准备调用 simulateStreaming，内容长度:', fullContent.length);
-          
-          // 找到最后一条空内容的助手消息
-          setMessages(prev => {
-            const lastAssistantIndex = prev.findLastIndex(
-              msg => msg.type === 'assistant' && msg.content === '' && msg.isStreaming === true
-            );
-            
-            if (lastAssistantIndex >= 0) {
-              const targetMessageId = prev[lastAssistantIndex].id;
-              console.log('找到目标消息，messageId:', targetMessageId);
-              // 在下一个tick中调用simulateStreaming
-              setTimeout(() => {
-                simulateStreaming(targetMessageId, fullContent);
-              }, 0);
-            } else {
-              console.log('没有找到匹配的消息');
-            }
-            return prev;
-          });
-        } else {
-          // 错误情况
-          console.log('处理错误情况:', data.content.error);
-          setMessages(prev => {
-            const lastAssistantIndex = prev.findLastIndex(
-              msg => msg.type === 'assistant' && msg.content === '' && msg.isStreaming === true
-            );
-            
-            if (lastAssistantIndex >= 0) {
-              const newMessages = [...prev];
-              newMessages[lastAssistantIndex] = {
-                ...newMessages[lastAssistantIndex],
-                content: `❌ ${data.content.error || '查询失败，请稍后重试。'}`,
-                isError: true,
-                isStreaming: false,
-              };
-              return newMessages;
-            }
-            return prev;
-          });
-          setIsLoading(false);
-        }
-      } else if (data.type === 'processing') {
-        console.log('收到 processing 消息:', data);
-      }
-    });
-
-    // 连接WebSocket
-    wsService.connect();
-
-    // 清理函数
-    return () => {
-      // 清理流式显示定时器
-      if (streamingIntervalRef.current) {
-        clearInterval(streamingIntervalRef.current);
-        streamingIntervalRef.current = null;
-      }
-      // 断开WebSocket连接
-      wsService.disconnect();
-    };
-  }, []); // 移除不必要的依赖，避免重复初始化
 
   // 初始化欢迎消息
   useEffect(() => {
@@ -329,65 +89,37 @@ const ChatInterface: React.FC = () => {
     // 设置加载状态
     setIsLoading(true);
 
-    // 检查WebSocket连接状态
-    console.log('WebSocket连接状态:', wsServiceRef.current?.isConnected());
-    
-    if (!wsServiceRef.current || !wsServiceRef.current.isConnected()) {
-      // 如果WebSocket未连接，使用传统HTTP方式
-      console.log('使用HTTP方式发送请求');
-      try {
-        const queryType = detectQueryType(content);
-        const response = await ApiService.query(content, queryType);
-        
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: response.success 
-            ? (response.answer || response.content || '抱歉，未获取到有效回复。')
-            : `❌ ${response.error || '查询失败，请稍后重试。'}`,
-          timestamp: new Date(),
-          isError: !response.success,
-        };
-        
-        setMessages(prev => [...prev, assistantMessage]);
-      } catch (error) {
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: '❌ 网络错误，请检查网络连接并重试。',
-          timestamp: new Date(),
-          isError: true,
-        };
-        setMessages(prev => [...prev, errorMessage]);
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // 使用WebSocket流式响应
-      console.log('使用WebSocket方式发送请求');
-      const messageId = (Date.now() + 1).toString();
-      console.log('生成的messageId:', messageId);
-      streamingContentRef.current = '';
-      
-      // 添加空的助手消息占位符
-      const assistantMessage: Message = {
-        id: messageId,
-        type: 'assistant',
-        content: '',
-        timestamp: new Date(),
-        isStreaming: true,
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-      
+    try {
       // 自动检测查询类型
       const queryType = detectQueryType(content);
       
-      // 发送WebSocket消息
-      console.log('发送WebSocket消息:', { type: 'query', question: content });
-      wsServiceRef.current.send({
-        type: 'query',
-        question: content,
-      });
+      // 发送API请求
+      const response = await ApiService.query(content, queryType);
+      
+      // 处理响应
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: response.success 
+          ? (response.answer || response.content || '抱歉，未获取到有效回复。')
+          : `❌ ${response.error || '查询失败，请稍后重试。'}`,
+        timestamp: new Date(),
+        isError: !response.success,
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      // 错误处理
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: '❌ 网络错误，请检查网络连接并重试。',
+        timestamp: new Date(),
+        isError: true,
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -427,25 +159,11 @@ const ChatInterface: React.FC = () => {
           ))}
         </div>
         
-        <div className="input-wrapper">
-          <InputBox
-            onSend={handleSend}
-            disabled={isLoading || !isHealthy}
-            placeholder={isLoading ? "正在处理查询中，请稍候..." : "请输入您的问题..."}
-          />
-          {isLoading && (
-            <button
-              className="cancel-button"
-              onClick={cancelQuery}
-              title="中断查询"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-              </svg>
-              取消
-            </button>
-          )}
-        </div>
+        <InputBox
+          onSend={handleSend}
+          disabled={isLoading || !isHealthy}
+          placeholder={isLoading ? "正在处理查询中，请稍候..." : "请输入您的问题..."}
+        />
       </div>
     </div>
   );
