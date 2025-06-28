@@ -72,13 +72,14 @@ export class WebSocketService {
       this.ws = new WebSocket(this.url);
 
       this.ws.onopen = () => {
-        console.log('WebSocket连接已建立');
+        console.log('WebSocket连接已建立，URL:', this.url);
         this.reconnectAttempts = 0;
       };
 
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log('WebSocket收到消息:', data);
           this.messageHandlers.forEach(handler => handler(data));
         } catch (e) {
           console.error('WebSocket消息解析失败:', e);

@@ -15,6 +15,8 @@ const ChatInterface: React.FC = () => {
 
   // 模拟流式显示效果
   const simulateStreaming = useCallback((messageId: string, fullContent: string) => {
+    console.log('simulateStreaming 被调用:', { messageId, contentLength: fullContent.length });
+    
     let currentIndex = 0;
     const charsPerInterval = 2; // 每次显示的字符数
     const intervalMs = 30; // 间隔时间（毫秒）
@@ -180,17 +182,55 @@ const ChatInterface: React.FC = () => {
         handleErrorMessage(data);
       } else if (data.type === 'analysis_result' && data.content) {
         // 处理完整的分析结果，使用模拟流式显示
-        const messageId = data.query_id || currentStreamingId;
-        if (messageId && data.content.success) {
+        console.log('收到 analysis_result:', data);
+        console.log('data.content:', data.content);
+        
+        if (data.content.success) {
           const fullContent = data.content.answer || data.content.content || '';
-          simulateStreaming(messageId, fullContent);
-        } else if (messageId) {
-          // 错误情况
-          handleErrorMessage({
-            message_id: messageId,
-            error: data.content.error || '查询失败'
+          console.log('准备调用 simulateStreaming，内容长度:', fullContent.length);
+          
+          // 找到最后一条空内容的助手消息
+          setMessages(prev => {
+            const lastAssistantIndex = prev.findLastIndex(
+              msg => msg.type === 'assistant' && msg.content === '' && msg.isStreaming === true
+            );
+            
+            if (lastAssistantIndex >= 0) {
+              const targetMessageId = prev[lastAssistantIndex].id;
+              console.log('找到目标消息，messageId:', targetMessageId);
+              // 在下一个tick中调用simulateStreaming
+              setTimeout(() => {
+                simulateStreaming(targetMessageId, fullContent);
+              }, 0);
+            } else {
+              console.log('没有找到匹配的消息');
+            }
+            return prev;
           });
+        } else {
+          // 错误情况
+          console.log('处理错误情况:', data.content.error);
+          setMessages(prev => {
+            const lastAssistantIndex = prev.findLastIndex(
+              msg => msg.type === 'assistant' && msg.content === '' && msg.isStreaming === true
+            );
+            
+            if (lastAssistantIndex >= 0) {
+              const newMessages = [...prev];
+              newMessages[lastAssistantIndex] = {
+                ...newMessages[lastAssistantIndex],
+                content: `❌ ${data.content.error || '查询失败，请稍后重试。'}`,
+                isError: true,
+                isStreaming: false,
+              };
+              return newMessages;
+            }
+            return prev;
+          });
+          setIsLoading(false);
         }
+      } else if (data.type === 'processing') {
+        console.log('收到 processing 消息:', data);
       }
     });
 
@@ -290,8 +330,11 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
 
     // 检查WebSocket连接状态
+    console.log('WebSocket连接状态:', wsServiceRef.current?.isConnected());
+    
     if (!wsServiceRef.current || !wsServiceRef.current.isConnected()) {
       // 如果WebSocket未连接，使用传统HTTP方式
+      console.log('使用HTTP方式发送请求');
       try {
         const queryType = detectQueryType(content);
         const response = await ApiService.query(content, queryType);
@@ -321,8 +364,9 @@ const ChatInterface: React.FC = () => {
       }
     } else {
       // 使用WebSocket流式响应
+      console.log('使用WebSocket方式发送请求');
       const messageId = (Date.now() + 1).toString();
-      setCurrentStreamingId(messageId);
+      console.log('生成的messageId:', messageId);
       streamingContentRef.current = '';
       
       // 添加空的助手消息占位符
@@ -339,6 +383,7 @@ const ChatInterface: React.FC = () => {
       const queryType = detectQueryType(content);
       
       // 发送WebSocket消息
+      console.log('发送WebSocket消息:', { type: 'query', question: content });
       wsServiceRef.current.send({
         type: 'query',
         question: content,
