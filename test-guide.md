@@ -274,7 +274,66 @@ curl -X POST http://localhost:8000/api/query \
   }'
 ```
 
-### 六、文档处理功能测试
+### 六、数据库Schema中文映射测试 (v2.0新增)
+
+#### 1. 测试Schema缓存管理器
+```bash
+# 测试动态Schema读取和中文查询解析
+source venv/bin/activate && python test_schema_mapping.py
+```
+
+预期输出：
+```
+缓存统计信息:
+- 表数量: 14
+- 字段总数: 500+
+- 中文字段名数量: 400+
+
+数据库表列表:
+1. tu_anns_d - 公告数据表
+2. tu_balancesheet - 资产负债表
+3. tu_cashflow - 现金流量表
+...
+
+测试中文查询解析:
+查询: 查询贵州茅台最新股价
+查询类型: stock_price
+生成SQL: SELECT open, high, low, close, vol, amount FROM tu_daily_detail WHERE ts_code = '600519.SH' AND trade_date >= DATE_SUB(CURDATE(), INTERVAL 0 DAY)
+```
+
+#### 2. 测试中文字段映射
+```python
+# 测试代码示例
+from utils.schema_cache_manager import SchemaCacheManager
+
+manager = SchemaCacheManager()
+
+# 测试表名映射
+print(manager.get_table_by_chinese("股票日线行情"))  # -> tu_daily_detail
+
+# 测试字段映射
+field_info = manager.get_field_by_chinese("收盘价")
+print(f"{field_info['table']}.{field_info['field']}")  # -> tu_daily_detail.close
+```
+
+#### 3. 测试自然语言查询解析
+```python
+from utils.chinese_query_parser import ChineseQueryParser
+
+parser = ChineseQueryParser()
+
+# 解析查询
+result = parser.parse_query("茅台最近30天的收盘价和成交量")
+print(result)
+# {
+#   "query_type": "stock_price",
+#   "tables": ["tu_daily_detail"],
+#   "fields": ["close", "vol"],
+#   "conditions": {"ts_code": "600519.SH", "days": 30}
+# }
+```
+
+### 七、文档处理功能测试
 
 #### 1. 测试PDF下载功能
 ```bash
@@ -292,7 +351,7 @@ python smart_processor_v5_1.py
 # 4 - 处理最近公告（带过滤）
 ```
 
-### 六、数据维护功能测试
+### 八、数据维护功能测试
 
 #### 1. Milvus去重检查
 ```bash
