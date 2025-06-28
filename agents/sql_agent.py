@@ -30,6 +30,7 @@ from config.settings import settings
 from database.mysql_connector import MySQLConnector
 from utils.logger import setup_logger
 from utils.date_intelligence import date_intelligence
+from utils.schema_knowledge_base import schema_kb
 
 
 
@@ -74,7 +75,39 @@ class SQLAgent:
         self.logger.info("SQL Agent初始化完成")
     
     def _get_schema_info(self) -> Dict[str, Any]:
-        """获取数据库schema信息"""
+        """获取数据库schema信息 - 使用Schema知识库优化性能"""
+        schema_info = {}
+        try:
+            # 使用Schema知识库快速获取表信息（<10ms）
+            self.logger.info("使用Schema知识库获取表结构信息...")
+            
+            # 获取所有表的基础信息
+            for table_name, table_data in schema_kb.table_knowledge.items():
+                schema_info[table_name] = {
+                    'columns': table_data['fields'],
+                    'comment': table_data['comment'],
+                    'row_count': table_data['row_count'],
+                    'primary_fields': table_data['primary_fields']
+                }
+            
+            self.logger.info(f"从Schema知识库获取了 {len(schema_info)} 个表的信息")
+            
+            # 记录性能提升
+            stats = schema_kb.get_performance_stats()
+            self.logger.info(f"Schema知识库统计: 表{stats['table_count']}个, "
+                           f"字段{stats['field_count']}个, "
+                           f"中文映射{stats['chinese_mapping_count']}个")
+            
+            return schema_info
+            
+        except Exception as e:
+            self.logger.error(f"获取schema信息失败: {e}")
+            # 降级到原始方法
+            self.logger.warning("降级到原始数据库查询方法...")
+            return self._get_schema_info_fallback()
+    
+    def _get_schema_info_fallback(self) -> Dict[str, Any]:
+        """降级方法：原始的数据库查询方式"""
         schema_info = {}
         try:
             # 获取主要表的信息
@@ -92,7 +125,7 @@ class SQLAgent:
             return schema_info
             
         except Exception as e:
-            self.logger.error(f"获取schema信息失败: {e}")
+            self.logger.error(f"降级方法也失败: {e}")
             return {}
     
     def _get_last_trading_date(self) -> str:
@@ -117,8 +150,19 @@ class SQLAgent:
         for table_name, info in self.schema_info.items():
             if info and 'columns' in info:
                 columns_desc = []
-                for col in info['columns'][:10]:  # 只显示前10个重要列
-                    columns_desc.append(f"  - {col['COLUMN_NAME']} ({col['DATA_TYPE']}): {col.get('COLUMN_COMMENT', '')}")
+                # 处理不同的数据结构
+                if isinstance(info['columns'], dict):
+                    # Schema知识库返回的格式
+                    for i, (col_name, col_info) in enumerate(info['columns'].items()):
+                        if i >= 10:  # 只显示前10个列
+                            break
+                        col_type = col_info.get('type', 'unknown')
+                        col_comment = col_info.get('comment', '')
+                        columns_desc.append(f"  - {col_name} ({col_type}): {col_comment}")
+                elif isinstance(info['columns'], list):
+                    # 原始格式
+                    for col in info['columns'][:10]:
+                        columns_desc.append(f"  - {col['COLUMN_NAME']} ({col['DATA_TYPE']}): {col.get('COLUMN_COMMENT', '')}")
                 
                 table_desc = f"""
 表名: {table_name}
@@ -389,7 +433,24 @@ class SQLAgent:
         return "\n".join(formatted_parts) if formatted_parts else str(result_dict)
     
     def _preprocess_question(self, question: str) -> str:
-        """预处理用户问题"""
+        """预处理用户问题 - 使用Schema知识库增强"""
+        # 使用Schema知识库分析查询关键词
+        try:
+            # 提取可能的数据字段关键词
+            keywords = []
+            for chinese, english in schema_kb.chinese_mapping.items():
+                if chinese in question:
+                    keywords.append(chinese)
+                    self.logger.info(f"识别到数据字段: {chinese} -> {english}")
+            
+            # 获取相关表的建议
+            if keywords:
+                suggestions = schema_kb.suggest_fields_for_query(keywords)
+                if suggestions:
+                    self.logger.info(f"Schema知识库建议查询表: {list(suggestions.keys())}")
+        except Exception as e:
+            self.logger.warning(f"Schema知识库预处理失败: {e}")
+        
         # 识别并转换股票代码格式
         stock_name_mapping = {
             '茅台': '贵州茅台(600519.SH)',

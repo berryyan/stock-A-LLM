@@ -24,6 +24,7 @@ from database.mysql_connector import MySQLConnector
 from config.settings import settings
 from utils.logger import setup_logger
 from utils.stock_code_mapper import convert_to_ts_code
+from utils.schema_knowledge_base import schema_kb
 
 
 @dataclass
@@ -85,6 +86,14 @@ class FinancialAnalysisAgent:
             'dupont': ['杜邦分析', 'ROE分解', '杜邦', '盈利能力分解'],
             'comparison': ['对比', '比较', '同行', '行业对比', '历史对比', '多期', '财务变化', '财务对比']
         }
+        
+        # 使用Schema知识库获取财务表结构（性能优化）
+        self.financial_tables = schema_kb.get_financial_analysis_tables()
+        self.logger.info(f"从Schema知识库获取财务表结构: {list(self.financial_tables.keys())}")
+        
+        # 记录性能提升
+        stats = schema_kb.get_performance_stats()
+        self.logger.info(f"Schema知识库已加载: {stats['table_count']}个表, {stats['field_count']}个字段")
         
         self.logger.info("Financial Analysis Agent初始化完成")
     

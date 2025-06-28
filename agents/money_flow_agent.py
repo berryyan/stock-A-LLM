@@ -17,6 +17,7 @@ from database.mysql_connector import MySQLConnector
 from utils.money_flow_analyzer import MoneyFlowAnalyzer, format_money_flow_report
 from utils.logger import setup_logger
 from config.settings import settings
+from utils.schema_knowledge_base import schema_kb
 
 
 class MoneyFlowAgent:
@@ -40,6 +41,15 @@ class MoneyFlowAgent:
         except Exception as e:
             self.logger.error(f"LLM初始化失败: {e}")
             self.llm = None
+        
+        # 使用Schema知识库获取资金流向字段（性能优化）
+        self.money_flow_fields = schema_kb.get_money_flow_fields()
+        self.logger.info(f"从Schema知识库获取资金流向字段: {len(self.money_flow_fields)}个")
+        
+        # 记录性能提升
+        stats = schema_kb.get_performance_stats()
+        self.logger.info(f"Schema知识库统计: 共{stats['field_count']}个字段, "
+                        f"中文映射{stats['chinese_mapping_count']}个")
         
         # 资金流向查询模式
         self.MONEY_FLOW_PATTERNS = [
