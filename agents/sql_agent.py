@@ -31,6 +31,7 @@ from database.mysql_connector import MySQLConnector
 from utils.logger import setup_logger
 from utils.date_intelligence import date_intelligence
 from utils.schema_knowledge_base import schema_kb
+from utils.flexible_parser import FlexibleSQLOutputParser, extract_result_from_error
 
 
 
@@ -73,6 +74,9 @@ class SQLAgent:
         
         # 初始化查询缓存
         self._query_cache = {}
+        
+        # 初始化灵活解析器
+        self.flexible_parser = FlexibleSQLOutputParser()
         
         self.logger.info("SQL Agent初始化完成")
     
@@ -365,15 +369,26 @@ class SQLAgent:
                 
                 # 检查是否为解析错误（通常包含raw SQL）
                 if isinstance(output, str) and "Could not parse LLM output" in output:
-                    self.logger.warning("LLM输出解析失败，尝试提取有用信息")
-                    # 尝试从错误消息中提取SQL结果
-                    if "Final Answer:" in output:
-                        # 提取Final Answer后的内容
-                        final_answer_start = output.find("Final Answer:") + len("Final Answer:")
-                        processed_result = output[final_answer_start:].strip()
-                    else:
-                        # 如果无法解析，返回友好的错误信息
-                        processed_result = "查询处理过程中遇到格式问题，请尝试重新表述您的问题或使用更具体的查询条件。"
+                    self.logger.warning("LLM输出解析失败，使用灵活解析器")
+                    # 使用灵活解析器处理
+                    try:
+                        # 先尝试提取错误中的实际输出
+                        extracted = extract_result_from_error(output)
+                        if extracted and extracted != output:
+                            parsed = self.flexible_parser.parse(extracted)
+                            if hasattr(parsed, 'return_values'):
+                                processed_result = parsed.return_values.get('output', extracted)
+                            else:
+                                processed_result = extracted
+                        else:
+                            # 直接尝试解析整个输出
+                            parsed = self.flexible_parser.parse(output)
+                            if hasattr(parsed, 'return_values'):
+                                processed_result = parsed.return_values.get('output', output)
+                            else:
+                                processed_result = "查询处理过程中遇到格式问题，请尝试重新表述您的问题。"
+                    except:
+                        processed_result = "查询处理过程中遇到格式问题，请尝试重新表述您的问题。"
                 else:
                     processed_result = self._postprocess_result(output)
                     
@@ -383,16 +398,21 @@ class SQLAgent:
                 
                 # 特殊处理输出解析错误
                 if "Could not parse LLM output" in error_str:
-                    self.logger.info("检测到输出解析错误，尝试提取有效结果")
-                    # 从错误信息中提取实际的查询结果
+                    self.logger.info("检测到输出解析错误，使用灵活解析器处理")
+                    # 使用灵活解析器从错误信息中提取结果
                     try:
-                        # 查找LLM实际输出的内容
-                        start_idx = error_str.find("`") + 1
-                        end_idx = error_str.rfind("`")
-                        if start_idx > 0 and end_idx > start_idx:
-                            llm_output = error_str[start_idx:end_idx]
-                            self.logger.info(f"提取到LLM输出: {llm_output[:100]}...")
-                            processed_result = llm_output
+                        extracted_output = extract_result_from_error(error_str)
+                        if extracted_output and extracted_output != error_str:
+                            self.logger.info(f"成功提取LLM输出: {extracted_output[:100]}...")
+                            # 尝试使用灵活解析器解析
+                            try:
+                                parsed_result = self.flexible_parser.parse(extracted_output)
+                                if hasattr(parsed_result, 'return_values'):
+                                    processed_result = parsed_result.return_values.get('output', extracted_output)
+                                else:
+                                    processed_result = extracted_output
+                            except:
+                                processed_result = extracted_output
                         else:
                             processed_result = f"查询执行失败: {error_str}"
                     except:
