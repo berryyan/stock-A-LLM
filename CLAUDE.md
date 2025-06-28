@@ -2,11 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 重要目录说明 (Important Directory Structure)
+
+- **主前端目录**: `/frontend` - React + TypeScript + Claude.ai风格界面
+- **后端API目录**: `/api` - FastAPI后端服务
+- **Agent系统**: `/agents` - 各种查询处理Agent
+- **配置文件**: 根目录 - .env, requirements.txt等
+- **文档目录**: `/docs` - 项目文档和状态记录
+
+⚠️ **注意**: 请勿混淆 `frontend` 与其他可能存在的前端目录
+
 ## Project Overview
 
-This is a **Stock Analysis System (v1.5.3)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v1.5.4)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
+**Current Status**: ✅ 流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
 ## Development Commands
 
@@ -263,6 +273,25 @@ The system supports six main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v1.5.4 - 流式响应完整实现与项目清理 (2025-06-28)
+
+**流式响应功能完成** ✅:
+- **WebSocket流式通信**: 实现逐字符显示效果，模拟真实打字体验
+- **打字光标动画**: 添加闪烁光标，增强视觉反馈
+- **停止查询按钮**: 支持中断正在进行的查询，提升用户控制感
+- **useStreamingResponse Hook**: 封装流式响应逻辑，便于复用
+
+**项目结构优化** ✅:
+- **目录清理**: 删除混淆的`stock-analysis-frontend`旧目录
+- **文档更新**: 在CLAUDE.md开头添加重要目录说明
+- **避免混淆**: 明确标注主前端目录为`/frontend`
+
+**技术实现** ✅:
+- 自定义Hook管理流式状态和定时器
+- 支持配置每次显示字符数和间隔时间
+- 内存泄漏防护，组件卸载时清理定时器
+- 集成停止功能到SmartInput组件
 
 #### v1.5.3+ - React前端Phase 1基本完成总结 (2025-06-27)
 
