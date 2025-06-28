@@ -275,7 +275,11 @@ class SQLAgent:
 思考：我应该查看数据库中有哪些表
 {{agent_scratchpad}}
 
-记住：最终答案(Final Answer)必须使用中文。对于股价数据，请使用类似"贵州茅台（600519.SH）在2025年6月20日的股价为：开盘价xxx元，最高价xxx元，最低价xxx元，收盘价xxx元"的格式。
+记住：
+1. 你的最终答案必须以"Final Answer:"开头（英文），然后是中文内容
+2. 格式必须是: Final Answer: [你的中文答案]
+3. 对于股价数据，使用格式: Final Answer: 贵州茅台（600519.SH）在2025年6月20日的股价为：开盘价xxx元，最高价xxx元，最低价xxx元，收盘价xxx元
+4. 不要在Final Answer前后添加其他内容
 """
         
         return create_sql_agent(
