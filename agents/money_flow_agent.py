@@ -18,6 +18,7 @@ from utils.money_flow_analyzer import MoneyFlowAnalyzer, format_money_flow_repor
 from utils.logger import setup_logger
 from config.settings import settings
 from utils.schema_knowledge_base import schema_kb
+from utils.stock_entity_validator import stock_validator
 
 
 class MoneyFlowAgent:
@@ -102,91 +103,7 @@ class MoneyFlowAgent:
             self.logger.error(f"判断资金流向查询失败: {e}")
             return False
     
-    def extract_ts_code(self, question: str) -> Optional[str]:
-        """从问题中提取股票代码"""
-        try:
-            # 股票代码模式：6位数字 + .SH/.SZ 或 单独6位数字
-            patterns = [
-                r'\b(\d{6}\.(?:SH|SZ))\b',  # 完整格式
-                r'\b(\d{6})\b',             # 仅数字
-            ]
-            
-            for pattern in patterns:
-                match = re.search(pattern, question, re.IGNORECASE)
-                if match:
-                    code = match.group(1)
-                    # 如果只有数字，需要添加交易所后缀
-                    if '.' not in code:
-                        # 简单规则：6开头是上交所，0/3开头是深交所
-                        if code.startswith('6'):
-                            code += '.SH'
-                        elif code.startswith(('0', '3')):
-                            code += '.SZ'
-                    return code
-            
-            # 如果没有找到代码，尝试通过公司名称查找
-            return self._find_ts_code_by_name(question)
-            
-        except Exception as e:
-            self.logger.error(f"提取股票代码失败: {e}")
-            return None
-    
-    def _find_ts_code_by_name(self, question: str) -> Optional[str]:
-        """通过公司名称查找股票代码"""
-        try:
-            # 常见公司名称关键词
-            name_keywords = [
-                ('贵州茅台', '600519.SH'),
-                ('茅台', '600519.SH'),
-                ('平安银行', '000001.SZ'),
-                ('万科', '000002.SZ'),
-                ('五粮液', '000858.SZ'),
-                ('比亚迪', '002594.SZ'),
-                ('宁德时代', '300750.SZ'),
-                ('腾讯控股', '00700.HK'),  # 港股暂不支持
-                ('阿里巴巴', '09988.HK'),  # 港股暂不支持
-            ]
-            
-            for name, code in name_keywords:
-                if name in question:
-                    # 暂时不支持港股
-                    if '.HK' in code:
-                        continue
-                    return code
-            
-            # 如果都没找到，尝试数据库查询
-            return self._query_ts_code_from_db(question)
-            
-        except Exception as e:
-            self.logger.error(f"通过名称查找股票代码失败: {e}")
-            return None
-    
-    def _query_ts_code_from_db(self, question: str) -> Optional[str]:
-        """从数据库查询股票代码"""
-        try:
-            # 提取可能的公司名称
-            # 简单实现：查找中文字符序列
-            chinese_pattern = r'[\u4e00-\u9fff]+'
-            names = re.findall(chinese_pattern, question)
-            
-            for name in names:
-                if len(name) >= 2:  # 至少2个字符
-                    query = f"""
-                    SELECT ts_code, name 
-                    FROM tu_stock_basic 
-                    WHERE name LIKE '%{name}%' 
-                    LIMIT 1
-                    """
-                    
-                    results = self.mysql_conn.execute_query(query)
-                    if results:
-                        return results[0].get('ts_code')
-            
-            return None
-            
-        except Exception as e:
-            self.logger.error(f"数据库查询股票代码失败: {e}")
-            return None
+    # 注意：extract_ts_code方法已删除，统一使用stock_validator.extract_stock_entities
     
     def extract_analysis_period(self, question: str) -> int:
         """提取分析周期，默认30天"""
@@ -302,15 +219,15 @@ class MoneyFlowAgent:
                     'money_flow_data': None
                 }
             
-            # 提取股票代码
-            ts_code = self.extract_ts_code(question)
+            # 早期股票实体验证（与Financial Agent保持一致）
+            ts_code, extract_error = stock_validator.extract_stock_entities(question)
+            
             if not ts_code:
-                return {
-                    'success': False,
-                    'error': '无法识别股票代码，请提供完整的股票代码或公司名称',
-                    'answer': None,
-                    'money_flow_data': None
-                }
+                # 如果统一验证器提取失败，返回标准错误
+                return stock_validator.format_error_response(
+                    'NOT_FOUND',
+                    extract_error or '未能从问题中识别出有效的股票代码或名称。请使用完整的股票名称（如"贵州茅台"）或标准股票代码（如"600519"或"600519.SH"）'
+                )
             
             # 提取分析周期
             days = self.extract_analysis_period(question)

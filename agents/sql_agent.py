@@ -35,6 +35,7 @@ from utils.flexible_parser import FlexibleSQLOutputParser, extract_result_from_e
 from utils.sql_templates import SQLTemplates
 from utils.query_templates import match_query_template
 from utils.stock_code_mapper import convert_to_ts_code, get_stock_name
+from utils.stock_entity_validator import stock_validator
 
 
 
@@ -376,6 +377,22 @@ class SQLAgent:
         try:
             self.logger.info(f"接收查询: {question}")
             
+            # 早期股票实体验证（与Financial Agent保持一致）
+            # 检查是否是股票相关查询
+            stock_keywords = ['股价', '股票', '价格', '涨跌', '成交', '市值', '财务', '资金']
+            is_stock_query = any(keyword in question for keyword in stock_keywords)
+            
+            if is_stock_query:
+                # 使用统一的股票实体验证器
+                ts_code, extract_error = stock_validator.extract_stock_entities(question)
+                
+                if not ts_code:
+                    # 如果统一验证器提取失败，返回标准错误
+                    return stock_validator.format_error_response(
+                        'NOT_FOUND',
+                        extract_error or '未能从查询中识别出有效的股票代码或名称。请使用完整的股票名称（如"贵州茅台"）或标准股票代码（如"600519"或"600519.SH"）'
+                    )
+            
             # 检查缓存
             cache_key = self._get_cache_key(question)
             if cache_key in self._query_cache:
@@ -584,55 +601,32 @@ class SQLAgent:
         # 使用动态股票代码映射器替换股票名称
         processed = question
         
-        # 尝试使用stock_code_mapper转换股票实体
+        # 使用动态股票代码映射器替换股票名称
+        # 注意：这里仅进行代码替换，验证已在query方法中完成
         try:
-            # 提取可能的股票实体（2-8个中文字符或股票代码）
-            # 匹配模式：中文名称、数字代码、ts_code格式
-            patterns = [
-                r'[\u4e00-\u9fa5]{2,8}',  # 中文名称
-                r'\d{6}',                   # 6位数字代码
-                r'\d{6}\.[A-Z]{2}'         # ts_code格式
-            ]
+            # 提取股票实体并转换
+            ts_code, _ = stock_validator.extract_stock_entities(processed)
             
-            potential_entities = []
-            for pattern in patterns:
-                matches = re.findall(pattern, processed)
-                potential_entities.extend(matches)
-            
-            # 去重并过滤常见非股票词汇
-            exclude_words = {'最新', '股价', '价格', '涨幅', '最大', '今天', '昨天', 
-                           '分析', '查询', '比较', '财务', '健康', '资金', '流向',
-                           '年报', '季报', '公告', '数据', '报表', '指标'}
-            
-            stock_converted = False
-            for entity in potential_entities:
-                if entity in exclude_words:
-                    continue
-                
-                # 尝试转换为ts_code
-                ts_code = convert_to_ts_code(entity)
-                if ts_code:
-                    # 获取股票全名
-                    stock_name = get_stock_name(ts_code)
-                    if stock_name:
-                        # 替换为格式：股票名称(ts_code)
-                        replacement = f"{stock_name}({ts_code})"
-                        # 使用精确替换
-                        processed = re.sub(r'\b' + re.escape(entity) + r'\b', replacement, processed)
-                        self.logger.info(f"股票代码转换: {entity} -> {replacement}")
-                        stock_converted = True
-                        break  # 一般一个查询只有一个股票
-            
-            # 如果没有成功转换，记录调试信息
-            if not stock_converted and potential_entities:
-                valid_entities = [e for e in potential_entities if e not in exclude_words]
-                if valid_entities:
-                    self.logger.warning(f"无法识别的股票实体: {valid_entities}")
-                    # 返回错误信息给用户
-                    error_msg = f"无法识别股票名称或代码: {', '.join(valid_entities)}。请使用完整的股票名称（如'贵州茅台'）或标准股票代码（如'600519'或'600519.SH'）。"
-                    self.logger.error(error_msg)
-                    # 注意：这里不应该直接返回错误，应该让查询继续，但记录警告
-                        
+            if ts_code:
+                # 成功提取到股票代码
+                stock_name = get_stock_name(ts_code)
+                if stock_name:
+                    # 替换为格式：股票名称(ts_code)
+                    replacement = f"{stock_name}({ts_code})"
+                    # 查找原始文本中的股票实体
+                    patterns = [
+                        r'[\u4e00-\u9fa5]{2,8}(?:股份|集团|银行|证券|保险|地产|科技|医药|能源|汽车)?',
+                        r'\d{6}(?:\.[A-Z]{2})?',
+                    ]
+                    for pattern in patterns:
+                        matches = re.findall(pattern, processed, re.IGNORECASE)
+                        for match in matches:
+                            validation_result = stock_validator.validate_and_convert(match)
+                            if validation_result['success'] and validation_result['ts_code'] == ts_code:
+                                processed = re.sub(r'\b' + re.escape(match) + r'\b', replacement, processed)
+                                self.logger.info(f"股票代码转换: {match} -> {replacement}")
+                                break
+                    
         except Exception as e:
             self.logger.warning(f"股票代码映射失败: {e}")
             # 如果映射失败，保持原始查询不变

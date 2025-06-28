@@ -121,19 +121,49 @@ def test_routing_statistics():
     stats = routing_monitor.get_statistics()
     
     print(f"\n总查询数: {stats['total_queries']}")
-    print(f"成功率: {stats['success_rate']:.1%}")
-    print(f"平均响应时间: {stats['avg_response_time']:.2f}秒")
     
-    print("\n路由类型分布:")
-    for route_type, count in stats['route_distribution'].items():
-        percentage = (count / stats['total_queries'] * 100) if stats['total_queries'] > 0 else 0
-        print(f"  {route_type}: {count} ({percentage:.1f}%)")
+    # 成功率统计
+    if stats.get('success_rates'):
+        print("\n成功率统计:")
+        for query_type, rate_info in stats['success_rates'].items():
+            print(f"  {query_type}: {rate_info['rate']:.1f}% ({rate_info['success']}/{rate_info['total']})")
+    else:
+        print("成功率: N/A")
     
-    print("\n最近的路由决策:")
-    recent = routing_monitor.get_recent_decisions(5)
-    for i, decision in enumerate(recent, 1):
-        print(f"  {i}. {decision['query'][:50]}...")
-        print(f"     类型: {decision['route_type']} | 时间: {decision['timestamp']}")
+    # 平均响应时间
+    if stats.get('avg_response_times'):
+        print("\n平均响应时间:")
+        for query_type, time_info in stats['avg_response_times'].items():
+            print(f"  {query_type}: {time_info['avg']:.2f}秒 (最小: {time_info['min']:.2f}s, 最大: {time_info['max']:.2f}s)")
+    else:
+        print("平均响应时间: N/A")
+    
+    # 路由分布
+    if 'routing_distribution' in stats:
+        print("\n路由类型分布:")
+        total = stats['total_queries']
+        for route_type, count in stats['routing_distribution'].items():
+            percentage = (count / total * 100) if total > 0 else 0
+            print(f"  {route_type}: {count} ({percentage:.1f}%)")
+    
+    # 热门关键词
+    if stats.get('top_keywords'):
+        print("\n热门关键词:")
+        for keyword, count in stats['top_keywords'][:5]:
+            print(f"  {keyword}: {count}次")
+    
+    # 热门实体
+    if stats.get('top_entities'):
+        print("\n热门实体:")
+        for entity, count in stats['top_entities'][:5]:
+            print(f"  {entity}: {count}次")
+    
+    # 最近的查询模式
+    if stats.get('recent_patterns'):
+        print("\n最近的查询模式:")
+        for i, pattern in enumerate(stats['recent_patterns'][-3:], 1):
+            print(f"  {i}. {pattern['query'][:50]}...")
+            print(f"     类型: {pattern['type']} | 时间: {pattern['timestamp']}")
 
 
 def test_hybrid_query_with_schema():
