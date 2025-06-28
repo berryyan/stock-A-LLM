@@ -29,6 +29,7 @@ from utils.logger import setup_logger
 from utils.stock_code_mapper import convert_to_ts_code
 from utils.chinese_query_parser import ChineseQueryParser
 from utils.routing_monitor import routing_monitor
+from utils.schema_enhanced_router import schema_router
 
 
 class QueryType(str, Enum):
@@ -337,6 +338,25 @@ class HybridAgent:
     def _route_query(self, question: str) -> Dict[str, Any]:
         """路由查询到合适的处理器"""
         try:
+            # 首先尝试快速路由
+            quick_route_type = schema_router.get_quick_route(question)
+            if quick_route_type:
+                self.logger.info(f"使用快速路由: {quick_route_type}")
+                decision = {
+                    'query_type': quick_route_type,
+                    'reasoning': '基于Schema快速路由',
+                    'entities': self._extract_entities(question),
+                    'time_range': self._extract_time_range(question),
+                    'metrics': self._extract_metrics(question)
+                }
+                
+                # 验证路由决策
+                is_valid, warning = schema_router.validate_routing(question, quick_route_type)
+                if not is_valid:
+                    self.logger.warning(f"快速路由验证警告: {warning}")
+                
+                return decision
+            
             # 使用LLM进行智能路由
             patterns_str = json.dumps(self.query_patterns, ensure_ascii=False, indent=2)
             
@@ -359,7 +379,15 @@ class HybridAgent:
             if 'entities' not in decision:
                 decision['entities'] = self._extract_entities(question)
             
-            return decision
+            # 使用Schema增强路由决策
+            enhanced_decision = schema_router.enhance_routing_decision(question, decision)
+            self.logger.info(f"Schema增强后的路由决策: {enhanced_decision['query_type']}")
+            
+            # 如果Schema建议覆盖了LLM决策，记录原因
+            if enhanced_decision.get('override_reason'):
+                self.logger.info(f"Schema覆盖原因: {enhanced_decision['override_reason']}")
+            
+            return enhanced_decision
             
         except Exception as e:
             self.logger.warning(f"路由决策失败，使用规则匹配: {e}")
