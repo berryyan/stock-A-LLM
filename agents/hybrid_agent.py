@@ -30,6 +30,7 @@ from utils.stock_code_mapper import convert_to_ts_code
 from utils.chinese_query_parser import ChineseQueryParser
 from utils.routing_monitor import routing_monitor
 from utils.schema_enhanced_router import schema_router
+from utils.query_templates import match_query_template
 
 
 class QueryType(str, Enum):
@@ -338,7 +339,29 @@ class HybridAgent:
     def _route_query(self, question: str) -> Dict[str, Any]:
         """路由查询到合适的处理器"""
         try:
-            # 首先尝试快速路由
+            # 首先尝试模板匹配（最快）
+            template_result = match_query_template(question)
+            if template_result:
+                template, params = template_result
+                self.logger.info(f"使用模板路由: {template.name} -> {template.route_type}")
+                
+                # 从模板参数中提取实体
+                entities = params.get('entities', [])
+                if not entities:
+                    entities = self._extract_entities(question)
+                
+                decision = {
+                    'query_type': template.route_type,
+                    'reasoning': f'基于查询模板: {template.name}',
+                    'entities': entities,
+                    'time_range': params.get('time_range', self._extract_time_range(question)),
+                    'metrics': template.required_fields,
+                    'template_params': params
+                }
+                
+                return decision
+            
+            # 其次尝试Schema快速路由
             quick_route_type = schema_router.get_quick_route(question)
             if quick_route_type:
                 self.logger.info(f"使用快速路由: {quick_route_type}")
