@@ -53,7 +53,9 @@ class SQLAgent:
         self.db = SQLDatabase.from_uri(settings.MYSQL_URL)
         
         # 获取数据库schema信息
+        self.logger.info("初始化SQL Agent，准备加载Schema信息...")
         self.schema_info = self._get_schema_info()
+        self.logger.info(f"Schema信息加载完成，共{len(self.schema_info)}个表")
         
         # 创建SQL工具包
         self.toolkit = SQLDatabaseToolkit(db=self.db, llm=self.llm)
@@ -341,6 +343,12 @@ class SQLAgent:
             
             # 使用agent执行查询，增加更好的错误处理
             try:
+                # 记录Schema知识库使用情况
+                if hasattr(self, 'schema_info') and self.schema_info:
+                    self.logger.info(f"当前使用Schema知识库，包含{len(self.schema_info)}个表")
+                else:
+                    self.logger.warning("未使用Schema知识库，可能影响性能")
+                
                 result = self.agent.invoke({"input": contextualized_question})
                 
                 # 处理invoke返回的结果
@@ -366,8 +374,27 @@ class SQLAgent:
                     processed_result = self._postprocess_result(output)
                     
             except Exception as invoke_error:
-                self.logger.error(f"Agent invoke执行失败: {invoke_error}")
-                processed_result = f"查询执行失败: {str(invoke_error)}"
+                error_str = str(invoke_error)
+                self.logger.error(f"Agent invoke执行失败: {error_str}")
+                
+                # 特殊处理输出解析错误
+                if "Could not parse LLM output" in error_str:
+                    self.logger.info("检测到输出解析错误，尝试提取有效结果")
+                    # 从错误信息中提取实际的查询结果
+                    try:
+                        # 查找LLM实际输出的内容
+                        start_idx = error_str.find("`") + 1
+                        end_idx = error_str.rfind("`")
+                        if start_idx > 0 and end_idx > start_idx:
+                            llm_output = error_str[start_idx:end_idx]
+                            self.logger.info(f"提取到LLM输出: {llm_output[:100]}...")
+                            processed_result = llm_output
+                        else:
+                            processed_result = f"查询执行失败: {error_str}"
+                    except:
+                        processed_result = f"查询执行失败: {error_str}"
+                else:
+                    processed_result = f"查询执行失败: {error_str}"
             
             # 转换为字符串
             if isinstance(processed_result, dict):
@@ -436,18 +463,28 @@ class SQLAgent:
         """预处理用户问题 - 使用Schema知识库增强"""
         # 使用Schema知识库分析查询关键词
         try:
+            self.logger.info(f"开始预处理查询: {question}")
+            
             # 提取可能的数据字段关键词
             keywords = []
+            matched_count = 0
             for chinese, english in schema_kb.chinese_mapping.items():
                 if chinese in question:
                     keywords.append(chinese)
-                    self.logger.info(f"识别到数据字段: {chinese} -> {english}")
+                    matched_count += 1
+                    self.logger.info(f"Schema知识库匹配到字段: {chinese} -> {english}")
+            
+            if matched_count == 0:
+                self.logger.info("Schema知识库未匹配到任何中文字段")
             
             # 获取相关表的建议
             if keywords:
                 suggestions = schema_kb.suggest_fields_for_query(keywords)
                 if suggestions:
                     self.logger.info(f"Schema知识库建议查询表: {list(suggestions.keys())}")
+                    self.logger.info(f"建议字段详情: {suggestions}")
+                else:
+                    self.logger.info("Schema知识库未找到相关表建议")
         except Exception as e:
             self.logger.warning(f"Schema知识库预处理失败: {e}")
         
