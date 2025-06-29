@@ -1,5 +1,8 @@
 # 股票分析系统功能测试指南
 
+**版本**: v1.5.5
+**更新日期**: 2025-06-29
+
 ## 前置准备
 
 ### 1. 环境激活
@@ -201,9 +204,9 @@ curl -X POST http://localhost:8000/api/query \
 # - 8期财务数据的综合分析报告
 ```
 
-#### 4. 破坏性测试用例（应返回错误）
+#### 4. 破坏性测试用例（应返回错误）- v1.5.5更新
 ```bash
-# 5位数字（应提示"股票代码格式不正确，请输入6位数字"）
+# 5位数字（应提示"股票代码应为6位数字，您输入了5位"）
 curl -X POST http://localhost:8000/api/query \
   -H "Content-Type: application/json" \
   -d '{
@@ -211,12 +214,28 @@ curl -X POST http://localhost:8000/api/query \
     "query_type": "financial"
   }'
 
-# 错误的后缀（应提示"证券代码格式不正确，后缀应为.SZ/.SH/.BJ"）
+# 错误的后缀（应提示"证券代码格式错误：后缀'SX'不正确，应为.SZ/.SH/.BJ"）
 curl -X POST http://localhost:8000/api/query \
   -H "Content-Type: application/json" \
   -d '{
     "question": "分析000000.SX的财务健康度",
     "query_type": "financial"
+  }'
+
+# 大小写错误（v1.5.5新增 - 应提示"证券代码后缀大小写错误，应为.SH"）
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "600519.sh最新股价",
+    "query_type": "sql"
+  }'
+
+# 简称提示（v1.5.5新增 - 应提示"请使用完整公司名称，如：贵州茅台"）
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "茅台最新股价",
+    "query_type": "sql"
   }'
 
 # 无效输入（应提示"无法识别输入内容"）
@@ -227,12 +246,12 @@ curl -X POST http://localhost:8000/api/query \
     "query_type": "financial"
   }'
 
-# 不存在的股票（应提示"未找到财务数据"）
+# 不存在的股票（v1.5.5改进 - 应提示"股票代码999999.BJ不存在，请检查是否输入正确"）
 curl -X POST http://localhost:8000/api/query \
   -H "Content-Type: application/json" \
   -d '{
-    "question": "分析999999.BJ的财务健康度",
-    "query_type": "financial"
+    "question": "999999.BJ最新股价",
+    "query_type": "sql"
   }'
 ```
 

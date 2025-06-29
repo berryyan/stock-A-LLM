@@ -14,9 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v1.5.4)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v1.5.5)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
+**Current Status**: ✅ 统一股票验证器大幅优化，支持大小写智能提示和简称映射。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
 ## Development Commands
 
@@ -257,12 +257,14 @@ The system supports six main query types:
 - `hybrid`: Automatically routes or combines multiple approaches
 
 ### Important Query Guidelines
-**Stock Entity Recognition**:
+**Stock Entity Recognition** (Enhanced in v1.5.5):
 - The system does NOT support fuzzy/partial matching for stock names or codes
 - Users MUST provide exact stock names (e.g., "贵州茅台" not "茅台") 
 - Supported formats: Full company name, 6-digit code (600519), or ts_code (600519.SH)
-- Invalid inputs will result in error messages guiding users to use correct formats
-- All stock entity conversion is handled by `utils.stock_code_mapper` with database validation
+- NEW: Smart case-sensitive error detection (e.g., "600519.sh" → "应为.SH")
+- NEW: Common abbreviation guidance (e.g., "茅台" → "请使用完整公司名称，如：贵州茅台")
+- Invalid inputs will result in precise error messages with specific guidance
+- All stock entity conversion is handled by `utils.unified_stock_validator` with enhanced validation
 
 ### Error Handling
 - All agents return standardized response format with `success`, `error`, and result fields
@@ -281,6 +283,26 @@ The system supports six main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v1.5.5 - 统一股票验证器大幅优化 (2025-06-29)
+
+**验证器智能化改进** ✅:
+- **大小写智能提示**: 识别.sh/.sz/.bj等所有大小写组合，精确提示正确格式.SH/.SZ/.BJ
+- **常见简称映射**: 20个常用简称自动提示完整名称（茅台→贵州茅台、平安→中国平安、建行→建设银行等）
+- **精细错误分类**: 新增INVALID_CASE、STOCK_NOT_EXISTS、USE_FULL_NAME错误类型
+- **复合查询支持**: extract_multiple_stocks方法支持"贵州茅台和五粮液对比"等多股票查询
+
+**错误提示优化** ✅:
+- 大小写错误: "证券代码后缀大小写错误，应为.SH"（而非通用的格式错误）
+- 简称提示: "请使用完整公司名称，如：贵州茅台"
+- 股票不存在: "股票代码123456.SH不存在，请检查是否输入正确"
+- 位数错误: "股票代码应为6位数字，您输入了5位"
+
+**Agent集成** ✅:
+- SQL Agent和Money Flow Agent已集成新验证器
+- Financial Agent保持原有验证逻辑不变
+- RAG Agent维持宽松验证策略
+- 所有Agent验证逻辑一致性测试100%通过
 
 #### v1.5.4 - 流式响应完整实现与项目清理 (2025-06-28)
 

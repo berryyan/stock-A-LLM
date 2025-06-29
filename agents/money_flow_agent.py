@@ -18,7 +18,7 @@ from utils.money_flow_analyzer import MoneyFlowAnalyzer, format_money_flow_repor
 from utils.logger import setup_logger
 from config.settings import settings
 from utils.schema_knowledge_base import schema_kb
-from utils.stock_entity_validator import stock_validator
+from utils.unified_stock_validator import validate_stock_input
 
 
 class MoneyFlowAgent:
@@ -219,15 +219,17 @@ class MoneyFlowAgent:
                     'money_flow_data': None
                 }
             
-            # 早期股票实体验证（与Financial Agent保持一致）
-            ts_code, extract_error = stock_validator.extract_stock_entities(question)
+            # 早期股票实体验证（使用统一验证器与Financial Agent保持一致）
+            success, ts_code, error_response = validate_stock_input(question)
             
-            if not ts_code:
-                # 如果统一验证器提取失败，返回标准错误
-                return stock_validator.format_error_response(
-                    'NOT_FOUND',
-                    extract_error or '未能从问题中识别出有效的股票代码或名称。请使用完整的股票名称（如"贵州茅台"）或标准股票代码（如"600519"或"600519.SH"）'
-                )
+            if not success:
+                # 如果验证失败，返回标准错误响应
+                return {
+                    'success': False,
+                    'error': error_response['error'],
+                    'answer': None,
+                    'money_flow_data': None
+                }
             
             # 提取分析周期
             days = self.extract_analysis_period(question)

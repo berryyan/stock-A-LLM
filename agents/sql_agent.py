@@ -35,7 +35,7 @@ from utils.flexible_parser import FlexibleSQLOutputParser, extract_result_from_e
 from utils.sql_templates import SQLTemplates
 from utils.query_templates import match_query_template
 from utils.stock_code_mapper import convert_to_ts_code, get_stock_name
-from utils.stock_entity_validator import stock_validator
+from utils.unified_stock_validator import validate_stock_input
 
 
 
@@ -377,21 +377,22 @@ class SQLAgent:
         try:
             self.logger.info(f"接收查询: {question}")
             
-            # 早期股票实体验证（与Financial Agent保持一致）
+            # 早期股票实体验证（使用统一验证器与Financial Agent保持一致）
             # 检查是否是股票相关查询
             stock_keywords = ['股价', '股票', '价格', '涨跌', '成交', '市值', '财务', '资金']
             is_stock_query = any(keyword in question for keyword in stock_keywords)
             
             if is_stock_query:
-                # 使用统一的股票实体验证器
-                ts_code, extract_error = stock_validator.extract_stock_entities(question)
+                # 使用统一验证器进行股票验证
+                success, ts_code, error_response = validate_stock_input(question)
                 
-                if not ts_code:
-                    # 如果统一验证器提取失败，返回标准错误
-                    return stock_validator.format_error_response(
-                        'NOT_FOUND',
-                        extract_error or '未能从查询中识别出有效的股票代码或名称。请使用完整的股票名称（如"贵州茅台"）或标准股票代码（如"600519"或"600519.SH"）'
-                    )
+                if not success:
+                    # 如果验证失败，返回标准错误响应
+                    return {
+                        'success': False,
+                        'error': error_response['error'],
+                        'result': None
+                    }
             
             # 检查缓存
             cache_key = self._get_cache_key(question)
