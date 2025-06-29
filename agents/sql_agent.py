@@ -35,7 +35,7 @@ from utils.flexible_parser import FlexibleSQLOutputParser, extract_result_from_e
 from utils.sql_templates import SQLTemplates
 from utils.query_templates import match_query_template
 from utils.stock_code_mapper import convert_to_ts_code, get_stock_name
-from utils.unified_stock_validator import validate_stock_input
+from utils.unified_stock_validator import validate_stock_input, UnifiedStockValidator
 
 
 
@@ -152,6 +152,9 @@ class SQLAgent:
             if template.route_type != 'SQL_ONLY':
                 return None
                 
+            # 获取最近交易日
+            last_trading_date = self._get_last_trading_date()
+            
             # 检查是否有对应的SQL模板
             if template.name == '最新股价查询':
                 # 提取股票代码
@@ -177,6 +180,112 @@ class SQLAgent:
                         result[0], 
                         stock_name or ts_code
                     )
+                    
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': sql,
+                        'quick_path': True
+                    }
+                    
+            elif template.name == '估值指标查询':
+                # PE/PB查询
+                entities = params.get('entities', [])
+                if not entities:
+                    return None
+                    
+                ts_code = convert_to_ts_code(entities[0])
+                if not ts_code:
+                    return None
+                    
+                stock_name = get_stock_name(ts_code)
+                sql = SQLTemplates.VALUATION_METRICS
+                result = self.mysql_connector.execute_query(sql, {'ts_code': ts_code})
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_valuation_result(
+                        result[0],
+                        stock_name or ts_code
+                    )
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': sql,
+                        'quick_path': True
+                    }
+                    
+            elif template.name in ['涨幅排名', '总市值排名', '流通市值排名']:
+                # 排名查询
+                limit = params.get('limit', 10)
+                
+                # 选择对应的SQL模板
+                if template.name == '涨幅排名':
+                    sql = SQLTemplates.PCT_CHG_RANKING
+                    ranking_type = 'pct_chg'
+                elif template.name in ['总市值排名', '市值排名']:
+                    sql = SQLTemplates.MARKET_CAP_RANKING  
+                    ranking_type = 'market_cap'
+                elif template.name == '流通市值排名':
+                    sql = SQLTemplates.MARKET_CAP_RANKING
+                    ranking_type = 'market_cap'
+                    
+                # 执行查询
+                result = self.mysql_connector.execute_query(sql, {
+                    'trade_date': last_trading_date,
+                    'limit': limit
+                })
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_ranking_result(
+                        result,
+                        ranking_type
+                    )
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': sql,
+                        'quick_path': True
+                    }
+                    
+            elif template.name == '历史K线查询':
+                # 历史K线数据
+                entities = params.get('entities', [])
+                if not entities:
+                    return None
+                    
+                ts_code = convert_to_ts_code(entities[0])
+                if not ts_code:
+                    return None
+                    
+                # 计算开始日期
+                days = int(params.get('days', 90))
+                start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
+                
+                stock_name = get_stock_name(ts_code)
+                sql = SQLTemplates.HISTORICAL_KLINE
+                result = self.mysql_connector.execute_query(sql, {
+                    'ts_code': ts_code,
+                    'start_date': start_date,
+                    'limit': days
+                })
+                
+                if result and len(result) > 0:
+                    # 格式化K线数据
+                    stock_info = f"{stock_name}（{ts_code}）" if stock_name else ts_code
+                    lines = [f"\n{stock_info}最近{days}天K线数据：\n"]
+                    lines.append("日期 | 开盘 | 最高 | 最低 | 收盘 | 涨跌幅 | 成交量(万手)")
+                    lines.append("-" * 70)
+                    
+                    for row in result[:20]:  # 只显示前20条
+                        vol_wan = row['vol'] / 10000 if row['vol'] else 0
+                        line = f"{row['trade_date']} | {row['open']:7.2f} | {row['high']:7.2f} | "
+                        line += f"{row['low']:7.2f} | {row['close']:7.2f} | {row['pct_chg']:6.2f}% | {vol_wan:10.2f}"
+                        lines.append(line)
+                        
+                    if len(result) > 20:
+                        lines.append(f"\n... 共{len(result)}条记录")
+                        
+                    formatted_result = "\n".join(lines)
                     
                     return {
                         'success': True,
@@ -378,11 +487,15 @@ class SQLAgent:
             self.logger.info(f"接收查询: {question}")
             
             # 早期股票实体验证（使用统一验证器与Financial Agent保持一致）
-            # 检查是否是股票相关查询
-            stock_keywords = ['股价', '股票', '价格', '涨跌', '成交', '市值', '财务', '资金']
-            is_stock_query = any(keyword in question for keyword in stock_keywords)
+            # 检查是否是需要验证股票的查询
+            stock_keywords = ['股价', '股票', '价格', '市盈率', '市净率', 'PE', 'PB', 'K线']
+            ranking_keywords = ['排名', '排行', '前', '最大', '最高', '涨幅', '跌幅', '榜']
             
-            if is_stock_query:
+            # 如果是排名查询，不需要股票验证
+            is_ranking_query = any(keyword in question for keyword in ranking_keywords)
+            is_specific_stock_query = any(keyword in question for keyword in stock_keywords) and not is_ranking_query
+            
+            if is_specific_stock_query:
                 # 使用统一验证器进行股票验证
                 success, ts_code, error_response = validate_stock_input(question)
                 
@@ -606,6 +719,7 @@ class SQLAgent:
         # 注意：这里仅进行代码替换，验证已在query方法中完成
         try:
             # 提取股票实体并转换
+            stock_validator = UnifiedStockValidator()
             ts_code, _ = stock_validator.extract_stock_entities(processed)
             
             if ts_code:

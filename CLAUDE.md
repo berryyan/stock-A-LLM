@@ -14,9 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v2.1.1)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v2.1.2)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
+**Current Status**: ✅ SQL Agent快速模板完成，支持7种新查询类型，实现2481.5倍加速。路由机制文档化完成，7-Agent架构Phase 0&1完成。代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
 ## Development Commands
 
@@ -327,6 +327,35 @@ The system supports six main query types:
 - Financial Agent保持原有验证逻辑不变
 - RAG Agent维持宽松验证策略
 - 所有Agent验证逻辑一致性测试100%通过
+
+#### v2.1.2 - SQL Agent快速模板与路由文档化 (2025-06-30)
+
+**SQL Agent快速模板完成** ✅:
+- **新增7个SQL模板**: 市值排名、涨跌幅排名、成交额排名、PE/PB查询、历史K线、板块股票
+- **性能大幅提升**: 快速路径平均响应0.02秒，加速比2481.5倍
+- **智能路径选择**: 模板匹配成功时避免LLM调用
+- **格式化输出**: 专业的排名表格、估值指标、K线数据展示
+
+**路由机制文档化** ✅:
+- **创建docs/ROUTING_MECHANISM.md**: 详细说明5级优先级路由体系
+- **7-Agent定位明确**: 每个Agent的职责和典型查询
+- **实现细节**: 文件位置、行号、测试用例
+- **更新指南**: 如何添加新模板、调整优先级
+
+**查询验证优化** ✅:
+- **排名查询免验证**: 排名类查询不再触发股票验证
+- **更灵活的判断**: 区分特定股票查询和排名查询
+
+#### v2.1.1 - 7-Agent架构设计与代码清理 (2025-06-29)
+
+**Phase 0 路由机制优化** ✅:
+- **触发词路由**: 配置化管理，避免硬编码
+- **模板覆盖机制**: TEMPLATE_ROUTE_OVERRIDE修正路由冲突
+- **QueryType扩展**: 新增RANK、ANNS、QA类型
+
+**代码清理** ✅:
+- **删除未使用文件**: chinese_query_parser.py、schema_cache_manager.py
+- **确认实现**: SchemaKnowledgeBase是实际使用的Schema系统
 
 #### v1.5.4 - 流式响应完整实现与项目清理 (2025-06-28)
 
