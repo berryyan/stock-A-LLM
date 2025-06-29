@@ -38,6 +38,9 @@ class QueryType(str, Enum):
     RAG_ONLY = "rag"          # 仅需RAG查询
     FINANCIAL = "financial"   # 财务分析查询
     MONEY_FLOW = "money_flow" # 资金流向分析查询
+    RANK = "rank"             # 排名分析查询（新增）
+    ANNS = "anns"             # 公告查询（新增）
+    QA = "qa"                 # 董秘互动查询（新增）
     SQL_FIRST = "sql_first"   # 先SQL后RAG
     RAG_FIRST = "rag_first"   # 先RAG后SQL
     PARALLEL = "parallel"     # 并行查询
@@ -48,6 +51,9 @@ class QueryType(str, Enum):
     rag = "rag"
     financial = "financial"
     money_flow = "money_flow"
+    rank = "rank"
+    anns = "anns"
+    qa = "qa"
     hybrid = "hybrid"
     
     @classmethod
@@ -65,6 +71,9 @@ class QueryType(str, Enum):
             'rag_only': cls.RAG_ONLY,
             'financial': cls.FINANCIAL,
             'money_flow': cls.MONEY_FLOW,
+            'rank': cls.RANK,
+            'anns': cls.ANNS,
+            'qa': cls.QA,
             'sql': cls.sql,
             'rag': cls.rag,
             'complex': cls.COMPLEX,
@@ -89,9 +98,6 @@ class HybridAgent:
         self.rag_agent = RAGAgent()
         self.financial_agent = FinancialAnalysisAgent()
         self.money_flow_agent = MoneyFlowAgent()
-        
-        # 初始化中文查询解析器
-        self.chinese_parser = ChineseQueryParser()
         
         # 初始化路由LLM
         self.router_llm = ChatOpenAI(
@@ -164,6 +170,36 @@ class HybridAgent:
                     r'.*散户.*机构'
                 ]
             },
+            'rank_patterns': {
+                'keywords': ['排行', '排名', '前十', 'TOP', '涨幅榜', '跌幅榜', '龙虎榜', '排行榜'],
+                'patterns': [
+                    r'.*排行.*',
+                    r'.*排名.*',
+                    r'.*前\d+.*',
+                    r'.*涨跌幅.*排.*',
+                    r'.*TOP\d+.*',
+                    r'.*榜单.*'
+                ]
+            },
+            'anns_patterns': {
+                'keywords': ['公告', '年报', '季报', '半年报', '业绩快报', '业绩预告', '问询函', '回复函'],
+                'patterns': [
+                    r'.*公告.*列表',
+                    r'.*最新.*公告',
+                    r'.*年报.*季报',
+                    r'.*业绩.*公告',
+                    r'.*公告.*时间'
+                ]
+            },
+            'qa_patterns': {
+                'keywords': ['董秘', '互动', '问答', '投资者关系', '投资者提问', '公司回复'],
+                'patterns': [
+                    r'.*董秘.*问.*',
+                    r'.*投资者.*问.*',
+                    r'.*互动.*平台',
+                    r'.*公司.*回复.*'
+                ]
+            },
             'hybrid_patterns': {
                 'keywords': ['综合分析', '全面评估', '详细了解', '深入研究'],
                 'patterns': [
@@ -180,10 +216,13 @@ class HybridAgent:
             template="""你是一个查询路由专家，需要分析用户问题并决定使用哪种查询方式。
 
 查询模式说明：
-- SQL_ONLY: 查询结构化数据（股价、财务指标、排名等）
+- SQL_ONLY: 查询结构化数据（股价、财务指标、简单排名等）
 - RAG_ONLY: 查询文档内容（公告详情、管理层分析等）
 - FINANCIAL: 专业财务分析（财务健康度、杜邦分析、现金流质量等）
 - MONEY_FLOW: 资金流向分析（主力资金、超大单、资金分布等）
+- RANK: 专业排名分析（涨跌幅排行、市值排名、板块排名等）
+- ANNS: 公告查询（公告列表、年报季报、业绩快报等）
+- QA: 董秘互动（投资者提问、公司回复等）
 - SQL_FIRST: 先获取数据，再查找相关解释
 - RAG_FIRST: 先查找文档，可能需要补充数据
 - PARALLEL: 同时需要数据和文档
@@ -258,13 +297,8 @@ class HybridAgent:
             self.logger.info(f"接收查询: {question}")
             start_time = datetime.now()
             
-            # 1. 使用中文查询解析器预处理
-            parsed_query = self.chinese_parser.parse_query(question)
-            self.logger.info(f"中文查询解析结果: {parsed_query}")
-            
-            # 2. 路由决策
+            # 路由决策
             routing_decision = self._route_query(question)
-            routing_decision['parsed_query'] = parsed_query  # 添加解析结果到路由决策
             self.logger.info(f"路由决策: {routing_decision['query_type']}")
             
             # 记录路由决策到监控器
@@ -290,6 +324,15 @@ class HybridAgent:
                 
                 elif query_type == QueryType.MONEY_FLOW:
                     result = self._handle_money_flow_analysis(question, routing_decision)
+                
+                elif query_type == QueryType.RANK:
+                    result = self._handle_rank(question, routing_decision)
+                
+                elif query_type == QueryType.ANNS:
+                    result = self._handle_anns(question, routing_decision)
+                
+                elif query_type == QueryType.QA:
+                    result = self._handle_qa(question, routing_decision)
                 
                 elif query_type == QueryType.SQL_FIRST:
                     result = self._handle_sql_first(question, routing_decision)
@@ -335,10 +378,37 @@ class HybridAgent:
                 'type': 'hybrid_query'
             }
     
+    def _check_trigger_words(self, question: str) -> Optional[str]:
+        """检测触发词并返回对应的查询类型"""
+        trigger_mapping = {
+            "排行分析：": QueryType.RANK,
+            "查询公告：": QueryType.ANNS,
+            "董秘互动：": QueryType.QA
+        }
+        
+        for trigger, query_type in trigger_mapping.items():
+            if question.startswith(trigger):
+                self.logger.info(f"检测到触发词: {trigger} -> {query_type.value}")
+                return query_type.value
+        
+        return None
+    
     def _route_query(self, question: str) -> Dict[str, Any]:
         """路由查询到合适的处理器"""
         try:
-            # 首先尝试模板匹配（最快）
+            # 0. 首先检查触发词（最高优先级）
+            trigger_type = self._check_trigger_words(question)
+            if trigger_type:
+                return {
+                    'query_type': trigger_type,
+                    'reasoning': '触发词匹配',
+                    'entities': self._extract_entities(question),
+                    'time_range': self._extract_time_range(question),
+                    'metrics': self._extract_metrics(question),
+                    'confidence': 1.0
+                }
+            
+            # 1. 其次尝试模板匹配（次高优先级）
             template_result = match_query_template(question)
             if template_result:
                 template, params = template_result
@@ -422,6 +492,9 @@ class HybridAgent:
         rag_score = 0
         financial_score = 0
         money_flow_score = 0
+        rank_score = 0
+        anns_score = 0
+        qa_score = 0
         
         # 关键词匹配
         for keyword in self.query_patterns['sql_patterns']['keywords']:
@@ -440,6 +513,18 @@ class HybridAgent:
             if keyword in question:
                 money_flow_score += 2  # 资金流向关键词权重更高
         
+        for keyword in self.query_patterns['rank_patterns']['keywords']:
+            if keyword in question:
+                rank_score += 2  # 排名分析关键词权重更高
+        
+        for keyword in self.query_patterns['anns_patterns']['keywords']:
+            if keyword in question:
+                anns_score += 1
+        
+        for keyword in self.query_patterns['qa_patterns']['keywords']:
+            if keyword in question:
+                qa_score += 2  # 董秘互动关键词权重更高
+        
         # 模式匹配
         for pattern in self.query_patterns['financial_patterns']['patterns']:
             if re.search(pattern, question):
@@ -449,8 +534,26 @@ class HybridAgent:
             if re.search(pattern, question):
                 money_flow_score += 3
         
-        # 决定查询类型
-        if money_flow_score > 0:
+        for pattern in self.query_patterns['rank_patterns']['patterns']:
+            if re.search(pattern, question):
+                rank_score += 3
+        
+        for pattern in self.query_patterns['anns_patterns']['patterns']:
+            if re.search(pattern, question):
+                anns_score += 3
+        
+        for pattern in self.query_patterns['qa_patterns']['patterns']:
+            if re.search(pattern, question):
+                qa_score += 3
+        
+        # 决定查询类型（按优先级排序）
+        if rank_score > 0:
+            query_type = QueryType.RANK.value
+        elif qa_score > 0:
+            query_type = QueryType.QA.value
+        elif anns_score > 0:
+            query_type = QueryType.ANNS.value
+        elif money_flow_score > 0:
             query_type = QueryType.MONEY_FLOW.value
         elif financial_score > 0:
             query_type = QueryType.FINANCIAL.value
@@ -478,16 +581,6 @@ class HybridAgent:
     def _handle_sql_only(self, question: str, routing: Dict) -> Dict[str, Any]:
         """处理仅需SQL的查询，增加类型安全检查"""
         try:
-            # 检查是否有中文查询解析结果
-            parsed_query = routing.get('parsed_query', {})
-            if parsed_query and parsed_query.get('query_type') and parsed_query.get('fields'):
-                self.logger.info(f"使用中文查询解析结果优化SQL查询")
-                # 如果解析成功，可以生成SQL直接执行
-                generated_sql = self.chinese_parser.generate_sql(parsed_query)
-                if generated_sql:
-                    self.logger.info(f"生成的SQL: {generated_sql}")
-                    # 这里可以添加直接执行SQL的逻辑
-            
             # 调用SQL Agent处理查询
             sql_result = self.sql_agent.query(question)
             
@@ -1092,6 +1185,55 @@ class HybridAgent:
         integrated = self.router_llm.invoke(integration_prompt).content
         return integrated
 
+    def _handle_rank(self, question: str, routing: Dict) -> Dict[str, Any]:
+        """处理排名分析查询"""
+        try:
+            # TODO: 实现Rank Agent后，这里调用rank_agent.query(question)
+            # 暂时使用SQL Agent处理排名查询
+            self.logger.info("Rank Agent尚未实现，暂时使用SQL Agent处理")
+            return self.sql_agent.query(question)
+        except Exception as e:
+            self.logger.error(f"排名分析失败: {e}")
+            return {
+                'success': False,
+                'error': f"排名分析失败: {str(e)}",
+                'type': 'rank_analysis'
+            }
+    
+    def _handle_anns(self, question: str, routing: Dict) -> Dict[str, Any]:
+        """处理公告查询"""
+        try:
+            # TODO: 实现ANNS Agent后，这里调用anns_agent.query(question)
+            # 暂时使用SQL Agent查询公告元数据
+            self.logger.info("ANNS Agent尚未实现，暂时使用SQL Agent处理")
+            return self.sql_agent.query(question)
+        except Exception as e:
+            self.logger.error(f"公告查询失败: {e}")
+            return {
+                'success': False,
+                'error': f"公告查询失败: {str(e)}",
+                'type': 'anns_query'
+            }
+    
+    def _handle_qa(self, question: str, routing: Dict) -> Dict[str, Any]:
+        """处理董秘互动查询"""
+        try:
+            # TODO: 实现QA Agent后，这里调用qa_agent.query(question)
+            # 暂时返回未实现提示
+            self.logger.info("QA Agent尚未实现")
+            return {
+                'success': False,
+                'error': 'QA Agent功能尚未实现，请等待后续更新',
+                'type': 'qa_query'
+            }
+        except Exception as e:
+            self.logger.error(f"董秘互动查询失败: {e}")
+            return {
+                'success': False,
+                'error': f"董秘互动查询失败: {str(e)}",
+                'type': 'qa_query'
+            }
+    
     def _safe_extract_result(self, result: Any, source_type: str) -> str:
         """安全地提取结果内容"""
         try:
