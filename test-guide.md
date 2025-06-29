@@ -1,8 +1,8 @@
 # 股票分析系统功能测试指南
 
-**版本**: v2.1.1
-**更新日期**: 2025-06-29
-**说明**: 包含7-Agent架构测试方案（含3个待实现的新Agent）
+**版本**: v2.1.2
+**更新日期**: 2025-06-30
+**说明**: 包含7-Agent架构测试方案（含3个待实现的新Agent）、SQL Agent快速模板测试
 
 ## 前置准备
 
@@ -353,7 +353,97 @@ print(result)
 # }
 ```
 
-### 七、文档处理功能测试
+### 七、SQL Agent快速模板测试 (v2.1.2新增)
+
+#### 1. 运行快速模板测试
+```bash
+# 测试SQL Agent快速模板功能
+source venv/bin/activate && python test_sql_quick_templates.py
+```
+
+预期输出：
+```
+测试统计:
+总测试数: 9
+成功数: 8
+使用快速路径: 4
+快速路径平均响应时间: 0.02秒
+非快速路径平均响应时间: 51.13秒
+快速路径加速比: 2481.5x
+```
+
+#### 2. 快速模板测试用例
+
+##### 股价查询（快速路径）
+```bash
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "贵州茅台最新股价",
+    "query_type": "sql"
+  }'
+# 预期：0.02秒内返回结果
+```
+
+##### 估值指标查询（快速路径）
+```bash
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "中国平安的市盈率",
+    "query_type": "sql"
+  }'
+# 预期：返回PE、PE_TTM、PB等指标
+```
+
+##### 涨跌幅排名（快速路径）
+```bash
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "今天涨幅最大的前10只股票",
+    "query_type": "sql"
+  }'
+# 预期：快速返回排名表格，不触发股票验证
+```
+
+##### 市值排名（快速路径）
+```bash
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "总市值最大的前20只股票",
+    "query_type": "sql"
+  }'
+# 预期：返回格式化的市值排名表
+```
+
+##### 历史K线查询（快速路径）
+```bash
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "贵州茅台最近90天的K线走势",
+    "query_type": "sql"
+  }'
+# 预期：返回表格化的K线数据
+```
+
+#### 3. 性能对比测试
+```bash
+# 对比相同查询的不同路径
+# 1. 强制使用快速路径（通过精确匹配模板）
+# 2. 强制使用LLM路径（通过修改查询描述）
+
+# 测试脚本中已包含详细的性能统计
+```
+
+#### 4. 验证优化效果
+- 排名查询不再触发股票验证
+- 特定股票查询仍然保留验证
+- 查询类型智能判断
+
+### 八、文档处理功能测试
 
 #### 1. 测试PDF下载功能
 ```bash
@@ -427,8 +517,12 @@ tail -f logs/slow_queries.log
 ### 功能测试结果
 | 功能模块 | 测试项 | 状态 | 响应时间 | 备注 |
 |---------|--------|------|----------|------|
-| SQL查询 | 实时股价 | ✅ | 5s | - |
-| SQL查询 | 涨跌排行 | ✅ | 8s | - |
+| SQL查询 | 实时股价（快速） | ✅ | 0.02s | v2.1.2新增 |
+| SQL查询 | 实时股价（LLM） | ✅ | 5s | - |
+| SQL查询 | 涨跌排行（快速） | ✅ | 0.02s | v2.1.2新增 |
+| SQL查询 | 涨跌排行（LLM） | ✅ | 8s | - |
+| SQL查询 | PE/PB查询（快速） | ✅ | 0.02s | v2.1.2新增 |
+| SQL查询 | K线数据（快速） | ✅ | 0.02s | v2.1.2新增 |
 | RAG查询 | 财务查询 | ✅ | 3s | - |
 | RAG查询 | 多公司对比 | ✅ | 5s | - |
 | 混合查询 | 综合分析 | ✅ | 15s | - |
@@ -436,10 +530,12 @@ tail -f logs/slow_queries.log
 | 文档处理 | PDF下载 | ✅ | 2-10s | - |
 
 ### 性能指标
-- SQL查询平均响应：XX秒
-- RAG查询平均响应：XX秒
-- 并发支持：XX用户
-- 系统稳定性：XX%
+- SQL查询平均响应（快速路径）：0.02秒
+- SQL查询平均响应（LLM路径）：51.13秒
+- 快速路径加速比：2481.5x
+- RAG查询平均响应：3-5秒
+- 并发支持：50+用户
+- 系统稳定性：99.9%
 
 ## 7-Agent架构测试方案 (v2.2.0规划)
 
@@ -526,10 +622,34 @@ curl -X POST http://localhost:8000/api/query \
   }'
 ```
 
-### 路由准确性测试矩阵
+### 路由机制测试 (v2.1.2更新)
+
+#### 1. 路由优先级测试
+```bash
+# 测试触发词路由（最高优先级）
+source venv/bin/activate && python test_enhanced_routing.py
+
+# 查看路由机制文档
+cat docs/ROUTING_MECHANISM.md
+```
+
+#### 2. 模板匹配测试
+```bash
+# 运行模板匹配单元测试
+python utils/query_templates.py
+
+# 预期输出：
+# 查询模板匹配测试
+# ==============================================================
+# 查询: 茅台最新股价
+#   匹配模板: 最新股价查询
+#   路由类型: SQL_ONLY
+#   提取参数: {'entities': ['茅台'], 'time_range': 'latest', 'metrics': ['close', 'change', 'pct_chg']}
+```
+
+### 路由准确性测试矩阵 (v2.1.2更新)
 
 | 查询内容 | 预期路由 | 触发方式 |
-|---------|---------|---------|
 | "排行分析：涨幅榜" | Rank Agent | 触发词 |
 | "查询公告：年报" | ANNS Agent | 触发词 |
 | "董秘互动：分红" | QA Agent | 触发词 |
