@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **Stock Analysis System (v2.1.1)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 统一股票验证器大幅优化，支持大小写智能提示和简称映射。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
+**Current Status**: ✅ 代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
 ## Development Commands
 
@@ -283,6 +283,30 @@ The system supports six main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v2.1.1 - 代码清理与7-Agent架构设计 (2025-06-29)
+
+**代码清理与验证** ✅:
+- **删除未使用文件**: 
+  - `utils/chinese_query_parser.py` - 从未被调用的中文查询解析器
+  - `utils/schema_cache_manager.py` - 功能已被SchemaKnowledgeBase替代
+- **确认实际实现**: 
+  - SchemaKnowledgeBase是实际使用的Schema系统
+  - 查询速度<10ms，性能优秀
+  - 通过测试用例"路桥信息的最新股价是多少？"追踪验证
+
+**7-Agent架构设计** ✅:
+- **现有4个Agent**: SQL、RAG、Financial、MoneyFlow
+- **新增3个Agent**: 
+  - Rank Agent - 排名分析（触发词："排行分析："）
+  - ANNS Agent - 公告查询（触发词："查询公告："）
+  - QA Agent - 董秘互动（触发词："董秘互动："）
+- **路由优化**: 触发词优先匹配，提升响应准确率
+
+**Agent职责明确** ✅:
+- 解决了Agent功能重叠问题
+- 每个Agent有清晰的职责边界
+- SQL Agent处理80%常见查询，专业Agent处理深度分析
 
 #### v1.5.5 - 统一股票验证器大幅优化 (2025-06-29)
 
@@ -674,96 +698,100 @@ ts_code = convert_to_ts_code("诺德股份")        # Returns: "600110.SH"
 - Web testing validates complete user experience  
 - Both testing layers required for production releases
 
-## Next Development Priority (v2.0 - 后端性能优化)
+## Next Development Priority (v2.2.0 - 7-Agent架构与快速查询模板)
 
-### Phase 1 完成状态总结 ✅
+### 系统现状评估 (2025-06-29)
 
-**前端成就回顾**（v1.5.0-v1.5.4）:
-- ✅ React基础框架搭建（100%完成）
-- ✅ Claude.ai风格界面完整实现
-- ✅ 流式响应功能（WebSocket + 打字效果 + 停止按钮）
-- ✅ 完整Markdown渲染（代码高亮、表格、公式）
-- ✅ 分屏布局 + 侧边栏折叠
-- ✅ 深色主题优化
-- ✅ 双环境开发方案成熟
+**已完成功能**:
+- ✅ React前端Phase 1完整实现（Claude.ai风格、流式响应、分屏布局）
+- ✅ 后端核心功能100%完成（SQL、RAG、Financial、MoneyFlow）
+- ✅ SchemaKnowledgeBase快速查询（<10ms查询，499个中文映射）
+- ✅ 代码清理完成，删除未使用的Schema相关文件
+- ✅ 7-Agent架构设计完成，职责边界明确
 
-**系统现状评估**:
-- 前端功能完整度：95%（待添加数据可视化）
-- 后端功能完整度：100%（但有性能优化空间）
-- 主要性能瓶颈：
-  - SQL查询5-30秒（需要缓存）
-  - 每次查询都重新获取数据库Schema
-  - 缺少中文字段映射缓存
+**系统问题与优化空间**:
+- ⚠️ Agent职责重叠严重（已设计解决方案）
+- ⚠️ 缺少排名分析、公告查询、董秘互动等功能
+- ⚠️ 快速模板覆盖率低（仅1个模板）
+- ⚠️ 路由机制需要优化以支持7个Agent
 
-### v2.0 开发计划概览（8周）
+### v2.2.0 开发计划（2周）- 7-Agent架构实施
 
-#### Phase 1: 数据库Schema中文映射缓存系统（第1-2周）⭐最高优先级
-- **目标**: 建立完整的数据库中英文映射缓存机制
-- **预期效果**: 
-  - 减少50%的数据库结构查询
-  - 响应速度提升30%
-  - 支持纯中文自然语言查询
+#### Phase 0：路由机制优化（最高优先级，2天）⭐
 
-#### Phase 2: 性能优化与缓存系统（第3-4周）
-- **Redis缓存层**: 热门查询<1秒响应
-- **查询优化器**: 复杂查询性能提升50%
-- **异步任务队列**: Celery + RabbitMQ
+**目标**：支持7-Agent架构的路由需求，实现触发词优先路由机制
 
-#### Phase 3: 技术分析系统（第5-6周）
-- **技术指标引擎**: 30+指标实时计算
-- **TechnicalAnalysisAgent**: 趋势分析、买卖信号
-- **K线形态识别**: 自动识别技术形态
+**任务清单**：
+1. 扩展QueryType枚举（新增RANK、ANNS、QA）
+2. 实现触发词检测机制
+3. 优化路由优先级（触发词→模板→Schema→LLM→规则）
+4. 添加新路由模式配置
+5. 实现新Agent处理方法
 
-#### Phase 4: 智能分析增强（第7-8周）
-- **综合评分系统**: 基本面+技术面+资金面
-- **监控告警**: Prometheus + Grafana
-- **测试覆盖**: 单元测试>80%
+#### Phase 1：SQL Agent快速模板（2天）
 
-### 立即开始：Phase 1 实施细节
+**目标**：实现7个高频查询的快速模板，覆盖80%常见查询
 
-#### 1.1 创建Schema映射配置（config/db_schema_chinese_mapping.py）
-包含14个核心表的完整中英文映射：
-- tu_stock_basic（股票基本信息表）
-- tu_daily_detail（股票日线行情表）
-- tu_income（利润表）
-- tu_balancesheet（资产负债表）
-- tu_cashflow（现金流量表）
-- tu_fina_indicator（财务指标表）
-- tu_moneyflow_dc（资金流向表）
-- 等等...
+**模板列表**：
+1. 历史K线查询（90天）
+2. 历史交易量查询（90天）
+3. 利润查询
+4. PE/PB查询
+5. 当日主力净流入排行
+6. 总市值排名
+7. 流通市值排名
 
-#### 1.2 实现缓存管理器（utils/schema_cache_manager.py）
-- 单例模式确保全局唯一
-- 启动时加载所有Schema到内存
-- 支持中文到英文的快速查找
-- 支持模糊匹配和智能推荐
+#### Phase 2：新增3个Agent（3天）
 
-#### 1.3 开发查询解析器（utils/chinese_query_parser.py）
-- 自然语言查询解析
-- 查询意图识别
-- SQL自动生成
-- 与现有Agent系统集成
+**Day 1: Rank Agent**
+- 各类排名分析（涨跌幅、市值、成交量等）
+- 支持排除ST/*ST股票
+- 支持排除北交所股票
+- 提供排名变化标识
 
-### 技术栈确认
-- **缓存**: Redis 7.0+
-- **任务队列**: Celery + RabbitMQ
-- **技术分析**: TA-Lib + NumPy + Pandas
-- **监控**: Prometheus + Grafana
-- **测试**: pytest + locust
+**Day 2: ANNS Agent**
+- 公告元数据查询
+- 返回公告列表和链接
+- 支持按类型筛选（年报、季报、业绩快报等）
+- 支持时间范围查询
+
+**Day 3: QA Agent**
+- 董秘互动数据查询
+- 支持关键词搜索
+- 支持逻辑组合（AND/OR/NOT）
+- 返回问答对
+
+#### Phase 3：专业Agent快速路径（2天）
+
+**Money Flow Agent模板**：
+- 连续N天主力流入
+- 资金异动检测
+- 四级资金分布快速查询
+
+**Financial Agent模板**：
+- 财务健康度快速评分
+- 杜邦分析快速版
+- 现金流质量快速评估
+
+#### Phase 4：集成测试与优化（2天）
+
+**测试内容**：
+1. 路由准确性测试（100个测试用例）
+2. 性能基准测试（响应时间要求）
+3. 并发测试（50+并发用户）
+4. 文档更新和用户手册
 
 ### 成功指标
-- ✅ 中文查询理解准确率 > 95%
-- ✅ 平均查询响应时间 < 5秒
-- ✅ 系统并发用户数 > 100
-- ✅ 缓存命中率 > 70%
+- ✅ 快速查询占比：30% → 70%
+- ✅ 平均响应时间：10秒 → 3秒
+- ✅ 查询准确率：95%以上
+- ✅ 系统稳定性：支持100+并发用户
 
 ### Git版本管理
 ```bash
 # 当前分支: dev-react-frontend-v2
-# 准备v2.0开发
-git add -A && git commit -m "docs: 添加v2.0后端优化开发计划"
+# 版本: v2.1.1 → v2.2.0
+git add -A && git commit -m "docs: 更新v2.2.0开发计划 - 7-Agent架构"
 ```
-
-**详细开发计划请参考**: [NEXT_DEVELOPMENT_PHASE.md](./NEXT_DEVELOPMENT_PHASE.md)
 
 The system is designed for production use with comprehensive error handling, logging, monitoring capabilities, and full LangChain modernization (v1.3.8).

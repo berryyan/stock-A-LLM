@@ -2,6 +2,7 @@
 
 **版本**: v2.1.1
 **更新日期**: 2025-06-29
+**说明**: 包含7-Agent架构测试方案（含3个待实现的新Agent）
 
 ## 前置准备
 
@@ -439,6 +440,103 @@ tail -f logs/slow_queries.log
 - RAG查询平均响应：XX秒
 - 并发支持：XX用户
 - 系统稳定性：XX%
+
+## 7-Agent架构测试方案 (v2.2.0规划)
+
+### 新增Agent测试用例
+
+#### 1. Rank Agent测试（待实现）
+```bash
+# 触发词测试
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "排行分析：今日涨幅前10的股票",
+    "query_type": "hybrid"
+  }'
+
+# 排除ST股票测试
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "排行分析：市值前20（排除ST）",
+    "query_type": "hybrid"
+  }'
+
+# 板块排名测试
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "排行分析：银行板块市值排名",
+    "query_type": "hybrid"
+  }'
+```
+
+#### 2. ANNS Agent测试（待实现）
+```bash
+# 触发词测试
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "查询公告：贵州茅台最新年报",
+    "query_type": "hybrid"
+  }'
+
+# 时间范围测试
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "查询公告：平安银行最近30天的公告",
+    "query_type": "hybrid"
+  }'
+
+# 公告类型测试
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "查询公告：600519.SH业绩快报",
+    "query_type": "hybrid"
+  }'
+```
+
+#### 3. QA Agent测试（待实现）
+```bash
+# 触发词测试
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "董秘互动：贵州茅台产能扩张计划",
+    "query_type": "hybrid"
+  }'
+
+# 关键词组合测试
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "董秘互动：平安银行AND不良贷款",
+    "query_type": "hybrid"
+  }'
+
+# 逻辑排除测试
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "董秘互动：招商银行投资NOT房地产",
+    "query_type": "hybrid"
+  }'
+```
+
+### 路由准确性测试矩阵
+
+| 查询内容 | 预期路由 | 触发方式 |
+|---------|---------|---------|
+| "排行分析：涨幅榜" | Rank Agent | 触发词 |
+| "查询公告：年报" | ANNS Agent | 触发词 |
+| "董秘互动：分红" | QA Agent | 触发词 |
+| "贵州茅台最新股价" | SQL Agent | 模板匹配 |
+| "分析茅台财务健康度" | Financial Agent | 关键词 |
+| "茅台资金流向分析" | Money Flow Agent | 关键词 |
+| "贵州茅台年报分析" | RAG Agent | 文档需求 |
 
 ## 自动化测试
 
