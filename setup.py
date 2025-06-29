@@ -12,7 +12,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="stock-analysis-system",
-    version="2.1.0",
+    version="2.1.1",
     author="Your Name",
     author_email="your.email@example.com",
     description="An intelligent stock analysis system based on LangChain with SQL query, RAG retrieval, and hybrid query capabilities",

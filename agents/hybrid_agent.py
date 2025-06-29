@@ -27,7 +27,6 @@ from langchain_core.output_parsers import StrOutputParser
 from config.settings import settings
 from utils.logger import setup_logger
 from utils.stock_code_mapper import convert_to_ts_code
-from utils.chinese_query_parser import ChineseQueryParser
 from utils.routing_monitor import routing_monitor
 from utils.schema_enhanced_router import schema_router
 from utils.query_templates import match_query_template

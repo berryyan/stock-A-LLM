@@ -3,18 +3,19 @@
 """
 
 # 系统版本号 - 恢复到v2系列
-VERSION = "2.1.0"
+VERSION = "2.1.1"
 
 # 版本信息
 VERSION_INFO = {
     "version": VERSION,
     "release_date": "2025-06-29",
-    "codename": "Unified Validator",
-    "description": "统一股票验证器大幅优化，恢复v2版本序列"
+    "codename": "Code Cleanup",
+    "description": "代码清理，删除未使用的Schema相关文件"
 }
 
 # 版本历史（保留重要节点）
 VERSION_HISTORY = [
+    ("2.1.1", "2025-06-29", "代码清理，删除未使用的Schema相关文件"),
     ("2.1.0", "2025-06-29", "统一股票验证器大幅优化"),
     ("2.0.5", "2025-06-28", "流式响应完整实现"),
     ("2.0.4", "2025-06-27", "React前端Phase 1完成"),

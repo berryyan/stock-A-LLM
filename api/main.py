@@ -37,7 +37,7 @@ def generate_timestamp() -> str:
 # 创建FastAPI应用
 app = FastAPI(
     title="股票分析智能查询系统",
-    description="""基于LangChain + RAG + 深度财务分析 + 智能日期解析 + 资金流向分析的智能股票分析API (v2.1.0)
+    description="""基于LangChain + RAG + 深度财务分析 + 智能日期解析 + 资金流向分析的智能股票分析API (v2.1.1)
     
 ## 核心功能
 - 🧠 **智能查询路由**: 自动识别问题类型并路由到合适的处理模块
@@ -54,7 +54,7 @@ app = FastAPI(
 - Milvus: 120万+文档向量 (公告、年报)
 - 实时资金流向数据 (tu_moneyflow_dc表)
     """,
-    version="2.1.0",
+    version="2.1.1",
     contact={
         "name": "股票分析系统",
         "url": "http://localhost:8000"
