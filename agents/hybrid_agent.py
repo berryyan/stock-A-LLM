@@ -25,6 +25,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
 from config.settings import settings
+from config.routing_config import routing_config
 from utils.logger import setup_logger
 from utils.stock_code_mapper import convert_to_ts_code
 from utils.routing_monitor import routing_monitor
@@ -380,16 +381,13 @@ class HybridAgent:
     
     def _check_trigger_words(self, question: str) -> Optional[str]:
         """检测触发词并返回对应的查询类型"""
-        trigger_mapping = {
-            "排行分析：": QueryType.RANK,
-            "查询公告：": QueryType.ANNS,
-            "董秘互动：": QueryType.QA
-        }
+        # 从配置文件获取触发词映射
+        trigger_mapping = routing_config.TRIGGER_WORDS
         
-        for trigger, query_type in trigger_mapping.items():
+        for trigger, query_type_str in trigger_mapping.items():
             if question.startswith(trigger):
-                self.logger.info(f"检测到触发词: {trigger} -> {query_type.value}")
-                return query_type.value
+                self.logger.info(f"检测到触发词: {trigger} -> {query_type_str}")
+                return query_type_str
         
         return None
     
@@ -412,7 +410,14 @@ class HybridAgent:
             template_result = match_query_template(question)
             if template_result:
                 template, params = template_result
-                self.logger.info(f"使用模板路由: {template.name} -> {template.route_type}")
+                
+                # 检查是否需要覆盖路由目标
+                route_type = template.route_type
+                if template.name in routing_config.TEMPLATE_ROUTE_OVERRIDE:
+                    route_type = routing_config.TEMPLATE_ROUTE_OVERRIDE[template.name]
+                    self.logger.info(f"路由覆盖: {template.name} -> {template.route_type} 改为 {route_type}")
+                else:
+                    self.logger.info(f"使用模板路由: {template.name} -> {route_type}")
                 
                 # 从模板参数中提取实体
                 entities = params.get('entities', [])
@@ -420,7 +425,7 @@ class HybridAgent:
                     entities = self._extract_entities(question)
                 
                 decision = {
-                    'query_type': template.route_type,
+                    'query_type': route_type,
                     'reasoning': f'基于查询模板: {template.name}',
                     'entities': entities,
                     'time_range': params.get('time_range', self._extract_time_range(question)),

@@ -75,6 +75,84 @@ class QueryTemplateLibrary:
                 example="贵州茅台今天的价格"
             ),
             
+            # 历史K线查询模板
+            QueryTemplate(
+                name="历史K线查询",
+                type=TemplateType.PRICE_QUERY,
+                pattern=r"(.+?)(?:的)?(?:最近|过去)(\d+)天.*(?:K线|走势|股价)",
+                route_type="SQL_ONLY",
+                required_fields=["open", "high", "low", "close", "trade_date"],
+                optional_fields=["vol", "amount", "pct_chg"],
+                default_params={
+                    "time_range": "recent_days",
+                    "days": 90,
+                    "metrics": ["open", "high", "low", "close", "vol"]
+                },
+                example="贵州茅台最近90天的K线走势"
+            ),
+            
+            # 历史交易量查询模板
+            QueryTemplate(
+                name="历史交易量查询",
+                type=TemplateType.PRICE_QUERY,
+                pattern=r"(.+?)(?:的)?(?:最近|过去)(\d+)天.*(?:成交量|交易量|换手率)",
+                route_type="SQL_ONLY",
+                required_fields=["vol", "amount", "trade_date"],
+                optional_fields=["turnover_rate"],
+                default_params={
+                    "time_range": "recent_days",
+                    "days": 90,
+                    "metrics": ["vol", "amount", "turnover_rate"]
+                },
+                example="平安银行最近30天的成交量"
+            ),
+            
+            # 利润查询模板
+            QueryTemplate(
+                name="利润查询",
+                type=TemplateType.FINANCIAL_HEALTH,
+                pattern=r"(.+?)(?:的)?(?:利润|营收|净利润|营业收入)",
+                route_type="SQL_ONLY",
+                required_fields=["revenue", "net_profit"],
+                optional_fields=["operate_profit", "total_profit"],
+                default_params={
+                    "period_count": 4,
+                    "metrics": ["revenue", "net_profit", "operate_profit"]
+                },
+                example="贵州茅台的净利润"
+            ),
+            
+            # PE/PB查询模板
+            QueryTemplate(
+                name="估值指标查询",
+                type=TemplateType.FINANCIAL_HEALTH,
+                pattern=r"(.+?)(?:的)?(?:PE|PB|市盈率|市净率|估值)",
+                route_type="SQL_ONLY",
+                required_fields=["pe", "pb"],
+                optional_fields=["pe_ttm", "ps", "ps_ttm"],
+                default_params={
+                    "time_range": "latest",
+                    "metrics": ["pe", "pe_ttm", "pb", "ps", "ps_ttm"]
+                },
+                example="中国平安的市盈率"
+            ),
+            
+            # 主力净流入排行模板
+            QueryTemplate(
+                name="主力净流入排行",
+                type=TemplateType.MONEY_FLOW,
+                pattern=r"(?:今日|今天)?主力.*净流入.*(?:排行|排名|前(\d+))",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "net_mf_amount"],
+                optional_fields=["net_mf_amount_rate", "pct_chg"],
+                default_params={
+                    "order_by": "net_mf_amount DESC",
+                    "limit": 10,
+                    "time_range": "today"
+                },
+                example="今日主力净流入排行前10"
+            ),
+            
             # 财务健康度模板
             QueryTemplate(
                 name="财务健康度分析",
@@ -177,6 +255,38 @@ class QueryTemplateLibrary:
                     "time_range": "today"
                 },
                 example="今天涨幅最大的前10只股票"
+            ),
+            
+            # 总市值排名模板
+            QueryTemplate(
+                name="总市值排名",
+                type=TemplateType.RANKING,
+                pattern=r"总市值.*前(\d+)|最大.*总市值.*(\d+)",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "total_mv"],
+                optional_fields=["close", "pe_ttm", "pb"],
+                default_params={
+                    "order_by": "total_mv DESC",
+                    "limit": 10,
+                    "time_range": "latest"
+                },
+                example="总市值最大的前20只股票"
+            ),
+            
+            # 流通市值排名模板
+            QueryTemplate(
+                name="流通市值排名",
+                type=TemplateType.RANKING,
+                pattern=r"流通市值.*前(\d+)|最大.*流通市值.*(\d+)",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "circ_mv"],
+                optional_fields=["total_mv", "turnover_rate", "volume_ratio"],
+                default_params={
+                    "order_by": "circ_mv DESC",
+                    "limit": 10,
+                    "time_range": "latest"
+                },
+                example="流通市值最大的前10只股票"
             ),
             
             QueryTemplate(
