@@ -227,10 +227,35 @@ function App() {
                 </h1>
                 <p>Ask me about stock prices, financial reports, or market analysis</p>
                 <div className="mt-8 space-y-2 text-sm">
-                  <p className="font-semibold">Try asking:</p>
-                  <p>"贵州茅台最新股价是多少？"</p>
-                  <p>"分析一下茅台的财务健康度"</p>
-                  <p>"查询贵州茅台最新的公告"</p>
+                  <p className="font-semibold mb-3 text-claude-text-primary">Try asking:</p>
+                  
+                  {/* SQL Agent - 快速路由优先 */}
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-1">基础数据查询：</p>
+                    <p className="text-gray-300">"中国平安最新股价"</p>
+                    <p className="text-gray-300">"今天涨幅最大的前10只股票"</p>
+                  </div>
+                  
+                  {/* RAG Agent - 文档内容 */}
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-1">公告文档分析：</p>
+                    <p className="text-gray-300">"万科A最新公告的主要内容"</p>
+                    <p className="text-gray-300">"比亚迪2024年年报核心观点"</p>
+                  </div>
+                  
+                  {/* Financial Agent - 财务分析 */}
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-1">专业财务分析：</p>
+                    <p className="text-gray-300">"分析宁德时代的财务健康度"</p>
+                    <p className="text-gray-300">"招商银行的杜邦分析"</p>
+                  </div>
+                  
+                  {/* Money Flow Agent - 资金流向 */}
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-1">资金流向分析：</p>
+                    <p className="text-gray-300">"五粮液的主力资金流向"</p>
+                    <p className="text-gray-300">"中国石油今日资金分布"</p>
+                  </div>
                 </div>
               </div>
             ) : (
