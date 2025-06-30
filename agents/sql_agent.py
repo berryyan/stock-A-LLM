@@ -36,6 +36,7 @@ from utils.sql_templates import SQLTemplates
 from utils.query_templates import match_query_template
 from utils.stock_code_mapper import convert_to_ts_code, get_stock_name
 from utils.unified_stock_validator import validate_stock_input, UnifiedStockValidator
+from utils.security_filter import clean_llm_output, validate_query
 
 
 
@@ -141,8 +142,14 @@ class SQLAgent:
     def _try_quick_query(self, question: str) -> Optional[Dict[str, Any]]:
         """尝试使用快速查询路径，避免LLM调用"""
         try:
-            # 模板匹配
-            template_match = match_query_template(question)
+            # 先进行日期智能解析
+            processed_question, parsing_result = date_intelligence.preprocess_question(question)
+            
+            self.logger.info(f"日期解析前: {question}")
+            self.logger.info(f"日期解析后: {processed_question}")
+            
+            # 使用处理后的问题进行模板匹配
+            template_match = match_query_template(processed_question)
             if not template_match:
                 return None
                 
@@ -156,7 +163,7 @@ class SQLAgent:
             last_trading_date = self._get_last_trading_date()
             
             # 检查是否有对应的SQL模板
-            if template.name == '最新股价查询':
+            if template.name == '股价查询':
                 # 提取股票代码
                 entities = params.get('entities', [])
                 if not entities:
@@ -170,9 +177,19 @@ class SQLAgent:
                 # 获取股票名称
                 stock_name = get_stock_name(ts_code)
                 
+                # 从处理后的查询中提取日期
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
                 # 执行SQL查询
-                sql = SQLTemplates.STOCK_PRICE_LATEST
-                result = self.mysql_connector.execute_query(sql, {'ts_code': ts_code})
+                if trade_date == last_trading_date:
+                    sql = SQLTemplates.STOCK_PRICE_LATEST
+                    result = self.mysql_connector.execute_query(sql, {'ts_code': ts_code})
+                else:
+                    sql = SQLTemplates.STOCK_PRICE_BY_DATE
+                    result = self.mysql_connector.execute_query(sql, {
+                        'ts_code': ts_code,
+                        'trade_date': trade_date
+                    })
                 
                 if result and len(result) > 0:
                     # 格式化结果
@@ -184,7 +201,7 @@ class SQLAgent:
                     return {
                         'success': True,
                         'result': formatted_result,
-                        'sql': sql,
+                        'sql': None,  # 不暴露SQL语句
                         'quick_path': True
                     }
                     
@@ -199,8 +216,15 @@ class SQLAgent:
                     return None
                     
                 stock_name = get_stock_name(ts_code)
-                sql = SQLTemplates.VALUATION_METRICS
-                result = self.mysql_connector.execute_query(sql, {'ts_code': ts_code})
+                
+                # 从处理后的查询中提取日期
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
+                sql = SQLTemplates.VALUATION_METRICS_BY_DATE
+                result = self.mysql_connector.execute_query(sql, {
+                    'ts_code': ts_code,
+                    'trade_date': trade_date
+                })
                 
                 if result and len(result) > 0:
                     formatted_result = SQLTemplates.format_valuation_result(
@@ -210,28 +234,36 @@ class SQLAgent:
                     return {
                         'success': True,
                         'result': formatted_result,
-                        'sql': sql,
+                        'sql': None,  # 不暴露SQL语句
                         'quick_path': True
                     }
                     
-            elif template.name in ['涨幅排名', '总市值排名', '流通市值排名']:
+            elif template.name in ['涨跌幅排名', '总市值排名', '流通市值排名']:
                 # 排名查询
                 limit = params.get('limit', 10)
                 
+                # 从处理后的查询中提取日期
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
                 # 选择对应的SQL模板
-                if template.name == '涨幅排名':
-                    sql = SQLTemplates.PCT_CHG_RANKING
-                    ranking_type = 'pct_chg'
-                elif template.name in ['总市值排名', '市值排名']:
+                if template.name == '涨跌幅排名':
+                    # 判断是涨幅还是跌幅
+                    if '跌幅' in processed_question:
+                        sql = SQLTemplates.PCT_CHG_RANKING_DESC  # 跌幅排名（升序）
+                        ranking_type = 'pct_chg_desc'
+                    else:
+                        sql = SQLTemplates.PCT_CHG_RANKING  # 涨幅排名（降序）
+                        ranking_type = 'pct_chg'
+                elif template.name == '总市值排名':
                     sql = SQLTemplates.MARKET_CAP_RANKING  
                     ranking_type = 'market_cap'
                 elif template.name == '流通市值排名':
-                    sql = SQLTemplates.MARKET_CAP_RANKING
-                    ranking_type = 'market_cap'
+                    sql = SQLTemplates.CIRC_MV_RANKING  # 使用专门的流通市值排名SQL
+                    ranking_type = 'circ_mv'
                     
                 # 执行查询
                 result = self.mysql_connector.execute_query(sql, {
-                    'trade_date': last_trading_date,
+                    'trade_date': trade_date,
                     'limit': limit
                 })
                 
@@ -243,12 +275,12 @@ class SQLAgent:
                     return {
                         'success': True,
                         'result': formatted_result,
-                        'sql': sql,
+                        'sql': None,  # 不暴露SQL语句
                         'quick_path': True
                     }
                     
-            elif template.name == '历史K线查询':
-                # 历史K线数据
+            elif template.name == 'K线查询':
+                # K线数据查询
                 entities = params.get('entities', [])
                 if not entities:
                     return None
@@ -257,32 +289,52 @@ class SQLAgent:
                 if not ts_code:
                     return None
                     
-                # 计算开始日期
-                days = int(params.get('days', 90))
-                start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
-                
                 stock_name = get_stock_name(ts_code)
-                sql = SQLTemplates.HISTORICAL_KLINE
-                result = self.mysql_connector.execute_query(sql, {
-                    'ts_code': ts_code,
-                    'start_date': start_date,
-                    'limit': days
-                })
+                
+                # 解析时间范围
+                if '从' in processed_question and '到' in processed_question:
+                    # 提取日期范围
+                    date_range_match = re.search(r'从(\d{8}|\d{4}-\d{2}-\d{2})到(\d{8}|\d{4}-\d{2}-\d{2})', processed_question)
+                    if date_range_match:
+                        start_date = date_range_match.group(1).replace('-', '')
+                        end_date = date_range_match.group(2).replace('-', '')
+                        sql = SQLTemplates.KLINE_RANGE
+                        query_params = {
+                            'ts_code': ts_code,
+                            'start_date': start_date,
+                            'end_date': end_date
+                        }
+                        days_desc = f"从{start_date}到{end_date}"
+                else:
+                    # 最近N天
+                    days = int(params.get('days', 90))
+                    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
+                    sql = SQLTemplates.HISTORICAL_KLINE
+                    query_params = {
+                        'ts_code': ts_code,
+                        'start_date': start_date,
+                        'limit': days
+                    }
+                    days_desc = f"最近{days}天"
+                
+                result = self.mysql_connector.execute_query(sql, query_params)
                 
                 if result and len(result) > 0:
                     # 格式化K线数据
                     stock_info = f"{stock_name}（{ts_code}）" if stock_name else ts_code
-                    lines = [f"\n{stock_info}最近{days}天K线数据：\n"]
-                    lines.append("日期 | 开盘 | 最高 | 最低 | 收盘 | 涨跌幅 | 成交量(万手)")
-                    lines.append("-" * 70)
+                    lines = [f"\n{stock_info}{days_desc}K线数据：\n"]
+                    lines.append("日期 | 开盘 | 最高 | 最低 | 收盘 | 涨跌幅 | 成交量(万手) | 成交额(万元)")
+                    lines.append("-" * 90)
                     
-                    for row in result[:20]:  # 只显示前20条
+                    for row in result[:30]:  # 显示前30条
                         vol_wan = row['vol'] / 10000 if row['vol'] else 0
+                        amount_wan = row['amount'] / 10000 if row['amount'] else 0
                         line = f"{row['trade_date']} | {row['open']:7.2f} | {row['high']:7.2f} | "
-                        line += f"{row['low']:7.2f} | {row['close']:7.2f} | {row['pct_chg']:6.2f}% | {vol_wan:10.2f}"
+                        line += f"{row['low']:7.2f} | {row['close']:7.2f} | {row['pct_chg']:6.2f}% | "
+                        line += f"{vol_wan:10.2f} | {amount_wan:10.2f}"
                         lines.append(line)
                         
-                    if len(result) > 20:
+                    if len(result) > 30:
                         lines.append(f"\n... 共{len(result)}条记录")
                         
                     formatted_result = "\n".join(lines)
@@ -290,9 +342,105 @@ class SQLAgent:
                     return {
                         'success': True,
                         'result': formatted_result,
-                        'sql': sql,
+                        'sql': None,  # 不暴露SQL语句
                         'quick_path': True
                     }
+                    
+            elif template.name == '成交量查询':
+                # 成交量查询
+                entities = params.get('entities', [])
+                if not entities:
+                    return None
+                    
+                ts_code = convert_to_ts_code(entities[0])
+                if not ts_code:
+                    return None
+                    
+                stock_name = get_stock_name(ts_code)
+                
+                # 从处理后的查询中提取日期
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
+                sql = SQLTemplates.VOLUME_BY_DATE
+                result = self.mysql_connector.execute_query(sql, {
+                    'ts_code': ts_code,
+                    'trade_date': trade_date
+                })
+                
+                if result and len(result) > 0:
+                    data = result[0]
+                    stock_info = f"{stock_name}（{ts_code}）" if stock_name else ts_code
+                    vol_wan = data['vol'] / 10000 if data['vol'] else 0
+                    amount_yi = data['amount'] / 100000000 if data['amount'] else 0
+                    
+                    formatted_result = f"""{stock_info}在{data['trade_date']}的成交情况：
+成交量：{vol_wan:.2f}万手
+成交额：{amount_yi:.2f}亿元
+股价：{data['close']:.2f}元
+涨跌幅：{data['pct_chg']:.2f}%"""
+                    
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,  # 不暴露SQL语句
+                        'quick_path': True
+                    }
+                    
+            elif template.name == '主力净流入排行':
+                # 主力净流入排行
+                limit = params.get('limit', 10)
+                
+                # 从处理后的查询中提取日期
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
+                # 检查是否是个股查询
+                entities = params.get('entities', [])
+                if entities and len(entities) > 1:  # 第二个实体可能是股票名称
+                    ts_code = convert_to_ts_code(entities[1])
+                    if ts_code:
+                        # 个股主力净流入查询
+                        sql = SQLTemplates.STOCK_MONEY_FLOW
+                        result = self.mysql_connector.execute_query(sql, {
+                            'ts_code': ts_code,
+                            'trade_date': trade_date
+                        })
+                        
+                        if result and len(result) > 0:
+                            data = result[0]
+                            stock_name = get_stock_name(ts_code)
+                            stock_info = f"{stock_name}（{ts_code}）" if stock_name else ts_code
+                            
+                            formatted_result = SQLTemplates.format_money_flow_result(
+                                data,
+                                stock_info
+                            )
+                            
+                            return {
+                                'success': True,
+                                'result': formatted_result,
+                                'sql': sql,
+                                'quick_path': True
+                            }
+                else:
+                    # 主力净流入排行榜
+                    sql = SQLTemplates.MAIN_FORCE_RANKING
+                    result = self.mysql_connector.execute_query(sql, {
+                        'trade_date': trade_date,
+                        'limit': limit
+                    })
+                    
+                    if result and len(result) > 0:
+                        formatted_result = SQLTemplates.format_money_flow_ranking(
+                            result,
+                            trade_date
+                        )
+                        
+                        return {
+                            'success': True,
+                            'result': formatted_result,
+                            'sql': sql,
+                            'quick_path': True
+                        }
                     
             # 其他模板类型暂不支持快速路径
             return None
@@ -314,6 +462,22 @@ class SQLAgent:
         
         # 格式化为YYYYMMDD
         return last_trading.strftime("%Y%m%d")
+    
+    def _extract_date_from_query(self, query: str) -> Optional[str]:
+        """从查询中提取日期（YYYYMMDD格式）"""
+        # 匹配各种日期格式
+        date_patterns = [
+            (r'(\d{8})', lambda m: m.group(1)),  # 20250627
+            (r'(\d{4})-(\d{2})-(\d{2})', lambda m: f"{m.group(1)}{m.group(2)}{m.group(3)}"),  # 2025-06-27
+            (r'(\d{4})年(\d{2})月(\d{2})日', lambda m: f"{m.group(1)}{m.group(2)}{m.group(3)}")  # 2025年06月27日
+        ]
+        
+        for pattern, formatter in date_patterns:
+            match = re.search(pattern, query)
+            if match:
+                return formatter(match)
+        
+        return None
     
     def _create_sql_prompt(self) -> PromptTemplate:
         """创建自定义的SQL prompt"""
@@ -353,6 +517,11 @@ class SQLAgent:
         prompt_template = f"""你是一个专业的股票数据分析师，精通SQL查询。
 请根据用户的问题，生成准确的SQL查询语句。
 
+重要安全要求：
+- 绝不要在回答中直接输出SQL语句
+- 不要说“查询语句为”、“SQL语句是”等
+- 只需要返回查询结果和中文解释
+
 数据库信息：
 {tables_info}
 
@@ -375,9 +544,11 @@ class SQLAgent:
 
 输出要求：
 - 必须使用中文回答
+- 只返回查询结果和数据分析，不要输出SQL语句
 - 对于股价数据，格式示例："贵州茅台（600519.SH）在2025年6月20日的股价为：开盘价1423.58元，最高价1441.14元，最低价1420.20元，收盘价1428.66元"
 - 对于财务数据，请转换为易读的单位（如亿元、万元）
 - 保持回答简洁清晰，突出重点数据
+- 如果用户询问SQL语句，请告诉他们直接返回数据结果更安全
 """
         
         return PromptTemplate(
@@ -430,8 +601,10 @@ class SQLAgent:
 
 如果问题与数据库无关，请回答"我不知道"。
 
-重要：请始终使用中文回复用户。即使工具返回的是英文，也要翻译成中文。
-对于股价等金融数据，请使用清晰的中文格式展示。
+重要：
+1. 请始终使用中文回复用户。即使工具返回的是英文，也要翻译成中文。
+2. 对于股价等金融数据，请使用清晰的中文格式展示。
+3. 不要在回答中包含SQL语句，只需要返回查询结果。
 
 {system_message}
 """
@@ -475,16 +648,36 @@ class SQLAgent:
         Returns:
             查询结果字符串
         """
-        # 输入验证
-        if not question or not question.strip():
+        # 使用安全过滤器验证输入
+        validation_result = validate_query(question)
+        if not validation_result['valid']:
             return {
                 'success': False,
-                'error': '查询内容不能为空',
+                'error': validation_result['error'],
                 'result': None
             }
         
         try:
             self.logger.info(f"接收查询: {question}")
+            
+            # 检查缓存
+            cache_key = self._get_cache_key(question)
+            if cache_key in self._query_cache:
+                self.logger.info("使用缓存结果")
+                return {
+                'success': True,
+                'result': self._query_cache[cache_key],
+                'sql': None,
+                'cached': True
+            }
+            
+            # 尝试快速查询路径（避免LLM调用）
+            quick_result = self._try_quick_query(question)
+            if quick_result:
+                self.logger.info("使用快速查询路径")
+                # 缓存结果
+                self._query_cache[cache_key] = quick_result['result']
+                return quick_result
             
             # 早期股票实体验证（使用统一验证器与Financial Agent保持一致）
             # 检查是否是需要验证股票的查询
@@ -506,25 +699,6 @@ class SQLAgent:
                         'error': error_response['error'],
                         'result': None
                     }
-            
-            # 检查缓存
-            cache_key = self._get_cache_key(question)
-            if cache_key in self._query_cache:
-                self.logger.info("使用缓存结果")
-                return {
-                'success': True,
-                'result': self._query_cache[cache_key],
-                'sql': None,
-                'cached': True
-            }
-            
-            # 尝试快速查询路径（避免LLM调用）
-            quick_result = self._try_quick_query(question)
-            if quick_result:
-                self.logger.info("使用快速查询路径")
-                # 缓存结果
-                self._query_cache[cache_key] = quick_result['result']
-                return quick_result
             
             # 使用智能日期解析预处理问题
             processed_question, parsing_result = date_intelligence.preprocess_question(question)
@@ -628,6 +802,15 @@ class SQLAgent:
             else:
                 final_result = str(processed_result)
             
+            # 使用安全过滤器清理LLM输出
+            security_result = clean_llm_output(final_result)
+            if security_result['has_sql']:
+                self.logger.warning("检测到LLM输出中包含SQL语句，已过滤")
+                final_result = security_result['cleaned_text']
+                if security_result.get('warning'):
+                    # 在结果末尾添加安全提示
+                    final_result += f"\n\n安全提示：{security_result['warning']}"
+            
             # 缓存结果
             self._query_cache[cache_key] = final_result
             
@@ -676,8 +859,9 @@ class SQLAgent:
         if 'row_count' in result_dict:
             formatted_parts.append(f"\n共找到 {result_dict['row_count']} 条记录")
         
-        if 'sql' in result_dict:
-            formatted_parts.append(f"\n执行的SQL: {result_dict['sql']}")
+        # 注释掉SQL输出，防止SQL注入风险
+        # if 'sql' in result_dict:
+        #     formatted_parts.append(f"\n执行的SQL: {result_dict['sql']}")
         
         return "\n".join(formatted_parts) if formatted_parts else str(result_dict)
     

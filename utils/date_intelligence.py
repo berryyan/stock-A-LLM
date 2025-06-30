@@ -162,7 +162,7 @@ class TradingDayCalculator:
                 
                 # 历史日期查询（保持原逻辑）
                 query = """
-                SELECT trade_date 
+                SELECT DISTINCT trade_date 
                 FROM tu_daily_detail 
                 WHERE trade_date < :before_date
                 ORDER BY trade_date DESC 
@@ -172,7 +172,7 @@ class TradingDayCalculator:
             else:
                 # 【核心改进】数据驱动的最新交易日判断
                 query = """
-                SELECT trade_date 
+                SELECT DISTINCT trade_date 
                 FROM tu_daily_detail 
                 WHERE trade_date <= CURDATE()
                   AND trade_date >= DATE_SUB(CURDATE(), INTERVAL 10 DAY)
@@ -334,7 +334,7 @@ class TradingDayCalculator:
         
         try:
             query = """
-            SELECT trade_date 
+            SELECT DISTINCT trade_date 
             FROM tu_daily_detail 
             WHERE trade_date <= :base_date
             ORDER BY trade_date DESC 
@@ -368,7 +368,7 @@ class TradingDayCalculator:
         
         try:
             query = """
-            SELECT trade_date 
+            SELECT DISTINCT trade_date 
             FROM tu_daily_detail 
             WHERE trade_date <= :end_date
             ORDER BY trade_date DESC 

@@ -47,64 +47,51 @@ class QueryTemplateLibrary:
         """构建查询模板"""
         return [
             # 股价查询模板
+            # 股价查询模板（支持任意日期）
             QueryTemplate(
-                name="最新股价查询",
+                name="股价查询",
                 type=TemplateType.PRICE_QUERY,
-                pattern=r"(.+?)(?:的)?最新股价",
+                pattern=r"(.+?)(?:的)?(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|最新|昨天|前天|上个交易日|最近一个交易日))?(?:的)?股价",
                 route_type="SQL_ONLY",
                 required_fields=["close", "trade_date"],
-                optional_fields=["change", "pct_chg", "vol"],
+                optional_fields=["open", "high", "low", "vol", "amount", "pct_chg"],
                 default_params={
-                    "time_range": "latest",
-                    "metrics": ["close", "change", "pct_chg"]
+                    "time_range": "specified",
+                    "metrics": ["open", "high", "low", "close", "vol", "amount", "pct_chg"]
                 },
-                example="茅台最新股价"
+                example="贵州茅台20250627的股价"
             ),
             
+            # K线查询模板（支持任意时间段）
             QueryTemplate(
-                name="今日股价查询",
+                name="K线查询",
                 type=TemplateType.PRICE_QUERY,
-                pattern=r"(.+?)(?:的)?今天.*价格|(.+?)今日.*股价",
-                route_type="SQL_ONLY",
-                required_fields=["close", "trade_date"],
-                optional_fields=["open", "high", "low", "vol"],
-                default_params={
-                    "time_range": "today",
-                    "metrics": ["open", "high", "low", "close", "vol"]
-                },
-                example="贵州茅台今天的价格"
-            ),
-            
-            # 历史K线查询模板
-            QueryTemplate(
-                name="历史K线查询",
-                type=TemplateType.PRICE_QUERY,
-                pattern=r"(.+?)(?:的)?(?:最近|过去)(\d+)天.*(?:K线|走势|股价)",
+                pattern=r"(.+?)(?:的)?(?:从(.+?)到(.+?)|最近(\d+)天|过去(\d+)天|最近(\d+)个月|过去(\d+)个月)?的?(?:K线|走势)",
                 route_type="SQL_ONLY",
                 required_fields=["open", "high", "low", "close", "trade_date"],
                 optional_fields=["vol", "amount", "pct_chg"],
                 default_params={
-                    "time_range": "recent_days",
+                    "time_range": "range",
                     "days": 90,
-                    "metrics": ["open", "high", "low", "close", "vol"]
+                    "metrics": ["open", "high", "low", "close", "vol", "amount", "pct_chg"]
                 },
-                example="贵州茅台最近90天的K线走势"
+                example="贵州茅台从2025-06-01到2025-06-27的K线"
             ),
             
-            # 历史交易量查询模板
+            # 成交量查询模板（支持任意日期）
             QueryTemplate(
-                name="历史交易量查询",
+                name="成交量查询",
                 type=TemplateType.PRICE_QUERY,
-                pattern=r"(.+?)(?:的)?(?:最近|过去)(\d+)天.*(?:成交量|交易量|换手率)",
+                pattern=r"(.+?)(?:的)?(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|最新|昨天|上个交易日)|最近(\d+)天|过去(\d+)天)?(?:的)?(?:成交量|交易量|成交额)",
                 route_type="SQL_ONLY",
                 required_fields=["vol", "amount", "trade_date"],
                 optional_fields=["turnover_rate"],
                 default_params={
-                    "time_range": "recent_days",
-                    "days": 90,
-                    "metrics": ["vol", "amount", "turnover_rate"]
+                    "time_range": "specified",
+                    "days": 1,
+                    "metrics": ["vol", "amount"]
                 },
-                example="平安银行最近30天的成交量"
+                example="平安银行昨天的成交量"
             ),
             
             # 利润查询模板
@@ -122,35 +109,35 @@ class QueryTemplateLibrary:
                 example="贵州茅台的净利润"
             ),
             
-            # PE/PB查询模板
+            # PE/PB查询模板（支持任意日期）
             QueryTemplate(
                 name="估值指标查询",
                 type=TemplateType.FINANCIAL_HEALTH,
-                pattern=r"(.+?)(?:的)?(?:PE|PB|市盈率|市净率|估值)",
+                pattern=r"(.+?)(?:的)?(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|最新|昨天|上个交易日))?(?:的)?(?:PE|PB|市盈率|市净率|估值)",
                 route_type="SQL_ONLY",
                 required_fields=["pe", "pb"],
                 optional_fields=["pe_ttm", "ps", "ps_ttm"],
                 default_params={
-                    "time_range": "latest",
+                    "time_range": "specified",
                     "metrics": ["pe", "pe_ttm", "pb", "ps", "ps_ttm"]
                 },
-                example="中国平安的市盈率"
+                example="中国平安昨天的市盈率"
             ),
             
-            # 主力净流入排行模板
+            # 主力净流入排行模板（支持个股和历史日期）
             QueryTemplate(
                 name="主力净流入排行",
                 type=TemplateType.MONEY_FLOW,
-                pattern=r"(?:今日|今天)?主力.*净流入.*(?:排行|排名|前(\d+))",
+                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今日|今天|昨天|上个交易日))?(?:(.+?)的)?主力.*净流入.*(?:排行|排名|前(\d+))",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "name", "net_mf_amount"],
                 optional_fields=["net_mf_amount_rate", "pct_chg"],
                 default_params={
                     "order_by": "net_mf_amount DESC",
                     "limit": 10,
-                    "time_range": "today"
+                    "time_range": "specified"
                 },
-                example="今日主力净流入排行前10"
+                example="昨天主力净流入排行前10"
             ),
             
             # 财务健康度模板
@@ -241,67 +228,54 @@ class QueryTemplateLibrary:
                 example="茅台的年报说了什么"
             ),
             
-            # 排名查询模板
+            # 涨跌幅排名模板（支持历史日期）
             QueryTemplate(
-                name="涨幅排名",
+                name="涨跌幅排名",
                 type=TemplateType.RANKING,
-                pattern=r"(?:今天)?涨幅.*前(\d+)|涨幅最大.*(\d+)",
+                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|上个交易日))?(?:涨幅|跌幅).*前(\d+)|(?:涨幅|跌幅)最大.*(\d+)",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "name", "pct_chg"],
                 optional_fields=["close", "vol", "amount"],
                 default_params={
                     "order_by": "pct_chg DESC",
                     "limit": 10,
-                    "time_range": "today"
+                    "time_range": "specified"
                 },
-                example="今天涨幅最大的前10只股票"
+                example="20250627涨幅前10"
             ),
             
-            # 总市值排名模板
+            # 总市值排名模板（支持历史日期，兼容"市值排名"）
             QueryTemplate(
                 name="总市值排名",
                 type=TemplateType.RANKING,
-                pattern=r"总市值.*前(\d+)|最大.*总市值.*(\d+)",
+                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|上个交易日))?(?:总市值|(?<!流通)市值).*前(\d+)|最大.*(?:总市值|(?<!流通)市值).*(\d+)",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "name", "total_mv"],
                 optional_fields=["close", "pe_ttm", "pb"],
                 default_params={
                     "order_by": "total_mv DESC",
                     "limit": 10,
-                    "time_range": "latest"
+                    "time_range": "specified"
                 },
-                example="总市值最大的前20只股票"
+                example="昨天市值最大的前20只股票"
             ),
             
-            # 流通市值排名模板
+            # 流通市值排名模板（支持历史日期）
             QueryTemplate(
                 name="流通市值排名",
                 type=TemplateType.RANKING,
-                pattern=r"流通市值.*前(\d+)|最大.*流通市值.*(\d+)",
+                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|上个交易日))?流通市值.*前(\d+)|最大.*流通市值.*(\d+)",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "name", "circ_mv"],
                 optional_fields=["total_mv", "turnover_rate", "volume_ratio"],
                 default_params={
                     "order_by": "circ_mv DESC",
                     "limit": 10,
-                    "time_range": "latest"
+                    "time_range": "specified"
                 },
-                example="流通市值最大的前10只股票"
+                example="上个交易日流通市值前10"
             ),
             
-            QueryTemplate(
-                name="市值排名",
-                type=TemplateType.RANKING,
-                pattern=r"市值.*前(\d+)|最大市值.*(\d+)",
-                route_type="SQL_ONLY",
-                required_fields=["ts_code", "name", "total_mv"],
-                optional_fields=["circ_mv", "close"],
-                default_params={
-                    "order_by": "total_mv DESC",
-                    "limit": 10
-                },
-                example="市值最大的前20只股票"
-            ),
             
             # 比较分析模板
             QueryTemplate(

@@ -1,0 +1,187 @@
+{
+  "summary": {
+    "total_tests": 29,
+    "passed_tests": 0,
+    "success_rate": 0.0,
+    "total_time": 29.07310938835144,
+    "quick_template_usage": 0,
+    "date_parsing_usage": 0,
+    "name_prompt_count": 0
+  },
+  "test_results": [
+    {
+      "query": "贵州茅台最新股价",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "贵州茅台20250627的股价",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "平安银行2025-06-27的股价",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "中国平安2025年06月27日的股价",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "格力电器昨天的股价",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "万科A上个交易日的股价",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "贵州茅台最近30天K线",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "平安银行从2025-06-01到2025-06-27的K线",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.004512786865234375
+    },
+    {
+      "query": "中国平安过去5天的走势",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "贵州茅台最新成交量",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "平安银行昨天的成交量",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "中国平安20250627的成交额",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "贵州茅台的净利润",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "平安银行的营业收入",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "中国平安最新PE",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "贵州茅台昨天的市盈率",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "平安银行20250627的市净率",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "今天涨幅前10",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "20250627涨幅前10",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "昨天跌幅最大的20只股票",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "上个交易日总市值排名前10",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "昨天流通市值前10",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "20250627市值最大的前20只股票",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "今日主力净流入排行前10",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "昨天主力净流入前20",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "20250627主力净流入排名",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "茅台最新股价",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "平安昨天的PE",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    },
+    {
+      "query": "万科的市值",
+      "success": false,
+      "error": "'SQLAgent' object has no attribute 'analyze'",
+      "elapsed_time": 0.0
+    }
+  ]
+}

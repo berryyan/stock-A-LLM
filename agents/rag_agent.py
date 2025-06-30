@@ -26,6 +26,7 @@ from models.embedding_model import EmbeddingModel
 from config.settings import settings
 from utils.logger import setup_logger
 from utils.date_intelligence import date_intelligence
+from utils.security_filter import clean_llm_output, validate_query
 
 
 class RAGAgent:
@@ -131,11 +132,12 @@ class RAGAgent:
         # 更新查询统计（包括无效查询）
         self.query_count += 1
         
-        # 输入验证
-        if not question or not question.strip():
+        # 使用安全过滤器验证输入
+        validation_result = validate_query(question)
+        if not validation_result['valid']:
             return {
                 'success': False,
-                'error': '查询内容不能为空',
+                'error': validation_result['error'],
                 'type': 'rag_query'
             }
         
@@ -260,6 +262,14 @@ class RAGAgent:
             #         {"input": question},
             #         {"output": answer}
             #     )
+            
+            # 使用安全过滤器清理LLM输出
+            security_result = clean_llm_output(answer)
+            if security_result['has_sql'] or security_result['has_sensitive']:
+                self.logger.warning("检测到LLM输出中包含SQL语句或敏感信息，已过滤")
+                answer = security_result['cleaned_text']
+                if security_result.get('warning'):
+                    answer += f"\n\n安全提示：{security_result['warning']}"
             
             # 更新成功统计
             self.success_count += 1

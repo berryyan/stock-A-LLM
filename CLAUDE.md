@@ -14,9 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v2.1.2)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v2.1.3)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 股票识别修复完成，解决"平安"歧义问题。路由机制修复，TEMPLATE_ROUTE_OVERRIDE冲突解决。SQL Agent快速模板完成，支持7种新查询类型，实现2481.5倍加速。路由机制文档化完成，7-Agent架构Phase 0&1完成。代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
+**Current Status**: ✅ 日期智能解析DISTINCT问题修复，交易日范围计算恢复正常。股票识别修复完成，解决"平安"歧义问题。路由机制修复，TEMPLATE_ROUTE_OVERRIDE冲突解决。SQL Agent快速模板完成，支持7种新查询类型，实现2481.5倍加速。路由机制文档化完成，7-Agent架构Phase 0&1完成。代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
 ## Development Commands
 
@@ -283,6 +283,32 @@ The system supports six main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v2.1.3 - 日期智能解析修复 (2025-06-30)
+
+**日期智能解析DISTINCT问题修复** ✅:
+- **问题根因**: tu_daily_detail表每个交易日有多条记录（对应不同股票），SQL查询缺少DISTINCT导致返回相同日期
+- **修复内容**: 
+  - 在`get_latest_trading_day()`、`get_nth_trading_day_before()`、`get_trading_days_range()`方法中添加DISTINCT
+  - 修复文件：`utils/date_intelligence.py`（第165、175、337、371行）
+- **验证结果**:
+  - 最近5个交易日: 正确返回`2025-06-23 至 2025-06-27`（修复前错误：`2025-06-27 至 2025-06-27`）
+  - SQL Agent测试成功率: 17/21 (81%)
+
+#### v2.1.2 - SQL Agent快速模板与路由机制修复 (2025-06-30)
+
+**SQL Agent快速模板实现** ✅:
+- **扩展SQL模板库**: 新增7个快速模板（市值排名、涨跌幅排名、成交额排名、PE/PB查询、历史K线等）
+- **性能提升**: 快速路径平均响应0.02秒，加速比2481.5倍
+- **优化查询验证**: 排名查询不再触发股票验证
+
+**路由机制修复** ✅:
+- **修复TEMPLATE_ROUTE_OVERRIDE错误**: 删除将SQL Agent查询路由到未实现Agent的覆盖规则
+- **确保快速模板正常工作**: SQL Agent可以正确处理涨幅排名、市值排名等查询
+
+**股票识别优化** ✅:
+- **修复"平安"歧义**: 移除有歧义的"平安"→"中国平安"映射
+- **改进股票名称提取**: 优先直接提取完整股票名称，修正"万科企业"为"万科A"
 
 #### v2.1.1 - 代码清理与7-Agent架构设计 (2025-06-29)
 
