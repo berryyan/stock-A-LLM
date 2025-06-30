@@ -294,7 +294,40 @@ curl -X POST http://localhost:8000/api/query \
   }'
 ```
 
-### 六、数据库Schema中文映射测试 (v2.0新增)
+### 六、股票识别测试 (v2.1.2修复)
+
+#### 1. 测试"平安"歧义修复
+```bash
+# 测试平安相关查询
+source venv/bin/activate && python test_pingan_fix.py
+```
+
+预期输出：
+```
+查询: 平安银行PE
+✅ 查询成功
+结果: 平安银行（000001.SZ）在2025-06-23的估值指标...
+
+查询: 中国平安PE  
+✅ 查询成功
+结果: 中国平安（601318.SH）在2025-06-23的估值指标...
+```
+
+#### 2. 测试股票简称映射
+```bash
+# 测试简称映射修复
+source venv/bin/activate && python test_short_name_fix.py
+```
+
+#### 3. 测试简称歧义性分析
+```bash
+# 运行歧义性分析脚本
+source venv/bin/activate && python check_short_name_ambiguity.py
+```
+
+查看生成的报告：`SHORT_NAME_AMBIGUITY_REPORT.md`
+
+### 七、数据库Schema中文映射测试 (v2.0新增)
 
 #### 1. 测试Schema缓存管理器
 ```bash
@@ -353,7 +386,7 @@ print(result)
 # }
 ```
 
-### 七、SQL Agent快速模板测试 (v2.1.2新增)
+### 八、SQL Agent快速模板测试 (v2.1.2新增)
 
 #### 1. 运行快速模板测试
 ```bash
@@ -443,7 +476,33 @@ curl -X POST http://localhost:8000/api/query \
 - 特定股票查询仍然保留验证
 - 查询类型智能判断
 
-### 八、文档处理功能测试
+### 九、路由机制测试 (v2.1.2新增)
+
+#### 1. 测试路由修复
+```bash
+# 测试模板路由覆盖修复
+source venv/bin/activate && python test_routing_fix.py
+```
+
+预期输出：
+```
+查询: 今天涨幅最大的前10只股票
+  匹配模板: 涨幅排名
+  原始路由: SQL_ONLY
+  覆盖路由: 无
+  最终路由: SQL_ONLY
+
+查询: 排行分析：今日涨幅前10
+  未匹配到模板
+```
+
+#### 2. 测试完整路由功能
+```bash
+# 运行增强路由测试
+source venv/bin/activate && python test_enhanced_routing.py
+```
+
+### 十、文档处理功能测试
 
 #### 1. 测试PDF下载功能
 ```bash
@@ -461,7 +520,7 @@ python smart_processor_v5_1.py
 # 4 - 处理最近公告（带过滤）
 ```
 
-### 八、数据维护功能测试
+### 十一、数据维护功能测试
 
 #### 1. Milvus去重检查
 ```bash
@@ -475,7 +534,7 @@ python scripts/maintenance/batch_process_manager.py
 # 选择2开始新批次
 ```
 
-### 七、性能测试
+### 十二、性能测试
 
 #### 1. 查询性能测试
 ```bash

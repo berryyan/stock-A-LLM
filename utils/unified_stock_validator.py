@@ -26,11 +26,13 @@ class UnifiedStockValidator:
         self.logger = setup_logger("unified_stock_validator")
         
         # 常见简称映射
+        # 注意：已移除有歧义的"平安"（可能指平安银行、中国平安、平安电工）
+        # 注意："格力"保留但需注意可能指格力电器或格力博
         self.common_short_names = {
             '茅台': '贵州茅台',
-            '平安': '中国平安',
-            '万科': '万科企业',
-            '格力': '格力电器',
+            # '平安': '中国平安',    # 移除：有歧义，可能指平安银行(000001.SZ)、中国平安(601318.SH)、平安电工(001359.SZ)
+            '万科': '万科A',         # 修正：实际是"万科A"不是"万科企业"
+            '格力': '格力电器',      # 保留：虽有歧义（格力博301260.SZ），但格力电器是主要目标
             '美的': '美的集团',
             '比亚迪': '比亚迪',
             '五粮液': '五粮液',
@@ -211,7 +213,36 @@ class UnifiedStockValidator:
             - suggestion: 建议使用的完整名称（当发现简称时）
         """
         try:
-            # 首先检查常见简称
+            # 提取可能的公司名称
+            name_patterns = [
+                # 带后缀的公司名（优先级最高）
+                r'([一-龥]{2,6}(?:股份|集团|银行|科技|电子|医药|能源|地产|证券|保险|汽车|新材料|新能源|电力|电器|电工))',
+                # 支持"中国XX"格式
+                r'(中国[一-龥]{2,4})',
+                # "XX的PE/财务/股价"等模式
+                r'([一-龥]{2,6})(?:的)?(?:PE|PB|财务|股价|市盈率|市净率|分析|资金|年报|公告)',
+                # "分析XX的"模式
+                r'分析([一-龥]{2,6})的',
+                # 一般的2-6字中文（最后尝试）
+                r'([一-龥]{2,6})(?=财务|分析|怎么样|如何|资金流向|最新股价|股价|年报|公告)',
+            ]
+            
+            potential_names = []
+            for pattern in name_patterns:
+                matches = re.findall(pattern, question)
+                potential_names.extend(matches)
+            
+            # 去重并尝试转换（优先处理完整匹配）
+            seen = set()
+            for name in potential_names:
+                if name not in seen:
+                    seen.add(name)
+                    ts_code = convert_to_ts_code(name)
+                    if ts_code:
+                        self.logger.info(f"从查询中提取到股票名称 '{name}'，转换为: {ts_code}")
+                        return (ts_code, None)
+            
+            # 检查常见简称（只在直接提取失败后）
             for short_name, full_name in self.common_short_names.items():
                 if short_name in question:
                     # 尝试用完整名称查找
@@ -224,37 +255,10 @@ class UnifiedStockValidator:
                             # 用户使用了简称，返回建议
                             return (None, full_name)
             
-            # 提取可能的公司名称
-            name_patterns = [
-                # 支持两字公司名（通过特定上下文）
-                r'([一-龥]{2})(?:财务|股价|分析|的|资金|年报|公告)',
-                # 带后缀的公司名
-                r'([一-龥]{2,6}(?:股份|集团|银行|科技|电子|医药|能源|地产|证券|保险|汽车|新材料|新能源))',
-                # "分析XX的"模式
-                r'分析([一-龥]{2,6})的',
-                # 一般的2-6字中文
-                r'([一-龥]{2,6})(?=财务|分析|怎么样|如何|资金流向|最新股价|股价|年报|公告)',
-            ]
-            
-            potential_names = []
-            for pattern in name_patterns:
-                matches = re.findall(pattern, question)
-                potential_names.extend(matches)
-            
-            # 去重并尝试转换
-            seen = set()
-            for name in potential_names:
-                if name not in seen:
-                    seen.add(name)
-                    ts_code = convert_to_ts_code(name)
-                    if ts_code:
-                        self.logger.info(f"从查询中提取到股票名称 '{name}'，转换为: {ts_code}")
-                        return (ts_code, None)
-            
             # 清理查询词后重试
             clean_question = question
             for word in ['分析', '查询', '的', '财务', '健康度', '状况', '怎么样', '如何', 
-                        '资金流向', '最新股价', '股价', '年报', '公告', '和', '对比', '比较']:
+                        '资金流向', '最新股价', '股价', '年报', '公告', '和', '对比', '比较', 'PE', 'PB']:
                 clean_question = clean_question.replace(word, ' ')
             
             # 提取剩余的主要词汇

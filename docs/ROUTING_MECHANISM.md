@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-本文档详细说明股票分析系统v2.1.1的智能路由机制实现，包括路由优先级、具体实现逻辑、文件位置、测试用例以及7个Agent的具体定位。
+本文档详细说明股票分析系统v2.1.2的智能路由机制实现，包括路由优先级、具体实现逻辑、文件位置、测试用例以及7个Agent的具体定位。
 
 ## 2. 路由优先级体系
 
@@ -39,17 +39,23 @@ TRIGGER_WORDS = {
 - `agents/hybrid_agent.py:409-436` (_check_template_route方法)
 - `utils/query_templates.py:337-445` (match_query_template函数)
 
-**配置文件**: `config/routing_config.py:33-39` (TEMPLATE_ROUTE_OVERRIDE)
+**配置文件**: `config/routing_config.py:33-43` (TEMPLATE_ROUTE_OVERRIDE)
 
 ```python
 TEMPLATE_ROUTE_OVERRIDE = {
-    "涨幅排名": "rank",
-    "市值排名": "rank",
-    "总市值排名": "rank",
-    "流通市值排名": "rank",
-    "最新公告": "anns",
+    # 已在SQL Agent实现快速模板的查询保持SQL_ONLY路由
+    # "涨幅排名": "rank",      # SQL Agent已实现快速模板
+    # "市值排名": "rank",      # SQL Agent已实现快速模板
+    # "总市值排名": "rank",    # SQL Agent已实现快速模板
+    # "流通市值排名": "rank",  # SQL Agent已实现快速模板
+    
+    "最新公告": "anns",      # 公告查询路由到ANNS Agent
 }
 ```
+
+**重要说明**: 
+- SQL Agent已实现的快速模板查询不应被覆盖路由
+- 保持SQL_ONLY路由以充分利用快速模板（0.02秒响应）
 
 **工作原理**:
 1. 使用正则表达式匹配预定义模板

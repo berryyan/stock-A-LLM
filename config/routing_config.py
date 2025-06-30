@@ -31,11 +31,14 @@ class RoutingConfig:
     
     # 模板路由调整映射（用于修正现有模板的路由目标）
     TEMPLATE_ROUTE_OVERRIDE = {
-        "涨幅排名": "rank",      # 原本是SQL_ONLY，改为rank
-        "市值排名": "rank",      # 原本是SQL_ONLY，改为rank
-        "总市值排名": "rank",    # 原本是SQL_ONLY，改为rank
-        "流通市值排名": "rank",  # 原本是SQL_ONLY，改为rank
-        "最新公告": "anns",      # 当查询公告列表时路由到anns
+        # 已在SQL Agent实现快速模板的查询保持SQL_ONLY路由
+        # "涨幅排名": "rank",      # SQL Agent已实现快速模板
+        # "市值排名": "rank",      # SQL Agent已实现快速模板
+        # "总市值排名": "rank",    # SQL Agent已实现快速模板
+        # "流通市值排名": "rank",  # SQL Agent已实现快速模板
+        
+        "最新公告": "anns",      # 公告查询路由到ANNS Agent
+        # 未来可添加更多需要覆盖的模板路由
     }
     
     # 区分简单查询和专业分析的关键词
