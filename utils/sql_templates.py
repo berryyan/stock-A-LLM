@@ -248,20 +248,18 @@ class SQLTemplates:
     MAIN_FORCE_RANKING = """
         SELECT 
             m.ts_code,
-            s.name,
-            d.close,
-            d.pct_chg,
-            m.net_mf_amount,
-            m.net_mf_amount / d.amount * 100 as net_mf_rate,
+            m.name,
+            m.close,
+            m.pct_change as pct_chg,
+            m.net_amount,
+            m.net_amount_rate,
             m.buy_elg_amount,
-            m.sell_elg_amount,
+            m.buy_lg_amount,
             m.trade_date
         FROM tu_moneyflow_dc m
-        JOIN tu_daily_detail d ON m.ts_code = d.ts_code AND m.trade_date = d.trade_date
-        JOIN tu_stock_basic s ON m.ts_code = s.ts_code
         WHERE m.trade_date = :trade_date
-            AND s.name NOT LIKE '%ST%'
-        ORDER BY m.net_mf_amount DESC
+            AND m.name NOT LIKE '%ST%'
+        ORDER BY m.net_amount DESC
         LIMIT :limit
     """
     
@@ -551,8 +549,8 @@ class SQLTemplates:
         lines.append("-" * 80)
         
         for i, row in enumerate(data, 1):
-            net_mf = row.get('net_mf_amount', 0) / 10000
-            net_rate = row.get('net_mf_rate', 0)
+            net_mf = row.get('net_amount', 0) / 10000
+            net_rate = row.get('net_amount_rate', 0)
             
             line = f"{i:2d} | {row['name']:8s} | {row['ts_code']} | {row['close']:8.2f} | "
             line += f"{row['pct_chg']:6.2f}% | {net_mf:12.2f} | {net_rate:6.2f}"

@@ -284,17 +284,60 @@ class SQLAgent:
                 entities = params.get('entities', [])
                 if not entities:
                     return None
-                    
-                ts_code = convert_to_ts_code(entities[0])
+                
+                # 从原始查询提取股票名称（避免日期处理干扰）
+                stock_name_patterns = [
+                    r'^([^最近过去近前\d]+?)(?:最近|过去|近|前|\d)',  # 匹配开头的股票名称
+                    r'^(.+?)(?:的)?(?:最近|过去|近|前|\d)',         # 更宽泛的匹配
+                    r'^(.+?)(?:的)?K线'                            # 直接匹配"XXX的K线"
+                ]
+                
+                ts_code = None
+                for pattern in stock_name_patterns:
+                    stock_name_match = re.search(pattern, question.strip())
+                    if stock_name_match:
+                        stock_name_text = stock_name_match.group(1).strip()
+                        ts_code = convert_to_ts_code(stock_name_text)
+                        if ts_code:  # 如果成功转换，就跳出循环
+                            break
+                
+                if not ts_code:
+                    # 回退到实体提取
+                    entity_text = entities[0]
+                    # 从复杂实体中提取股票名称部分
+                    clean_entity = re.sub(r'\d{4}-\d{2}-\d{2}.*', '', entity_text).strip()
+                    ts_code = convert_to_ts_code(clean_entity)
+                
                 if not ts_code:
                     return None
                     
                 stock_name = get_stock_name(ts_code)
                 
-                # 解析时间范围
-                if '从' in processed_question and '到' in processed_question:
-                    # 提取日期范围
-                    date_range_match = re.search(r'从(\d{8}|\d{4}-\d{2}-\d{2})到(\d{8}|\d{4}-\d{2}-\d{2})', processed_question)
+                # 优先处理直接指定的日期范围
+                if params.get('time_range') == 'date_range' and params.get('start_date') and params.get('end_date'):
+                    # 参数中直接包含日期范围
+                    start_date_raw = params['start_date']
+                    end_date_raw = params['end_date']
+                    
+                    # 统一日期格式为YYYYMMDD
+                    start_date = self._normalize_date_format(start_date_raw)
+                    end_date = self._normalize_date_format(end_date_raw)
+                    
+                    sql = SQLTemplates.KLINE_RANGE
+                    query_params = {
+                        'ts_code': ts_code,
+                        'start_date': start_date,
+                        'end_date': end_date
+                    }
+                    
+                    # 格式化显示用的日期
+                    start_display = self._format_date_for_display(start_date)
+                    end_display = self._format_date_for_display(end_date)
+                    days_desc = f"从{start_display}到{end_display}"
+                    
+                elif '至' in processed_question:
+                    # 日期智能解析已转换为日期范围格式
+                    date_range_match = re.search(r'(\d{4}-\d{2}-\d{2})至(\d{4}-\d{2}-\d{2})', processed_question)
                     if date_range_match:
                         start_date = date_range_match.group(1).replace('-', '')
                         end_date = date_range_match.group(2).replace('-', '')
@@ -305,17 +348,25 @@ class SQLAgent:
                             'end_date': end_date
                         }
                         days_desc = f"从{start_date}到{end_date}"
+                    else:
+                        return None
                 else:
-                    # 最近N天
+                    # 使用天数参数或默认值
                     days = int(params.get('days', 90))
-                    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
-                    sql = SQLTemplates.HISTORICAL_KLINE
-                    query_params = {
-                        'ts_code': ts_code,
-                        'start_date': start_date,
-                        'limit': days
-                    }
-                    days_desc = f"最近{days}天"
+                    date_range = date_intelligence.calculator.get_trading_days_range(days)
+                    if date_range:
+                        start_date, end_date = date_range
+                        start_date = start_date.replace('-', '')
+                        end_date = end_date.replace('-', '')
+                        sql = SQLTemplates.KLINE_RANGE
+                        query_params = {
+                            'ts_code': ts_code,
+                            'start_date': start_date,
+                            'end_date': end_date
+                        }
+                        days_desc = f"最近{days}天"
+                    else:
+                        return None
                 
                 result = self.mysql_connector.execute_query(sql, query_params)
                 
@@ -326,6 +377,11 @@ class SQLAgent:
                     lines.append("日期 | 开盘 | 最高 | 最低 | 收盘 | 涨跌幅 | 成交量(万手) | 成交额(万元)")
                     lines.append("-" * 90)
                     
+                    # 准备结构化数据
+                    kline_data = []
+                    total_volume = 0
+                    total_amount = 0
+                    
                     for row in result[:30]:  # 显示前30条
                         vol_wan = row['vol'] / 10000 if row['vol'] else 0
                         amount_wan = row['amount'] / 10000 if row['amount'] else 0
@@ -334,17 +390,54 @@ class SQLAgent:
                         line += f"{vol_wan:10.2f} | {amount_wan:10.2f}"
                         lines.append(line)
                         
+                        # 添加到结构化数据
+                        kline_data.append({
+                            "date": str(row['trade_date']),
+                            "open": float(row['open']),
+                            "high": float(row['high']),
+                            "low": float(row['low']),
+                            "close": float(row['close']),
+                            "volume": int(row['vol']),
+                            "amount": float(row['amount']),
+                            "pct_chg": float(row['pct_chg'])
+                        })
+                        
+                        total_volume += int(row['vol'])
+                        total_amount += float(row['amount'])
+                        
                     if len(result) > 30:
                         lines.append(f"\n... 共{len(result)}条记录")
                         
                     formatted_result = "\n".join(lines)
                     
-                    return {
+                    # 计算汇总信息
+                    avg_close = sum(item['close'] for item in kline_data) / len(kline_data) if kline_data else 0
+                    
+                    # 构建完整的响应数据
+                    response_data = {
                         'success': True,
                         'result': formatted_result,
                         'sql': None,  # 不暴露SQL语句
-                        'quick_path': True
+                        'quick_path': True,
+                        'data_type': 'kline',  # 标识数据类型
+                        'structured_data': {
+                            'type': 'kline',
+                            'stock_info': {
+                                'name': stock_name or ts_code,
+                                'code': ts_code
+                            },
+                            'period': days_desc,
+                            'data': kline_data,
+                            'summary': {
+                                'total_days': len(kline_data),
+                                'avg_price': round(avg_close, 2),
+                                'total_volume': total_volume,
+                                'total_amount': round(total_amount, 2)
+                            }
+                        }
                     }
+                    
+                    return response_data
                     
             elif template.name == '成交量查询':
                 # 成交量查询
@@ -431,8 +524,7 @@ class SQLAgent:
                     
                     if result and len(result) > 0:
                         formatted_result = SQLTemplates.format_money_flow_ranking(
-                            result,
-                            trade_date
+                            result
                         )
                         
                         return {
@@ -442,6 +534,31 @@ class SQLAgent:
                             'quick_path': True
                         }
                     
+            elif template.name == '成交额排名':
+                # 成交额排名
+                limit = params.get('limit', 10)
+                
+                # 从处理后的查询中提取日期
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
+                sql = SQLTemplates.AMOUNT_RANKING
+                result = self.mysql_connector.execute_query(sql, {
+                    'trade_date': trade_date,
+                    'limit': limit
+                })
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_ranking_result(
+                        result,
+                        'amount'
+                    )
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,  # 不暴露SQL语句
+                        'quick_path': True
+                    }
+                    
             # 其他模板类型暂不支持快速路径
             return None
             
@@ -449,19 +566,83 @@ class SQLAgent:
             self.logger.error(f"快速查询路径失败: {e}")
             return None
     
+    def _normalize_date_format(self, date_str: str) -> str:
+        """将各种日期格式统一为YYYYMMDD格式"""
+        import re
+        from datetime import datetime
+        
+        # 已经是YYYYMMDD格式
+        if re.match(r'^\d{8}$', date_str):
+            return date_str
+            
+        # YYYY-MM-DD格式
+        if re.match(r'^\d{4}-\d{1,2}-\d{1,2}$', date_str):
+            # 分割并补齐0
+            parts = date_str.split('-')
+            if len(parts) == 3:
+                year, month, day = parts
+                return f"{year}{month.zfill(2)}{day.zfill(2)}"
+            
+        # YYYY/MM/DD格式
+        if re.match(r'^\d{4}/\d{1,2}/\d{1,2}$', date_str):
+            # 分割并补齐0
+            parts = date_str.split('/')
+            if len(parts) == 3:
+                year, month, day = parts
+                return f"{year}{month.zfill(2)}{day.zfill(2)}"
+            
+        # YYYY年MM月DD日格式
+        if re.match(r'^\d{4}年\d{1,2}月\d{1,2}日?$', date_str):
+            # 提取数字
+            numbers = re.findall(r'\d+', date_str)
+            if len(numbers) == 3:
+                year, month, day = numbers
+                return f"{year}{month.zfill(2)}{day.zfill(2)}"
+                
+        # MM月DD日格式（无年份，默认今年）
+        if re.match(r'^\d{1,2}月\d{1,2}日?$', date_str):
+            # 提取数字
+            numbers = re.findall(r'\d+', date_str)
+            if len(numbers) == 2:
+                month, day = numbers
+                year = datetime.now().year
+                return f"{year}{month.zfill(2)}{day.zfill(2)}"
+                
+        # 如果无法识别，返回原字符串
+        self.logger.warning(f"无法识别的日期格式: {date_str}")
+        return date_str
+    
+    def _format_date_for_display(self, date_str: str) -> str:
+        """将YYYYMMDD格式转换为YYYY-MM-DD格式用于显示"""
+        if len(date_str) == 8 and date_str.isdigit():
+            return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
+        return date_str
+    
     def _get_last_trading_date(self) -> str:
         """获取最近的交易日期"""
-        today = datetime.now()
-        # 如果是周末，回退到周五
-        if today.weekday() == 5:  # 周六
-            last_trading = today - timedelta(days=1)
-        elif today.weekday() == 6:  # 周日
-            last_trading = today - timedelta(days=2)
-        else:
-            last_trading = today
-        
-        # 格式化为YYYYMMDD
-        return last_trading.strftime("%Y%m%d")
+        # 直接从数据库查询最新交易日
+        try:
+            result = self.mysql_connector.execute_query(
+                'SELECT DISTINCT trade_date FROM tu_daily_basic ORDER BY trade_date DESC LIMIT 1'
+            )
+            if result and result[0]['trade_date']:
+                return str(result[0]['trade_date'])
+            else:
+                raise Exception("数据库中没有交易日数据")
+        except Exception as e:
+            self.logger.warning(f"从数据库获取最新交易日失败: {e}")
+            # 回退到简单逻辑
+            today = datetime.now()
+            # 如果是周末，回退到周五
+            if today.weekday() == 5:  # 周六
+                last_trading = today - timedelta(days=1)
+            elif today.weekday() == 6:  # 周日
+                last_trading = today - timedelta(days=2)
+            else:
+                last_trading = today
+            
+            # 格式化为YYYYMMDD
+            return last_trading.strftime("%Y%m%d")
     
     def _extract_date_from_query(self, query: str) -> Optional[str]:
         """从查询中提取日期（YYYYMMDD格式）"""

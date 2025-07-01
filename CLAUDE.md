@@ -675,13 +675,13 @@ python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
 When updating project documentation, always update all three core documents:
 1. **CLAUDE.md** (this file) - Development guidance and technical overview
-2. **test-guide.md** - Comprehensive testing procedures and test cases
+2. **test-guide-v3.md** - Comprehensive testing procedures and test cases (完全基于实际实现的功能模板)
 3. **docs/project_status/CURRENT_STATUS.md** - Project status, version history, and known issues
 
 ### Testing Strategy
 
 **Script Testing (Backend API)**:
-- Use the test-guide.md for comprehensive testing procedures
+- Use the test-guide-v3.md for comprehensive testing procedures
 - Essential comprehensive tests: `baseline_test.py`, `comprehensive_verification.py`
 - Feature-specific tests: Financial Analysis, Money Flow, Date Intelligence
 - Performance benchmarks in scripts/tests/

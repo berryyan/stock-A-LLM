@@ -66,7 +66,8 @@ class QueryTemplateLibrary:
             QueryTemplate(
                 name="K线查询",
                 type=TemplateType.PRICE_QUERY,
-                pattern=r"(.+?)(?:的)?(?:从(.+?)到(.+?)|最近(\d+)天|过去(\d+)天|最近(\d+)个月|过去(\d+)个月)?的?(?:K线|走势)",
+                # 改进的正则表达式，支持更多日期格式和表达方式
+                pattern=r"(.+?)(?:的)?(?:从(\d{4}年?\d{1,2}月?\d{1,2}日?|\d{4}-\d{1,2}-\d{1,2}|\d{4}/\d{1,2}/\d{1,2}|\d{8}|\d{1,2}月\d{1,2}日)到(\d{4}年?\d{1,2}月?\d{1,2}日?|\d{4}-\d{1,2}-\d{1,2}|\d{4}/\d{1,2}/\d{1,2}|\d{8}|\d{1,2}月\d{1,2}日)|最近(\d+)(?:个)?天|过去(\d+)(?:个)?天|最近(\d+)个?月|过去(\d+)个?月|最近一个?月|近(\d+)(?:个)?交易日|最近(\d+)个?交易日)?的?(?:K线|k线|走势|行情)",
                 route_type="SQL_ONLY",
                 required_fields=["open", "high", "low", "close", "trade_date"],
                 optional_fields=["vol", "amount", "pct_chg"],
@@ -138,6 +139,22 @@ class QueryTemplateLibrary:
                     "time_range": "specified"
                 },
                 example="昨天主力净流入排行前10"
+            ),
+            
+            # 成交额排名模板（支持历史日期）
+            QueryTemplate(
+                name="成交额排名",
+                type=TemplateType.RANKING,
+                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今日|今天|昨天|上个交易日))?成交额.*(?:排行|排名|前(\d+))|成交额最.*(?:大|高).*(?:前)?(\d+)",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "amount"],
+                optional_fields=["close", "pct_chg", "vol"],
+                default_params={
+                    "order_by": "amount DESC",
+                    "limit": 10,
+                    "time_range": "specified"
+                },
+                example="成交额最大的前10只股票"
             ),
             
             # 财务健康度模板
@@ -325,11 +342,71 @@ class QueryTemplateLibrary:
             groups = [g for g in match.groups() if g]
             if groups:
                 params['entities'] = groups
+                
+            # 特殊处理K线查询的天数参数
+            if template.name == "K线查询":
+                # 改进后的K线查询正则表达式的捕获组：
+                # 1: 股票名称
+                # 2: 开始日期（从X到Y格式）
+                # 3: 结束日期（从X到Y格式）
+                # 4: 最近N天
+                # 5: 过去N天
+                # 6: 最近N月
+                # 7: 过去N月
+                # 8: 近N交易日
+                # 9: 最近N个交易日
+                full_groups = match.groups()
+                
+                # 提取日期范围（从X到Y）
+                if full_groups[1] and full_groups[2]:  # 从日期到日期
+                    params['start_date'] = full_groups[1]
+                    params['end_date'] = full_groups[2]
+                    params['time_range'] = 'date_range'
+                    # 不设置days，因为是具体日期范围
+                else:
+                    # 提取天数（各种表达方式）
+                    days = None
+                    if full_groups[3]:  # 最近N天
+                        days = int(full_groups[3])
+                    elif full_groups[4]:  # 过去N天
+                        days = int(full_groups[4])
+                    elif full_groups[5]:  # 最近N月
+                        days = int(full_groups[5]) * 21  # 1月约21个交易日
+                    elif full_groups[6]:  # 过去N月
+                        days = int(full_groups[6]) * 21
+                    elif full_groups[7]:  # 近N交易日
+                        days = int(full_groups[7])
+                    elif full_groups[8]:  # 最近N个交易日
+                        days = int(full_groups[8])
+                    elif "最近一个月" in query or "最近一月" in query:
+                        days = 21  # 一个月约21个交易日
+                    
+                    if days:
+                        params['days'] = days
+                        params['time_range'] = 'relative'
         
         # 提取数字参数（如排名数量）
-        numbers = re.findall(r'\d+', query)
-        if numbers and template.type == TemplateType.RANKING:
-            params['limit'] = int(numbers[0])
+        if template.type == TemplateType.RANKING:
+            # 优先从"前N"或"最大的N"模式中提取限制数
+            limit_patterns = [
+                r'前(\d+)',
+                r'最.*?(\d+).*?(?:只|个)',
+                r'排.*?(\d+)',
+                r'top\s*(\d+)'
+            ]
+            limit_found = False
+            for pattern in limit_patterns:
+                limit_match = re.search(pattern, query, re.IGNORECASE)
+                if limit_match:
+                    params['limit'] = int(limit_match.group(1))
+                    limit_found = True
+                    break
+            
+            # 如果没有找到特定模式，回退到通用数字提取（但跳过年份格式）
+            if not limit_found:
+                numbers = re.findall(r'(?<!\d{4})\b(\d{1,3})\b(?!\d)', query)  # 排除年份格式
+                if numbers:
+                    params['limit'] = int(numbers[0])
         
         # 提取时间参数
         if '今天' in query or '今日' in query:
