@@ -610,7 +610,8 @@ class SQLTemplates:
         lines.append("|------|----------|----------|----------|--------|--------------|------|")
         
         for i, row in enumerate(data, 1):
-            net_mf = row.get('net_amount', 0) / 10000
+            # net_amount已经是万元为单位，直接使用
+            net_mf = row.get('net_amount', 0)
             net_rate = row.get('net_amount_rate', 0)
             
             # 流出时取绝对值显示
