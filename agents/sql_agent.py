@@ -637,26 +637,30 @@ class SQLAgent:
                     
                     # 格式化板块资金流向结果
                     formatted_result = f"""
-## {sector_name}板块主力资金流向分析
+## {data['name']}主力资金流向分析
 
+**板块代码**: {data['ts_code']}  
+**板块类型**: {data['content_type']}  
 **交易日期**: {trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:]}
 
 ### 资金流向概况
-- **板块净流入金额**: {data['total_net_amount']/100000000:.2f}亿元
-- **平均净流入率**: {data['avg_net_amount_rate']:.2f}%
-- **平均涨跌幅**: {data['avg_pct_change']:.2f}%
-- **统计股票数量**: {data['stock_count']}只
+- **主力净流入金额**: {data['net_amount']/100000000:.2f}亿元
+- **板块涨跌幅**: {data['pct_change']:.2f}%
+- **板块排名**: 第{data['rank']}名（按主力净流入）
+- **主力流入最大个股**: {data['top_inflow_stock'] if data['top_inflow_stock'] else '无'}
 
 ### 各类资金流向（亿元）
-| 资金类型 | 流入金额 |
-|---------|---------|
-| 超大单   | {data['total_buy_elg_amount']/100000000:.2f} |
-| 大单     | {data['total_buy_lg_amount']/100000000:.2f} |
-| 中单     | {data['total_buy_md_amount']/100000000:.2f} |
-| 小单     | {data['total_buy_sm_amount']/100000000:.2f} |
+| 资金类型 | 净流入金额 |
+|---------|-----------|
+| 超大单（≥100万）| {data['buy_elg_amount']/100000000:.2f} |
+| 大单（20-100万）| {data['buy_lg_amount']/100000000:.2f} |
+| 中单（4-20万）  | {data['buy_md_amount']/100000000:.2f} |
+| 小单（<4万）    | {data['buy_sm_amount']/100000000:.2f} |
 
 ### 主力资金分析
-主力资金（超大单+大单）净流入 **{(data['total_buy_elg_amount'] + data['total_buy_lg_amount'])/100000000:.2f}** 亿元
+主力资金（超大单+大单）净流入 **{(data['buy_elg_amount'] + data['buy_lg_amount'])/100000000:.2f}** 亿元
+
+{self._analyze_sector_money_flow(data)}
 """
                     
                     return {
@@ -750,6 +754,42 @@ class SQLAgent:
             
             # 格式化为YYYYMMDD
             return last_trading.strftime("%Y%m%d")
+    
+    def _analyze_sector_money_flow(self, data: Dict) -> str:
+        """分析板块资金流向特征"""
+        net_amount = data['net_amount'] / 100000000  # 转换为亿元
+        pct_change = data['pct_change']
+        
+        # 判断资金流向强度
+        if abs(net_amount) < 1:
+            flow_strength = "较弱"
+        elif abs(net_amount) < 5:
+            flow_strength = "中等"
+        elif abs(net_amount) < 10:
+            flow_strength = "较强"
+        else:
+            flow_strength = "非常强"
+            
+        # 判断资金与价格的一致性
+        if net_amount > 0 and pct_change > 0:
+            consistency = "资金流入与板块上涨一致，表明资金推动效应明显"
+        elif net_amount < 0 and pct_change < 0:
+            consistency = "资金流出与板块下跌一致，表明资金撤离导致下跌"
+        elif net_amount > 0 and pct_change < 0:
+            consistency = "资金流入但板块下跌，可能存在低吸行为"
+        else:
+            consistency = "资金流出但板块上涨，可能存在获利了结"
+            
+        # 生成分析结论
+        flow_type = "流入" if net_amount > 0 else "流出"
+        
+        return f"""
+### 资金流向特征分析
+- **流向强度**: {flow_strength}（主力{flow_type}{abs(net_amount):.2f}亿元）
+- **价格表现**: {"上涨" if pct_change > 0 else "下跌"}{abs(pct_change):.2f}%
+- **一致性分析**: {consistency}
+- **投资建议**: {"该板块获得主力资金青睐，可关注板块内龙头股" if net_amount > 0 else "主力资金撤离明显，建议谨慎观望"}
+"""
     
     def _extract_date_from_query(self, query: str) -> Optional[str]:
         """从查询中提取日期（YYYYMMDD格式）"""
