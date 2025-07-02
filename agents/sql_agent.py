@@ -486,53 +486,51 @@ class SQLAgent:
                 # 从处理后的查询中提取日期
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
                 
-                # 检查是否是个股查询
-                entities = params.get('entities', [])
-                if entities and len(entities) > 1:  # 第二个实体可能是股票名称
-                    ts_code = convert_to_ts_code(entities[1])
-                    if ts_code:
-                        # 个股主力净流入查询
-                        sql = SQLTemplates.STOCK_MONEY_FLOW
-                        result = self.mysql_connector.execute_query(sql, {
-                            'ts_code': ts_code,
-                            'trade_date': trade_date
-                        })
-                        
-                        if result and len(result) > 0:
-                            data = result[0]
-                            stock_name = get_stock_name(ts_code)
-                            stock_info = f"{stock_name}（{ts_code}）" if stock_name else ts_code
-                            
-                            formatted_result = SQLTemplates.format_money_flow_result(
-                                data,
-                                stock_info
-                            )
-                            
-                            return {
-                                'success': True,
-                                'result': formatted_result,
-                                'sql': sql,
-                                'quick_path': True
-                            }
-                else:
-                    # 主力净流入排行榜
-                    sql = SQLTemplates.MAIN_FORCE_RANKING
-                    result = self.mysql_connector.execute_query(sql, {
-                        'trade_date': trade_date,
-                        'limit': limit
-                    })
+                # 主力净流入排行榜
+                sql = SQLTemplates.MAIN_FORCE_RANKING
+                result = self.mysql_connector.execute_query(sql, {
+                    'trade_date': trade_date,
+                    'limit': limit
+                })
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_money_flow_ranking(
+                        result
+                    )
                     
-                    if result and len(result) > 0:
-                        formatted_result = SQLTemplates.format_money_flow_ranking(
-                            result
-                        )
-                        
-                        return {
-                            'success': True,
-                            'result': formatted_result,
-                            'sql': sql,
-                            'quick_path': True
-                        }
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,  # 不暴露SQL语句
+                        'quick_path': True
+                    }
+                    
+            elif template.name == '主力净流出排行':
+                # 主力净流出排行（与流入相反，按ASC排序）
+                limit = params.get('limit', 10)
+                
+                # 从处理后的查询中提取日期
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
+                # 使用相同的SQL但按升序排列
+                sql = SQLTemplates.MAIN_FORCE_RANKING.replace('DESC', 'ASC')
+                result = self.mysql_connector.execute_query(sql, {
+                    'trade_date': trade_date,
+                    'limit': limit
+                })
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_money_flow_ranking(
+                        result,
+                        is_outflow=True
+                    )
+                    
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': sql,
+                        'quick_path': True
+                    }
                     
             elif template.name == '成交额排名':
                 # 成交额排名
@@ -552,6 +550,66 @@ class SQLAgent:
                         result,
                         'amount'
                     )
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,  # 不暴露SQL语句
+                        'quick_path': True
+                    }
+                    
+            elif template.name == '成交量排名':
+                # 成交量排名
+                limit = params.get('limit', 10)
+                
+                # 从处理后的查询中提取日期
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
+                sql = SQLTemplates.VOLUME_RANKING
+                result = self.mysql_connector.execute_query(sql, {
+                    'trade_date': trade_date,
+                    'limit': limit
+                })
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_ranking_result(
+                        result,
+                        'volume'
+                    )
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,  # 不暴露SQL语句
+                        'quick_path': True
+                    }
+                    
+            elif template.name == '个股主力资金':
+                # 个股主力资金查询
+                entities = params.get('entities', [])
+                if not entities:
+                    return None
+                    
+                ts_code = convert_to_ts_code(entities[0])
+                if not ts_code:
+                    return None
+                    
+                stock_name = get_stock_name(ts_code)
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
+                sql = SQLTemplates.STOCK_MONEY_FLOW
+                result = self.mysql_connector.execute_query(sql, {
+                    'ts_code': ts_code,
+                    'trade_date': trade_date
+                })
+                
+                if result and len(result) > 0:
+                    data = result[0]
+                    stock_info = f"{stock_name}（{ts_code}）" if stock_name else ts_code
+                    
+                    formatted_result = SQLTemplates.format_money_flow_result(
+                        data,
+                        stock_info
+                    )
+                    
                     return {
                         'success': True,
                         'result': formatted_result,

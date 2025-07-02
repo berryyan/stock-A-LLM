@@ -49,6 +49,12 @@ class SchemaEnhancedRouter:
                 'tables': ['tu_irm_qa_sh', 'tu_irm_qa_sz'],
                 'query_type': 'RAG_ONLY',
                 'priority': 70
+            },
+            # 新增：排名查询通常涉及多个表的聚合
+            'ranking': {
+                'tables': ['tu_daily_detail', 'tu_daily_basic', 'tu_moneyflow_dc'],
+                'query_type': 'RANK',
+                'priority': 95  # 高优先级，因为排名是明确的意图
             }
         }
         
@@ -110,6 +116,17 @@ class SchemaEnhancedRouter:
             '披露': {'weight': 7, 'types': ['RAG_ONLY']},
             '说明': {'weight': 6, 'types': ['RAG_ONLY']},
             '解释': {'weight': 6, 'types': ['RAG_ONLY']},
+            
+            # 排名相关关键词（新增，最高权重）
+            '排名': {'weight': 12, 'types': ['RANK', 'SQL_ONLY']},
+            '排行': {'weight': 12, 'types': ['RANK', 'SQL_ONLY']},
+            '前10': {'weight': 11, 'types': ['RANK', 'SQL_ONLY']},
+            '前20': {'weight': 11, 'types': ['RANK', 'SQL_ONLY']},
+            '前5': {'weight': 11, 'types': ['RANK', 'SQL_ONLY']},
+            'TOP': {'weight': 11, 'types': ['RANK', 'SQL_ONLY']},
+            '最多': {'weight': 10, 'types': ['RANK', 'SQL_ONLY']},
+            '最大': {'weight': 10, 'types': ['RANK', 'SQL_ONLY']},
+            '榜': {'weight': 10, 'types': ['RANK', 'SQL_ONLY']},
             
             # 复合查询关键词
             '比较': {'weight': 5, 'types': ['PARALLEL', 'COMPLEX']},
@@ -229,11 +246,23 @@ class SchemaEnhancedRouter:
             }
         }
         
+        # 检测是否包含明确的排名意图
+        ranking_indicators = [
+            '排名', '排行', '前10', '前20', '前5', 'TOP', '最多', '最大', '榜',
+            '最多的前', '最大的前', '最高的前', '最低的前'
+        ]
+        has_ranking_intent = any(indicator in query for indicator in ranking_indicators)
+        
         # 如果Schema建议与LLM决策不同，且置信度高，考虑覆盖
         if suggested_type != original_type and confidence > 15:
-            self.logger.info(f"Schema建议覆盖LLM决策: {original_type} -> {suggested_type} (置信度: {confidence})")
-            enhanced_decision['query_type'] = suggested_type
-            enhanced_decision['override_reason'] = f"Schema分析置信度高 ({confidence:.1f})"
+            # 特殊保护：如果查询包含明确的排名意图，不要覆盖为MONEY_FLOW
+            if has_ranking_intent and suggested_type == 'MONEY_FLOW' and original_type in ['RANK', 'SQL_ONLY']:
+                self.logger.info(f"保护排名查询，拒绝Schema覆盖: {original_type} -> {suggested_type}")
+                # 保持原始决策
+            else:
+                self.logger.info(f"Schema建议覆盖LLM决策: {original_type} -> {suggested_type} (置信度: {confidence})")
+                enhanced_decision['query_type'] = suggested_type
+                enhanced_decision['override_reason'] = f"Schema分析置信度高 ({confidence:.1f})"
         
         # 添加额外的元数据
         enhanced_decision['entities'] = llm_decision.get('entities', [])
@@ -249,13 +278,17 @@ class SchemaEnhancedRouter:
         """快速路由判断（用于常见模式）"""
         # 定义快速路由模式
         quick_patterns = [
+            # 排名模式（最高优先级）
+            (r'.*(?:排名|排行|前\d+|TOP\d+|最[多大]的?\d+).*', 'RANK'),
+            (r'.*(?:涨幅|跌幅|市值|成交[量额]|主力.*流[入出]).*(?:排名|排行|前\d+|TOP).*', 'RANK'),
+            
             # 财务分析模式
             (r'.*财务健康.*|.*财务状况.*|.*杜邦分析.*', 'FINANCIAL'),
             (r'.*ROE.*|.*ROA.*|.*净资产收益率.*', 'FINANCIAL'),
             
-            # 资金流向模式
-            (r'.*资金流向.*|.*主力资金.*|.*超大单.*', 'MONEY_FLOW'),
-            (r'.*资金流入.*|.*资金流出.*', 'MONEY_FLOW'),
+            # 资金流向模式（个股）
+            (r'^[^排名排行前最]*资金流向.*|^[^排名排行前最]*主力资金.*|^[^排名排行前最]*超大单.*', 'MONEY_FLOW'),
+            (r'^[^排名排行前最]*资金流入.*|^[^排名排行前最]*资金流出.*', 'MONEY_FLOW'),
             
             # 简单查询模式
             (r'^.*最新股价.*$|^.*今天.*价格.*$', 'SQL_ONLY'),

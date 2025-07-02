@@ -79,11 +79,11 @@ class QueryTemplateLibrary:
                 example="贵州茅台从2025-06-01到2025-06-27的K线"
             ),
             
-            # 成交量查询模板（支持任意日期）
+            # 成交量查询模板（支持任意日期）- 修改为不匹配"成交额排名"
             QueryTemplate(
                 name="成交量查询",
                 type=TemplateType.PRICE_QUERY,
-                pattern=r"(.+?)(?:的)?(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|最新|昨天|上个交易日)|最近(\d+)天|过去(\d+)天)?(?:的)?(?:成交量|交易量|成交额)",
+                pattern=r"(.+?)(?:的)?(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|最新|昨天|上个交易日)|最近(\d+)天|过去(\d+)天)?(?:的)?(?:成交量|交易量|成交额)(?!.*(?:排名|排行|前\d+|最大|TOP))",
                 route_type="SQL_ONLY",
                 required_fields=["vol", "amount", "trade_date"],
                 optional_fields=["turnover_rate"],
@@ -125,11 +125,11 @@ class QueryTemplateLibrary:
                 example="中国平安昨天的市盈率"
             ),
             
-            # 主力净流入排行模板（支持个股和历史日期）
+            # 主力净流入排行模板（必须包含排名相关关键词）
             QueryTemplate(
                 name="主力净流入排行",
                 type=TemplateType.MONEY_FLOW,
-                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今日|今天|昨天|上个交易日))?(?:(.+?)的)?主力.*净流入.*(?:排行|排名|前(\d+))",
+                pattern=r"(?:.*(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今日|今天|昨天|上个交易日|最新).*)?(?:主力|机构|大资金)(?:资金)?(?:净)?流入.*?(?:排名|排行|榜|前(\d+)|最[多大].*?前(\d+)|TOP(\d+))",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "name", "net_mf_amount"],
                 optional_fields=["net_mf_amount_rate", "pct_chg"],
@@ -141,11 +141,27 @@ class QueryTemplateLibrary:
                 example="昨天主力净流入排行前10"
             ),
             
-            # 成交额排名模板（支持历史日期）
+            # 主力净流出排行模板（仅匹配排名查询）
+            QueryTemplate(
+                name="主力净流出排行",
+                type=TemplateType.MONEY_FLOW,
+                pattern=r"(?:.*(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今日|今天|昨天|上个交易日|最新).*)?(?:主力|机构|大资金)(?:资金)?(?:净)?流出.*?(?:排名|排行|榜|前(\d+)|最[多大].*?前(\d+)|TOP(\d+))",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "net_mf_amount"],
+                optional_fields=["net_mf_amount_rate", "pct_chg"],
+                default_params={
+                    "order_by": "net_mf_amount ASC",
+                    "limit": 10,
+                    "time_range": "specified"
+                },
+                example="昨天主力净流出排行前10"
+            ),
+            
+            # 成交额排名模板（支持历史日期，支持无数字默认前10）
             QueryTemplate(
                 name="成交额排名",
                 type=TemplateType.RANKING,
-                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今日|今天|昨天|上个交易日))?成交额.*(?:排行|排名|前(\d+))|成交额最.*(?:大|高).*(?:前)?(\d+)",
+                pattern=r"(?:.*(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|上个交易日|最新).*)?成交额(?:.*前(\d+)|.*最大.*(\d+)|排名|排行|TOP(\d+))?",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "name", "amount"],
                 optional_fields=["close", "pct_chg", "vol"],
@@ -155,6 +171,22 @@ class QueryTemplateLibrary:
                     "time_range": "specified"
                 },
                 example="成交额最大的前10只股票"
+            ),
+            
+            # 成交量排名模板（支持历史日期，支持无数字默认前10）
+            QueryTemplate(
+                name="成交量排名",
+                type=TemplateType.RANKING,
+                pattern=r"(?:.*(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|上个交易日|最新).*)?成交量(?:.*前(\d+)|.*最大.*(\d+)|排名|排行|TOP(\d+))?",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "vol"],
+                optional_fields=["close", "pct_chg", "amount"],
+                default_params={
+                    "order_by": "vol DESC",
+                    "limit": 10,
+                    "time_range": "specified"
+                },
+                example="成交量最大的前10只股票"
             ),
             
             # 财务健康度模板
@@ -185,6 +217,20 @@ class QueryTemplateLibrary:
                     "period_count": 4
                 },
                 example="平安银行的杜邦分析"
+            ),
+            
+            # 个股主力资金查询模板（SQL快速路径）
+            QueryTemplate(
+                name="个股主力资金",
+                type=TemplateType.MONEY_FLOW,
+                pattern=r"(.+?)(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP))",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "net_amount", "buy_elg_amount"],
+                optional_fields=["buy_lg_amount", "buy_md_amount", "buy_sm_amount"],
+                default_params={
+                    "time_range": "specified"
+                },
+                example="贵州茅台的主力净流入"
             ),
             
             # 资金流向模板
@@ -261,11 +307,11 @@ class QueryTemplateLibrary:
                 example="20250627涨幅前10"
             ),
             
-            # 总市值排名模板（支持历史日期，兼容"市值排名"）
+            # 总市值排名模板（支持历史日期，兼容"市值排名"，支持无数字默认前10）
             QueryTemplate(
                 name="总市值排名",
                 type=TemplateType.RANKING,
-                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|上个交易日))?(?:总市值|(?<!流通)市值).*前(\d+)|最大.*(?:总市值|(?<!流通)市值).*(\d+)",
+                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|上个交易日|最新))?(?:总市值|(?<!流通)市值)(?:.*前(\d+)|.*最大.*(\d+)|排名|排行|TOP(\d+))?",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "name", "total_mv"],
                 optional_fields=["close", "pe_ttm", "pb"],
@@ -277,11 +323,11 @@ class QueryTemplateLibrary:
                 example="昨天市值最大的前20只股票"
             ),
             
-            # 流通市值排名模板（支持历史日期）
+            # 流通市值排名模板（支持历史日期，支持无数字默认前10）
             QueryTemplate(
                 name="流通市值排名",
                 type=TemplateType.RANKING,
-                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|上个交易日))?流通市值.*前(\d+)|最大.*流通市值.*(\d+)",
+                pattern=r"(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|上个交易日|最新))?流通市值(?:.*前(\d+)|.*最大.*(\d+)|排名|排行|TOP(\d+))?",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "name", "circ_mv"],
                 optional_fields=["total_mv", "turnover_rate", "volume_ratio"],
@@ -386,7 +432,7 @@ class QueryTemplateLibrary:
                         params['time_range'] = 'relative'
         
         # 提取数字参数（如排名数量）
-        if template.type == TemplateType.RANKING:
+        if template.type == TemplateType.RANKING or template.type == TemplateType.MONEY_FLOW:
             # 优先从"前N"或"最大的N"模式中提取限制数
             limit_patterns = [
                 r'前(\d+)',
@@ -402,11 +448,8 @@ class QueryTemplateLibrary:
                     limit_found = True
                     break
             
-            # 如果没有找到特定模式，回退到通用数字提取（但跳过年份格式）
-            if not limit_found:
-                numbers = re.findall(r'(?<!\d{4})\b(\d{1,3})\b(?!\d)', query)  # 排除年份格式
-                if numbers:
-                    params['limit'] = int(numbers[0])
+            # 对于排名类查询，不要从日期中提取数字
+            # 如果没有找到特定模式，保持默认值（通常是10）
         
         # 提取时间参数
         if '今天' in query or '今日' in query:

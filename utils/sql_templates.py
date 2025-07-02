@@ -190,6 +190,23 @@ class SQLTemplates:
         LIMIT :limit
     """
     
+    # 成交量排名模板
+    VOLUME_RANKING = """
+        SELECT 
+            d.ts_code,
+            s.name,
+            d.close,
+            d.pct_chg,
+            d.vol,
+            d.amount,
+            d.trade_date
+        FROM tu_daily_detail d
+        JOIN tu_stock_basic s ON d.ts_code = s.ts_code
+        WHERE d.trade_date = :trade_date
+        ORDER BY d.vol DESC
+        LIMIT :limit
+    """
+    
     # 流通市值排名模板（修正：ORDER BY circ_mv）
     CIRC_MV_RANKING = """
         SELECT 
@@ -267,18 +284,20 @@ class SQLTemplates:
     STOCK_MONEY_FLOW = """
         SELECT 
             m.ts_code,
+            m.name,
             m.trade_date,
+            m.net_amount,
+            m.net_amount_rate,
             m.buy_elg_amount,
-            m.sell_elg_amount,
+            m.buy_elg_amount_rate,
             m.buy_lg_amount,
-            m.sell_lg_amount,
+            m.buy_lg_amount_rate,
             m.buy_md_amount,
-            m.sell_md_amount,
+            m.buy_md_amount_rate,
             m.buy_sm_amount,
-            m.sell_sm_amount,
-            m.net_mf_amount,
-            d.close,
-            d.pct_chg,
+            m.buy_sm_amount_rate,
+            m.close,
+            m.pct_change,
             d.amount
         FROM tu_moneyflow_dc m
         JOIN tu_daily_detail d ON m.ts_code = d.ts_code AND m.trade_date = d.trade_date
@@ -413,39 +432,56 @@ class SQLTemplates:
     
     @staticmethod
     def format_ranking_result(data: list, ranking_type: str) -> str:
-        """格式化排名结果"""
+        """格式化排名结果为Markdown表格"""
         if not data:
             return "未查询到相关排名数据"
             
         # 构建标题
         title_map = {
             'market_cap': '总市值排名',
+            'circ_mv': '流通市值排名',
             'pct_chg': '涨跌幅排名',
-            'amount': '成交额排名'
+            'amount': '成交额排名',
+            'volume': '成交量排名'
         }
         title = title_map.get(ranking_type, '排名结果')
         
-        # 构建结果表格
-        lines = [f"\n{title} - {data[0]['trade_date']}\n"]
-        lines.append("排名 | 股票名称 | 股票代码 | 股价 | 涨跌幅 | ")
+        # 构建Markdown表格
+        lines = [f"## {title} - {data[0]['trade_date']}\n"]
         
+        # 构建表头
         if ranking_type == 'market_cap':
-            lines[1] += "总市值(亿) | 流通市值(亿)"
+            lines.append("| 排名 | 股票名称 | 股票代码 | 股价(元) | 涨跌幅 | 总市值(亿) |")
+            lines.append("|------|----------|----------|----------|--------|------------|")
+        elif ranking_type == 'circ_mv':
+            lines.append("| 排名 | 股票名称 | 股票代码 | 股价(元) | 涨跌幅 | 流通市值(亿) |")
+            lines.append("|------|----------|----------|----------|--------|--------------|")
         elif ranking_type == 'amount':
-            lines[1] += "成交额(亿)"
-            
-        lines.append("-" * 60)
+            lines.append("| 排名 | 股票名称 | 股票代码 | 股价(元) | 涨跌幅 | 成交额(亿) |")
+            lines.append("|------|----------|----------|----------|--------|------------|")
+        elif ranking_type == 'volume':
+            lines.append("| 排名 | 股票名称 | 股票代码 | 股价(元) | 涨跌幅 | 成交量(万手) |")
+            lines.append("|------|----------|----------|----------|--------|--------------|")
+        else:
+            lines.append("| 排名 | 股票名称 | 股票代码 | 股价(元) | 涨跌幅 |")
+            lines.append("|------|----------|----------|----------|--------|")
         
+        # 构建数据行
         for i, row in enumerate(data, 1):
-            line = f"{i:2d} | {row['name']:8s} | {row['ts_code']} | {row['close']:8.2f} | {row['pct_chg']:6.2f}% | "
-            
             if ranking_type == 'market_cap':
                 total_mv = row['total_mv'] / 10000 if row.get('total_mv') else 0
+                line = f"| {i} | {row['name']} | {row['ts_code']} | {row['close']:.2f} | {row['pct_chg']:.2f}% | {total_mv:.2f} |"
+            elif ranking_type == 'circ_mv':
                 circ_mv = row['circ_mv'] / 10000 if row.get('circ_mv') else 0
-                line += f"{total_mv:10.2f} | {circ_mv:10.2f}"
+                line = f"| {i} | {row['name']} | {row['ts_code']} | {row['close']:.2f} | {row['pct_chg']:.2f}% | {circ_mv:.2f} |"
             elif ranking_type == 'amount':
                 amount = row['amount'] / 100000000 if row.get('amount') else 0
-                line += f"{amount:10.2f}"
+                line = f"| {i} | {row['name']} | {row['ts_code']} | {row['close']:.2f} | {row['pct_chg']:.2f}% | {amount:.2f} |"
+            elif ranking_type == 'volume':
+                volume = row['vol'] / 10000 if row.get('vol') else 0
+                line = f"| {i} | {row['name']} | {row['ts_code']} | {row['close']:.2f} | {row['pct_chg']:.2f}% | {volume:.2f} |"
+            else:
+                line = f"| {i} | {row['name']} | {row['ts_code']} | {row['close']:.2f} | {row['pct_chg']:.2f}% |"
                 
             lines.append(line)
             
@@ -506,55 +542,60 @@ class SQLTemplates:
             
         ts_code = data.get('ts_code', '')
         if stock_name:
-            stock_info = f"{stock_name}（{ts_code}）"
+            stock_info = stock_name
         else:
-            stock_info = ts_code
+            stock_info = data.get('name', ts_code)
             
-        # 计算各级别资金净流入（单位：万元）
-        elg_net = (data.get('buy_elg_amount', 0) - data.get('sell_elg_amount', 0)) / 10000
-        lg_net = (data.get('buy_lg_amount', 0) - data.get('sell_lg_amount', 0)) / 10000
-        md_net = (data.get('buy_md_amount', 0) - data.get('sell_md_amount', 0)) / 10000
-        sm_net = (data.get('buy_sm_amount', 0) - data.get('sell_sm_amount', 0)) / 10000
+        # 直接使用净流入字段（已经是万元）
+        net_amount = data.get('net_amount', 0)
+        net_rate = data.get('net_amount_rate', 0)
         
-        # 主力净流入（超大单+大单）
-        main_net = elg_net + lg_net
-        net_mf = data.get('net_mf_amount', 0) / 10000
+        # 各级别净流入（已经是万元）
+        elg_net = data.get('buy_elg_amount', 0)
+        lg_net = data.get('buy_lg_amount', 0)
+        md_net = data.get('buy_md_amount', 0)
+        sm_net = data.get('buy_sm_amount', 0)
         
-        # 计算主力净流入占比
-        if data.get('amount') and data['amount'] > 0:
-            main_rate = main_net * 10000 / data['amount'] * 100
-        else:
-            main_rate = 0
-            
+        # 各级别占比
+        elg_rate = data.get('buy_elg_amount_rate', 0)
+        lg_rate = data.get('buy_lg_amount_rate', 0)
+        md_rate = data.get('buy_md_amount_rate', 0)
+        sm_rate = data.get('buy_sm_amount_rate', 0)
+        
         return f"""{stock_info}在{data['trade_date']}的资金流向：
-主力净流入：{main_net:.2f}万元（占比{main_rate:.2f}%）
-  - 超大单净流入：{elg_net:.2f}万元
-  - 大单净流入：{lg_net:.2f}万元
-中单净流入：{md_net:.2f}万元
-小单净流入：{sm_net:.2f}万元
-总净流入：{net_mf:.2f}万元
+主力净流入：{net_amount:.2f}万元（占比{net_rate:.2f}%）
+  - 超大单净流入：{elg_net:.2f}万元（占比{elg_rate:.2f}%）
+  - 大单净流入：{lg_net:.2f}万元（占比{lg_rate:.2f}%）
+中单净流入：{md_net:.2f}万元（占比{md_rate:.2f}%）
+小单净流入：{sm_net:.2f}万元（占比{sm_rate:.2f}%）
 
 股价表现：
 收盘价：{data.get('close', 0):.2f}元
-涨跌幅：{data.get('pct_chg', 0):.2f}%"""
+涨跌幅：{data.get('pct_change', 0):.2f}%"""
     
     @staticmethod
-    def format_money_flow_ranking(data: list) -> str:
-        """格式化主力净流入排名结果"""
+    def format_money_flow_ranking(data: list, is_outflow: bool = False) -> str:
+        """格式化主力净流入/流出排名结果为Markdown表格"""
         if not data:
             return "未查询到相关排名数据"
             
-        lines = [f"\n主力净流入排名 - {data[0]['trade_date']}\n"]
-        lines.append("排名 | 股票名称 | 股票代码 | 股价 | 涨跌幅 | 主力净流入(万) | 占比(%)")
-        lines.append("-" * 80)
+        title = "主力净流出排名" if is_outflow else "主力净流入排名"
+        column_name = "主力净流出(万)" if is_outflow else "主力净流入(万)"
+        
+        # 构建Markdown表格
+        lines = [f"## {title} - {data[0]['trade_date']}\n"]
+        lines.append(f"| 排名 | 股票名称 | 股票代码 | 股价(元) | 涨跌幅 | {column_name} | 占比 |")
+        lines.append("|------|----------|----------|----------|--------|--------------|------|")
         
         for i, row in enumerate(data, 1):
             net_mf = row.get('net_amount', 0) / 10000
             net_rate = row.get('net_amount_rate', 0)
             
-            line = f"{i:2d} | {row['name']:8s} | {row['ts_code']} | {row['close']:8.2f} | "
-            line += f"{row['pct_chg']:6.2f}% | {net_mf:12.2f} | {net_rate:6.2f}"
+            # 流出时取绝对值显示
+            if is_outflow:
+                net_mf = abs(net_mf)
             
+            line = f"| {i} | {row['name']} | {row['ts_code']} | {row['close']:.2f} | {row['pct_chg']:.2f}% | {net_mf:.2f} | {net_rate:.2f}% |"
             lines.append(line)
             
         return "\n".join(lines)
