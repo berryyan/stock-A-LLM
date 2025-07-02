@@ -24,6 +24,37 @@ from utils.unified_stock_validator import validate_stock_input
 class MoneyFlowAgent:
     """资金流向分析Agent"""
     
+    # 资金类型标准化映射
+    FUND_TYPE_MAPPING = {
+        # 非标准术语 -> 标准术语
+        "游资": "主力资金",
+        "庄家": "主力资金",
+        "热钱": "主力资金",
+        "大资金": "主力资金",
+        "散户": "小单",
+        "散户资金": "小单",
+        "个人投资者": "小单",
+        "小散": "小单",
+        "大户": "大单",
+        "大户资金": "大单",
+        "中户": "中单",
+        "机构": "超大单",
+        "机构资金": "超大单",
+        "基金": "超大单",
+        "主力": "主力资金",
+        "主力军": "主力资金",
+    }
+    
+    # 标准资金类型说明
+    STANDARD_FUND_TYPES = """
+    请使用以下标准资金类型术语：
+    • 主力资金：大单+超大单的合计（游资、庄家、热钱等）
+    • 超大单：单笔成交额≥100万元（机构、基金等）
+    • 大单：单笔成交额20-100万元（大户等）
+    • 中单：单笔成交额4-20万元
+    • 小单：单笔成交额<4万元（散户、个人投资者等）
+    """
+    
     def __init__(self, mysql_connector: MySQLConnector = None):
         """初始化资金流向分析Agent"""
         self.mysql_conn = mysql_connector or MySQLConnector()
@@ -87,14 +118,42 @@ class MoneyFlowAgent:
 """
         )
     
+    def standardize_fund_terms(self, query: str) -> tuple[str, List[str]]:
+        """
+        标准化资金术语
+        
+        Args:
+            query: 原始查询
+            
+        Returns:
+            (标准化后的查询, 转换提示列表)
+        """
+        standardized = query
+        hints = []
+        
+        # 按照术语长度降序排序，避免"散户资金"被先替换为"小单资金"
+        sorted_mappings = sorted(self.FUND_TYPE_MAPPING.items(), 
+                               key=lambda x: len(x[0]), reverse=True)
+        
+        for non_standard, standard in sorted_mappings:
+            if non_standard in standardized:
+                # 避免重复替换
+                if standard not in standardized or non_standard == standard:
+                    standardized = standardized.replace(non_standard, standard)
+                    hints.append(f"'{non_standard}'已转换为标准术语'{standard}'")
+        
+        return standardized, hints
+    
     def is_money_flow_query(self, question: str) -> bool:
         """判断是否是资金流向相关查询"""
         try:
-            question_lower = question.lower()
+            # 先进行术语标准化
+            standardized_question, _ = self.standardize_fund_terms(question)
+            question_lower = standardized_question.lower()
             
             # 检查是否包含资金流向相关关键词
             for pattern in self.MONEY_FLOW_PATTERNS:
-                if re.search(pattern, question, re.IGNORECASE):
+                if re.search(pattern, standardized_question, re.IGNORECASE):
                     return True
             
             return False
@@ -210,8 +269,22 @@ class MoneyFlowAgent:
                     'money_flow_data': None
                 }
             
-            # 判断是否是资金流向查询
+            # 术语标准化
+            standardized_question, hints = self.standardize_fund_terms(question)
+            if hints:
+                self.logger.info(f"术语标准化: {hints}")
+            
+            # 判断是否是资金流向查询（使用标准化后的查询）
             if not self.is_money_flow_query(question):
+                # 检查是否包含可能的资金相关词但无法识别
+                fund_keywords = ['资金', '流入', '流出', '买入', '卖出']
+                if any(keyword in question for keyword in fund_keywords):
+                    return {
+                        'success': False,
+                        'error': f'无法识别的资金类型查询。\n{self.STANDARD_FUND_TYPES}',
+                        'answer': None,
+                        'money_flow_data': None
+                    }
                 return {
                     'success': False,
                     'error': '这不是资金流向相关的查询',
@@ -219,8 +292,8 @@ class MoneyFlowAgent:
                     'money_flow_data': None
                 }
             
-            # 早期股票实体验证（使用统一验证器与Financial Agent保持一致）
-            success, ts_code, error_response = validate_stock_input(question)
+            # 早期股票实体验证（使用标准化后的查询）
+            success, ts_code, error_response = validate_stock_input(standardized_question)
             
             if not success:
                 # 如果验证失败，返回标准错误响应
@@ -264,6 +337,11 @@ class MoneyFlowAgent:
             if llm_analysis:
                 final_answer += f"\n\n### AI深度分析\n{llm_analysis}"
             
+            # 如果有术语转换，添加提示
+            if hints:
+                hint_text = "\n💡 术语提示：" + "；".join(hints)
+                final_answer = hint_text + "\n\n" + final_answer
+            
             return {
                 'success': True,
                 'result': final_answer,  # 统一使用result字段
@@ -272,6 +350,7 @@ class MoneyFlowAgent:
                 'query_type': 'money_flow',
                 'ts_code': ts_code,
                 'analysis_period': days,
+                'term_hints': hints,  # 包含术语转换提示
                 'error': None
             }
             
