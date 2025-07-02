@@ -306,6 +306,28 @@ class SQLTemplates:
         LIMIT 1
     """
     
+    # 板块资金流向查询模板
+    SECTOR_MONEY_FLOW = """
+        SELECT 
+            b.industry,
+            m.trade_date,
+            SUM(m.net_amount) as total_net_amount,
+            AVG(m.net_amount_rate) as avg_net_amount_rate,
+            SUM(m.buy_elg_amount) as total_buy_elg_amount,
+            SUM(m.buy_lg_amount) as total_buy_lg_amount,
+            SUM(m.buy_md_amount) as total_buy_md_amount,
+            SUM(m.buy_sm_amount) as total_buy_sm_amount,
+            AVG(m.pct_change) as avg_pct_change,
+            COUNT(DISTINCT m.ts_code) as stock_count
+        FROM tu_moneyflow_dc m
+        JOIN tu_stock_basic b ON m.ts_code = b.ts_code
+        WHERE b.industry = :sector_name
+            AND m.trade_date = :trade_date
+            AND b.list_status = 'L'
+        GROUP BY b.industry, m.trade_date
+        ORDER BY total_net_amount DESC
+    """
+    
     # PE/PB查询模板
     VALUATION_METRICS = """
         SELECT 

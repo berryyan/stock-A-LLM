@@ -617,6 +617,55 @@ class SQLAgent:
                         'quick_path': True
                     }
                     
+            elif template.name == '板块主力资金':
+                # 板块主力资金查询
+                entities = params.get('entities', [])
+                if not entities:
+                    return None
+                    
+                sector_name = entities[0]
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
+                sql = SQLTemplates.SECTOR_MONEY_FLOW
+                result = self.mysql_connector.execute_query(sql, {
+                    'sector_name': sector_name,
+                    'trade_date': trade_date
+                })
+                
+                if result and len(result) > 0:
+                    data = result[0]
+                    
+                    # 格式化板块资金流向结果
+                    formatted_result = f"""
+## {sector_name}板块主力资金流向分析
+
+**交易日期**: {trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:]}
+
+### 资金流向概况
+- **板块净流入金额**: {data['total_net_amount']/100000000:.2f}亿元
+- **平均净流入率**: {data['avg_net_amount_rate']:.2f}%
+- **平均涨跌幅**: {data['avg_pct_change']:.2f}%
+- **统计股票数量**: {data['stock_count']}只
+
+### 各类资金流向（亿元）
+| 资金类型 | 流入金额 |
+|---------|---------|
+| 超大单   | {data['total_buy_elg_amount']/100000000:.2f} |
+| 大单     | {data['total_buy_lg_amount']/100000000:.2f} |
+| 中单     | {data['total_buy_md_amount']/100000000:.2f} |
+| 小单     | {data['total_buy_sm_amount']/100000000:.2f} |
+
+### 主力资金分析
+主力资金（超大单+大单）净流入 **{(data['total_buy_elg_amount'] + data['total_buy_lg_amount'])/100000000:.2f}** 亿元
+"""
+                    
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,  # 不暴露SQL语句
+                        'quick_path': True
+                    }
+                    
             # 其他模板类型暂不支持快速路径
             return None
             

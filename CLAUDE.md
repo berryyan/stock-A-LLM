@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v2.1.3)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v2.1.4)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
 **Current Status**: ✅ 日期智能解析DISTINCT问题修复，交易日范围计算恢复正常。股票识别修复完成，解决"平安"歧义问题。路由机制修复，TEMPLATE_ROUTE_OVERRIDE冲突解决。SQL Agent快速模板完成，支持7种新查询类型，实现2481.5倍加速。路由机制文档化完成，7-Agent架构Phase 0&1完成。代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
@@ -266,6 +266,37 @@ The system supports six main query types:
 - Invalid inputs will result in precise error messages with specific guidance
 - All stock entity conversion is handled by `utils.unified_stock_validator` with enhanced validation
 
+### 资金查询功能规范 (Money Flow Query Guidelines) - v2.1.4
+
+**标准资金类型定义**:
+系统仅支持以下标准资金类型，不接受其他别称：
+- **主力资金** = 超大单 + 大单（数据库字段：net_mf_amount）
+- **超大单资金**：≥100万元（数据库字段：net_elg_amount）
+- **大单资金**：20-100万元（数据库字段：net_lg_amount）
+- **中单资金**：4-20万元（数据库字段：net_md_amount）
+- **小单资金**：<4万元（数据库字段：net_sm_amount）
+
+**非标准术语处理**:
+- 当用户使用"机构资金"、"大资金"等非标准术语时，系统将提示：
+  "请使用标准资金类型：主力资金、超大单资金、大单资金、中单资金、小单资金"
+
+**板块查询支持**:
+- 板块查询不支持简称，必须使用完整板块名称
+- ✅ 正确：银行板块、新能源板块、白酒板块
+- ❌ 错误：银行、新能源、白酒（缺少"板块"后缀）
+
+**查询类型划分**:
+1. **数据查询（SQL_ONLY）**：获取具体数值，快速返回表格数据
+   - 个股主力资金查询："贵州茅台的主力资金"
+   - 板块主力资金查询："银行板块的主力资金"
+   - 主力净流入排行："主力净流入排名前10"
+   
+2. **深度分析（MONEY_FLOW）**：生成分析报告，包含LLM分析
+   - 资金流向分析："分析贵州茅台的资金流向"
+   - 超大单分析："分析宁德时代的超大单资金"
+   
+3. **复杂排名分析（RANK）**：未来规划，通过"排名分析："前缀路由
+
 ### Error Handling
 - All agents return standardized response format with `success`, `error`, and result fields
 - Input validation prevents empty/whitespace queries from causing errors  
@@ -283,6 +314,17 @@ The system supports six main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v2.1.4 - 资金查询功能标准化 (2025-07-02)
+
+**资金查询功能规范化** ✅:
+- **标准资金类型定义**: 统一使用主力资金、超大单、大单、中单、小单五种标准类型
+- **非标准术语处理**: 机构资金、大资金等非标准术语将提示用户使用标准术语
+- **板块查询支持**: 新增板块主力资金查询功能，必须使用"XX板块"完整名称
+- **查询类型明确划分**: 
+  - SQL_ONLY：快速数据查询（个股/板块主力资金、排名查询）
+  - MONEY_FLOW：深度分析报告（需包含"分析"、"如何"等关键词）
+- **测试文档更新**: test-guide-comprehensive.md v4.6，重组资金查询测试用例
 
 #### v2.1.3 - 日期智能解析修复 (2025-06-30)
 

@@ -219,11 +219,26 @@ class QueryTemplateLibrary:
                 example="平安银行的杜邦分析"
             ),
             
+            # 板块主力资金查询模板（SQL快速路径）- 优先匹配板块
+            QueryTemplate(
+                name="板块主力资金",
+                type=TemplateType.MONEY_FLOW,
+                pattern=r"(.+?)(?:板块|行业)(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)?(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP|分析|如何))",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "net_amount", "buy_elg_amount"],
+                optional_fields=["buy_lg_amount", "buy_md_amount", "buy_sm_amount"],
+                default_params={
+                    "time_range": "specified",
+                    "query_type": "sector"
+                },
+                example="银行板块的主力资金流入"
+            ),
+            
             # 个股主力资金查询模板（SQL快速路径）
             QueryTemplate(
                 name="个股主力资金",
                 type=TemplateType.MONEY_FLOW,
-                pattern=r"(.+?)(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP))",
+                pattern=r"(.+?)(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)?(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP|分析|如何))",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "net_amount", "buy_elg_amount"],
                 optional_fields=["buy_lg_amount", "buy_md_amount", "buy_sm_amount"],
@@ -237,7 +252,7 @@ class QueryTemplateLibrary:
             QueryTemplate(
                 name="资金流向分析",
                 type=TemplateType.MONEY_FLOW,
-                pattern=r"(.+?)(?:的)?资金流向|(.+?)主力资金",
+                pattern=r"(?:分析)?(.+?)(?:的)?资金流向(?:如何|怎么样|情况)?|(.+?)(?:的)?主力资金(?:流向|分析|如何|怎么样)",
                 route_type="MONEY_FLOW",
                 required_fields=["buy_elg_amount", "sell_elg_amount", "net_mf_amount"],
                 optional_fields=["buy_lg_amount", "buy_md_amount", "buy_sm_amount"],
@@ -251,7 +266,7 @@ class QueryTemplateLibrary:
             QueryTemplate(
                 name="超大单分析",
                 type=TemplateType.MONEY_FLOW,
-                pattern=r"(.+?)(?:的)?超大单.*|(.+?)机构资金",
+                pattern=r"(?:分析)?(.+?)(?:的)?超大单(?:资金)?(?:流[入出向]|分析|情况|如何)?|(.+?)(?:的)?机构资金(?:流向|分析|如何|情况)",
                 route_type="MONEY_FLOW",
                 required_fields=["buy_elg_amount", "sell_elg_amount"],
                 optional_fields=["elg_vol", "elg_amount"],
