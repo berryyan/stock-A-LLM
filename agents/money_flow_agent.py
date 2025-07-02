@@ -266,7 +266,8 @@ class MoneyFlowAgent:
             
             return {
                 'success': True,
-                'answer': final_answer,
+                'result': final_answer,  # 统一使用result字段
+                'answer': final_answer,  # 保持向后兼容
                 'money_flow_data': analysis_result['data'],
                 'query_type': 'money_flow',
                 'ts_code': ts_code,

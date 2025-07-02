@@ -1,15 +1,11 @@
 """
-资金流向分析模块 v1.1 - 修复数值精度问题
+资金流向分析模块 v1.0
 基于tu_moneyflow_dc表数据，实现专业的资金流向分析
 
 核心分析维度：
 1. 主力资金净流入/流出 (最高优先级)
 2. 超大单资金分析 (重点单独分析)
 3. 四级资金分布分析 (超大单、大单、中单、小单)
-
-重要说明：
-- buy_*_amount字段实际上是净买入金额，可以为负值（表示净卖出）
-- 不需要复杂的比例计算，直接使用各级别的净买入金额即可
 """
 
 import pandas as pd
@@ -30,12 +26,12 @@ class MoneyFlowData:
     name: str
     pct_change: float         # 涨跌幅
     close: float              # 收盘价
-    # 净买入金额（万元）- 注意：这些字段可以为负值
-    buy_sm_amount: float      # 小单净买入
-    buy_md_amount: float      # 中单净买入
-    buy_lg_amount: float      # 大单净买入
-    buy_elg_amount: float     # 超大单净买入
-    # 总净流入金额（万元）
+    # 买入金额（万元）
+    buy_sm_amount: float      # 小单买入
+    buy_md_amount: float      # 中单买入
+    buy_lg_amount: float      # 大单买入
+    buy_elg_amount: float     # 超大单买入
+    # 净流入金额（万元）
     net_amount: float         # 总净流入
     # 买入占比
     buy_sm_amount_rate: float # 小单买入占比
@@ -145,9 +141,20 @@ class MoneyFlowAnalyzer:
             daily_flows = []
             
             for day_data in data:
-                # 主力资金 = 大单净买入 + 超大单净买入
-                # 注意：buy_lg_amount和buy_elg_amount已经是净买入金额，可以为负
-                main_net = day_data.buy_lg_amount + day_data.buy_elg_amount
+                # 主力资金 = 大单 + 超大单（只有买入数据，使用净流入估算）
+                # 根据买入占比推算主力资金净流入
+                main_buy = day_data.buy_lg_amount + day_data.buy_elg_amount
+                
+                # 使用净流入数据估算主力资金净流向
+                # 假设主力资金占总净流入的比例与其买入占总买入的比例相似
+                total_buy = (day_data.buy_sm_amount + day_data.buy_md_amount + 
+                           day_data.buy_lg_amount + day_data.buy_elg_amount)
+                
+                if total_buy > 0:
+                    main_ratio = main_buy / total_buy
+                    main_net = day_data.net_amount * main_ratio
+                else:
+                    main_net = day_data.net_amount * 0.5  # 默认主力占50%
                 
                 total_main_net_flow += main_net
                 daily_flows.append(main_net)
@@ -157,21 +164,18 @@ class MoneyFlowAnalyzer:
             negative_days = sum(1 for flow in daily_flows if flow < 0)
             total_days = len(daily_flows)
             
-            if total_days > 0:
-                if positive_days / total_days >= 0.6:
-                    flow_trend = 'inflow'
-                elif negative_days / total_days >= 0.6:
-                    flow_trend = 'outflow'
-                else:
-                    flow_trend = 'balanced'
+            if positive_days / total_days >= 0.6:
+                flow_trend = 'inflow'
+            elif negative_days / total_days >= 0.6:
+                flow_trend = 'outflow'
             else:
                 flow_trend = 'balanced'
             
             # 计算流向强度
-            avg_abs_flow = np.mean([abs(flow) for flow in daily_flows]) if daily_flows else 0
-            if avg_abs_flow > 5000:  # 日均5000万以上
+            avg_abs_flow = np.mean([abs(flow) for flow in daily_flows])
+            if avg_abs_flow > 5000:  # 500万以上
                 flow_strength = 'strong'
-            elif avg_abs_flow > 1000:  # 日均1000万以上
+            elif avg_abs_flow > 1000:  # 100万以上
                 flow_strength = 'medium'
             else:
                 flow_strength = 'weak'
@@ -203,60 +207,82 @@ class MoneyFlowAnalyzer:
         try:
             # 超大单数据分析
             super_large_flows = []
-            super_large_net_total = 0
-            active_days = 0  # 有显著超大单交易的天数
+            super_large_buy_total = 0
+            super_large_sell_total = 0
+            active_days = 0  # 有超大单交易的天数
             
             for day_data in data:
-                super_large_net = day_data.buy_elg_amount  # 超大单净买入金额
+                super_large_buy = day_data.buy_elg_amount
                 
-                super_large_net_total += super_large_net
+                # 使用净流入数据和超大单买入占比估算超大单净流向
+                total_buy = (day_data.buy_sm_amount + day_data.buy_md_amount + 
+                           day_data.buy_lg_amount + day_data.buy_elg_amount)
+                
+                if total_buy > 0:
+                    super_large_ratio = super_large_buy / total_buy
+                    super_large_net = day_data.net_amount * super_large_ratio
+                else:
+                    super_large_net = 0
+                
+                super_large_buy_total += super_large_buy
                 super_large_flows.append(super_large_net)
                 
                 # 判断是否有显著的超大单交易
-                if abs(super_large_net) > 100:  # 绝对值100万以上算活跃
+                if super_large_buy > 100:  # 100万以上算活跃
                     active_days += 1
             
-            # 计算超大单买入占比（基于正值天数）
-            positive_days = sum(1 for flow in super_large_flows if flow > 0)
-            total_days = len(super_large_flows)
-            buy_ratio = positive_days / total_days if total_days > 0 else 0.5
+            super_large_net_flow = sum(super_large_flows)
+            
+            # 计算超大单买入占比（基于净流向推算）
+            # 假设买入占比与净流向成正比
+            if super_large_buy_total > 0:
+                # 简化处理：根据净流向推算买入占比
+                if super_large_net_flow > 0:
+                    buy_ratio = 0.6 + min(0.3, super_large_net_flow / super_large_buy_total)
+                else:
+                    buy_ratio = 0.4 + max(-0.3, super_large_net_flow / super_large_buy_total)
+            else:
+                buy_ratio = 0.5
             
             # 分析行为模式
-            if super_large_net_total > 1000 and buy_ratio > 0.65:
+            if buy_ratio > 0.65 and super_large_net_flow > 0:
                 behavior_pattern = 'accumulating'  # 建仓
-            elif super_large_net_total < -1000 and buy_ratio < 0.35:
+            elif buy_ratio < 0.35 and super_large_net_flow < 0:
                 behavior_pattern = 'distributing'  # 减仓
-            elif active_days > total_days * 0.5 and abs(super_large_net_total) < 500:
+            elif abs(super_large_net_flow) / max(super_large_buy_total, 1) < 0.2:
                 behavior_pattern = 'washing'  # 洗盘
             else:
                 behavior_pattern = 'uncertain'  # 不确定
             
             # 计算超大单主导度
-            if data:
-                total_net_flow = sum(abs(day_data.net_amount) for day_data in data)
-                super_large_abs_total = sum(abs(flow) for flow in super_large_flows)
-                dominance = super_large_abs_total / total_net_flow if total_net_flow > 0 else 0
+            total_flow = sum(abs(flow) for flow in super_large_flows)
+            all_net_flow = sum(day_data.net_amount for day_data in data)
+            
+            if abs(all_net_flow) > 0:
+                dominance = min(abs(super_large_net_flow) / abs(all_net_flow), 1.0)
             else:
                 dominance = 0
             
-            # 与股价相关性分析（简化处理）
+            # 与股价相关性分析（如果有价格数据）
             price_correlation = 0.0
-            if len(data) > 1:
+            if price_data and len(price_data) == len(super_large_flows):
                 try:
-                    price_changes = [d.pct_change for d in data]
-                    if len(super_large_flows) == len(price_changes):
+                    price_changes = [p.get('pct_chg', 0) for p in price_data]
+                    if len(price_changes) > 1:
                         correlation_matrix = np.corrcoef(super_large_flows, price_changes)
                         price_correlation = correlation_matrix[0, 1] if not np.isnan(correlation_matrix[0, 1]) else 0.0
                 except:
                     price_correlation = 0.0
             
             return {
-                'super_large_net_flow': super_large_net_total,
+                'super_large_net_flow': super_large_net_flow,
                 'super_large_buy_ratio': buy_ratio,
                 'super_large_frequency': active_days,
                 'super_large_vs_price_correlation': price_correlation,
                 'super_large_behavior_pattern': behavior_pattern,
-                'super_large_dominance': min(dominance, 1.0)  # 限制在0-1之间
+                'super_large_dominance': dominance,
+                'super_large_buy_total': super_large_buy_total,
+                'super_large_sell_total': 0  # 没有卖出数据
             }
             
         except Exception as e:
@@ -277,46 +303,61 @@ class MoneyFlowAnalyzer:
                 'small': {'buy': 0, 'sell': 0, 'net': 0, 'percentage': 0}
             }
             
-            # 累计各级别资金数据
+            # 累计各级别资金数据（只有买入数据，根据净流入估算卖出）
             for day_data in data:
+                total_buy = (day_data.buy_sm_amount + day_data.buy_md_amount + 
+                           day_data.buy_lg_amount + day_data.buy_elg_amount)
+                
                 # 超大单
-                distribution['super_large']['net'] += day_data.buy_elg_amount
-                if day_data.buy_elg_amount > 0:
-                    distribution['super_large']['buy'] += day_data.buy_elg_amount
+                distribution['super_large']['buy'] += day_data.buy_elg_amount
+                if total_buy > 0:
+                    ratio = day_data.buy_elg_amount / total_buy
+                    net_flow = day_data.net_amount * ratio
                 else:
-                    distribution['super_large']['sell'] += abs(day_data.buy_elg_amount)
+                    net_flow = 0
                 
                 # 大单
-                distribution['large']['net'] += day_data.buy_lg_amount
-                if day_data.buy_lg_amount > 0:
-                    distribution['large']['buy'] += day_data.buy_lg_amount
+                distribution['large']['buy'] += day_data.buy_lg_amount
+                if total_buy > 0:
+                    ratio = day_data.buy_lg_amount / total_buy
+                    net_flow_lg = day_data.net_amount * ratio
                 else:
-                    distribution['large']['sell'] += abs(day_data.buy_lg_amount)
+                    net_flow_lg = 0
                 
                 # 中单
-                distribution['medium']['net'] += day_data.buy_md_amount
-                if day_data.buy_md_amount > 0:
-                    distribution['medium']['buy'] += day_data.buy_md_amount
+                distribution['medium']['buy'] += day_data.buy_md_amount
+                if total_buy > 0:
+                    ratio = day_data.buy_md_amount / total_buy
+                    net_flow_md = day_data.net_amount * ratio
                 else:
-                    distribution['medium']['sell'] += abs(day_data.buy_md_amount)
+                    net_flow_md = 0
                 
                 # 小单
-                distribution['small']['net'] += day_data.buy_sm_amount
-                if day_data.buy_sm_amount > 0:
-                    distribution['small']['buy'] += day_data.buy_sm_amount
+                distribution['small']['buy'] += day_data.buy_sm_amount
+                if total_buy > 0:
+                    ratio = day_data.buy_sm_amount / total_buy
+                    net_flow_sm = day_data.net_amount * ratio
                 else:
-                    distribution['small']['sell'] += abs(day_data.buy_sm_amount)
+                    net_flow_sm = 0
+                
+                # 累计净流入（这里暂存到sell字段，后面会重新计算）
+                distribution['super_large']['sell'] += net_flow
+                distribution['large']['sell'] += net_flow_lg
+                distribution['medium']['sell'] += net_flow_md
+                distribution['small']['sell'] += net_flow_sm
             
-            # 计算各级别占比（基于总流入流出）
-            total_flow = sum(
-                distribution[level]['buy'] + distribution[level]['sell'] 
-                for level in distribution
-            )
-            
+            # 计算净流入和占比（sell字段实际存储的是净流入）
+            total_net_flow = 0
             for level in distribution:
-                if total_flow > 0:
-                    level_flow = distribution[level]['buy'] + distribution[level]['sell']
-                    distribution[level]['percentage'] = level_flow / total_flow * 100
+                net_flow = distribution[level]['sell']  # 之前存储的净流入
+                distribution[level]['net'] = net_flow
+                distribution[level]['sell'] = 0  # 重置sell字段
+                total_net_flow += abs(net_flow)
+            
+            # 计算各级别占比
+            for level in distribution:
+                if total_net_flow > 0:
+                    distribution[level]['percentage'] = abs(distribution[level]['net']) / total_net_flow * 100
                 else:
                     distribution[level]['percentage'] = 0
             
