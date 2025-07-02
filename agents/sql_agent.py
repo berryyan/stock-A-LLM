@@ -670,6 +670,114 @@ class SQLAgent:
                         'quick_path': True
                     }
                     
+            elif template.name == 'PE排名':
+                # PE排名查询
+                limit = params.get('limit', 10)
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
+                # 判断是最高还是最低
+                if '最低' in processed_question:
+                    sql = SQLTemplates.PE_RANKING.replace('ORDER BY b.pe DESC', 'ORDER BY b.pe ASC')
+                    order = 'ASC'
+                else:
+                    sql = SQLTemplates.PE_RANKING
+                    order = 'DESC'
+                
+                result = self.mysql_connector.execute_query(sql, {
+                    'trade_date': trade_date,
+                    'limit': limit
+                })
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_pe_ranking(result, order)
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,
+                        'quick_path': True
+                    }
+                    
+            elif template.name == 'PB排名':
+                # PB排名查询
+                limit = params.get('limit', 10)
+                trade_date = self._extract_date_from_query(processed_question) or last_trading_date
+                
+                # 判断是最高还是最低
+                if '最低' in processed_question or '破净' in processed_question:
+                    sql = SQLTemplates.PB_RANKING.replace('ORDER BY b.pb DESC', 'ORDER BY b.pb ASC')
+                    order = 'ASC'
+                else:
+                    sql = SQLTemplates.PB_RANKING
+                    order = 'DESC'
+                
+                result = self.mysql_connector.execute_query(sql, {
+                    'trade_date': trade_date,
+                    'limit': limit
+                })
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_pb_ranking(result, order)
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,
+                        'quick_path': True
+                    }
+                    
+            elif template.name == '净利润排名':
+                # 净利润排名查询
+                limit = params.get('limit', 10)
+                
+                # 判断是盈利还是亏损
+                if '亏损' in processed_question:
+                    sql = SQLTemplates.PROFIT_RANKING.replace('ORDER BY i.n_income DESC', 'ORDER BY i.n_income ASC')
+                    sql = sql.replace('WHERE i.end_date', 'WHERE i.n_income < 0 AND i.end_date')
+                else:
+                    sql = SQLTemplates.PROFIT_RANKING
+                
+                result = self.mysql_connector.execute_query(sql, {'limit': limit})
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_profit_ranking(result)
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,
+                        'quick_path': True
+                    }
+                    
+            elif template.name == '营收排名':
+                # 营收排名查询
+                limit = params.get('limit', 10)
+                sql = SQLTemplates.REVENUE_RANKING
+                
+                result = self.mysql_connector.execute_query(sql, {'limit': limit})
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_revenue_ranking(result)
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,
+                        'quick_path': True
+                    }
+                    
+            elif template.name == 'ROE排名':
+                # ROE排名查询
+                limit = params.get('limit', 10)
+                sql = SQLTemplates.ROE_RANKING
+                
+                result = self.mysql_connector.execute_query(sql, {'limit': limit})
+                
+                if result and len(result) > 0:
+                    formatted_result = SQLTemplates.format_roe_ranking(result)
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,
+                        'quick_path': True
+                    }
+                    
             # 其他模板类型暂不支持快速路径
             return None
             

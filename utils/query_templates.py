@@ -354,6 +354,85 @@ class QueryTemplateLibrary:
                 example="上个交易日流通市值前10"
             ),
             
+            # PE排名模板
+            QueryTemplate(
+                name="PE排名", 
+                type=TemplateType.RANKING,
+                pattern=r"(?:PE|市盈率)(?:最高|最低|排名|前).*?(\d+)?|.*前(\d+).*(?:PE|市盈率)",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "pe", "pe_ttm", "close"],
+                optional_fields=["pct_chg"],
+                default_params={
+                    "order_by": "pe DESC",
+                    "limit": 10,
+                    "time_range": "latest"
+                },
+                example="PE最高的前10"
+            ),
+            
+            # PB排名模板
+            QueryTemplate(
+                name="PB排名",
+                type=TemplateType.RANKING,
+                pattern=r"(?:PB|市净率|破净)(?:最高|最低|排名|前).*?(\d+)?|.*前(\d+).*(?:PB|市净率)",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "pb", "close"],
+                optional_fields=["pct_chg"],
+                default_params={
+                    "order_by": "pb DESC",
+                    "limit": 10,
+                    "time_range": "latest"
+                },
+                example="PB最低的前10"
+            ),
+            
+            # 净利润排名模板
+            QueryTemplate(
+                name="净利润排名",
+                type=TemplateType.RANKING,
+                pattern=r"(?:净利润|利润|盈利|亏损)(?:最高|最多|排名|前).*?(\d+)?",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "net_profit", "revenue", "end_date"],
+                optional_fields=["report_type"],
+                default_params={
+                    "order_by": "net_profit DESC",
+                    "limit": 10,
+                    "time_range": "latest_report"
+                },
+                example="利润排名前20"
+            ),
+            
+            # 营收排名模板
+            QueryTemplate(
+                name="营收排名",
+                type=TemplateType.RANKING,
+                pattern=r"(?:营收|营业收入|收入)(?:最高|排名|前).*?(\d+)?",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "revenue", "net_profit", "end_date"],
+                optional_fields=["report_type"],
+                default_params={
+                    "order_by": "revenue DESC",
+                    "limit": 10,
+                    "time_range": "latest_report"
+                },
+                example="营收排名前10"
+            ),
+            
+            # ROE排名模板
+            QueryTemplate(
+                name="ROE排名",
+                type=TemplateType.RANKING,
+                pattern=r"(?:ROE|净资产收益率)(?:最高|排名|前).*?(\d+)?",
+                route_type="SQL_ONLY",
+                required_fields=["ts_code", "name", "roe", "roa", "end_date"],
+                optional_fields=[],
+                default_params={
+                    "order_by": "roe DESC",
+                    "limit": 10,
+                    "time_range": "latest_report"
+                },
+                example="ROE排名前10"
+            ),
             
             # 比较分析模板
             QueryTemplate(

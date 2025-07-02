@@ -386,6 +386,108 @@ class SQLTemplates:
         LIMIT :limit
     """
     
+    # PE排名模板
+    PE_RANKING = """
+        SELECT 
+            d.ts_code,
+            s.name,
+            d.close,
+            b.pe,
+            b.pe_ttm,
+            d.pct_chg,
+            d.trade_date
+        FROM tu_daily_detail d
+        JOIN tu_daily_basic b ON d.ts_code = b.ts_code AND d.trade_date = b.trade_date
+        JOIN tu_stock_basic s ON d.ts_code = s.ts_code
+        WHERE d.trade_date = :trade_date
+            AND b.pe > 0
+            AND b.pe < 10000
+        ORDER BY b.pe DESC
+        LIMIT :limit
+    """
+    
+    # PB排名模板
+    PB_RANKING = """
+        SELECT 
+            d.ts_code,
+            s.name,
+            d.close,
+            b.pb,
+            d.pct_chg,
+            d.trade_date
+        FROM tu_daily_detail d
+        JOIN tu_daily_basic b ON d.ts_code = b.ts_code AND d.trade_date = b.trade_date
+        JOIN tu_stock_basic s ON d.ts_code = s.ts_code
+        WHERE d.trade_date = :trade_date
+            AND b.pb > 0
+            AND b.pb < 1000
+        ORDER BY b.pb DESC
+        LIMIT :limit
+    """
+    
+    # 净利润排名模板
+    PROFIT_RANKING = """
+        SELECT 
+            i.ts_code,
+            s.name,
+            i.n_income as net_profit,
+            i.revenue,
+            i.end_date,
+            i.report_type
+        FROM tu_income i
+        JOIN tu_stock_basic s ON i.ts_code = s.ts_code
+        WHERE i.end_date = (
+            SELECT MAX(end_date) 
+            FROM tu_income 
+            WHERE report_type = '1'
+        )
+        AND i.report_type = '1'
+        ORDER BY i.n_income DESC
+        LIMIT :limit
+    """
+    
+    # 营收排名模板
+    REVENUE_RANKING = """
+        SELECT 
+            i.ts_code,
+            s.name,
+            i.revenue,
+            i.n_income as net_profit,
+            i.end_date,
+            i.report_type
+        FROM tu_income i
+        JOIN tu_stock_basic s ON i.ts_code = s.ts_code
+        WHERE i.end_date = (
+            SELECT MAX(end_date) 
+            FROM tu_income 
+            WHERE report_type = '1'
+        )
+        AND i.report_type = '1'
+        ORDER BY i.revenue DESC
+        LIMIT :limit
+    """
+    
+    # ROE排名模板
+    ROE_RANKING = """
+        SELECT 
+            f.ts_code,
+            s.name,
+            f.roe,
+            f.roa,
+            f.end_date
+        FROM tu_fina_indicator f
+        JOIN tu_stock_basic s ON f.ts_code = s.ts_code
+        WHERE f.end_date = (
+            SELECT MAX(end_date) 
+            FROM tu_fina_indicator 
+            WHERE ts_code = f.ts_code
+        )
+        AND f.roe > 0
+        AND f.roe < 100
+        ORDER BY f.roe DESC
+        LIMIT :limit
+    """
+    
     # 板块股票查询模板
     SECTOR_STOCKS = """
         SELECT 
@@ -624,6 +726,99 @@ class SQLTemplates:
         return "\n".join(lines)
     
     @staticmethod
+    def format_pe_ranking(data: list, order: str = 'DESC') -> str:
+        """格式化PE排名结果"""
+        if not data:
+            return "未查询到PE排名数据"
+            
+        title = "市盈率(PE)最低排名" if order == 'ASC' else "市盈率(PE)最高排名"
+        
+        lines = [f"## {title} - {data[0]['trade_date']}\n"]
+        lines.append("| 排名 | 股票名称 | 股票代码 | 股价(元) | PE | PE(TTM) | 涨跌幅 |")
+        lines.append("|------|----------|----------|----------|------|---------|--------|")
+        
+        for i, row in enumerate(data, 1):
+            pe = row.get('pe', 0) or 0
+            pe_ttm = row.get('pe_ttm', 0) or 0
+            line = f"| {i} | {row['name']} | {row['ts_code']} | {row['close']:.2f} | {pe:.2f} | {pe_ttm:.2f} | {row['pct_chg']:.2f}% |"
+            lines.append(line)
+            
+        return "\n".join(lines)
+    
+    @staticmethod
+    def format_pb_ranking(data: list, order: str = 'DESC') -> str:
+        """格式化PB排名结果"""
+        if not data:
+            return "未查询到PB排名数据"
+            
+        title = "市净率(PB)最低排名" if order == 'ASC' else "市净率(PB)最高排名"
+        
+        lines = [f"## {title} - {data[0]['trade_date']}\n"]
+        lines.append("| 排名 | 股票名称 | 股票代码 | 股价(元) | PB | 涨跌幅 |")
+        lines.append("|------|----------|----------|----------|------|--------|")
+        
+        for i, row in enumerate(data, 1):
+            pb = row.get('pb', 0)
+            line = f"| {i} | {row['name']} | {row['ts_code']} | {row['close']:.2f} | {pb:.2f} | {row['pct_chg']:.2f}% |"
+            lines.append(line)
+            
+        return "\n".join(lines)
+    
+    @staticmethod
+    def format_profit_ranking(data: list) -> str:
+        """格式化净利润排名结果"""
+        if not data:
+            return "未查询到净利润排名数据"
+            
+        lines = [f"## 净利润排名 - {data[0]['end_date']}\n"]
+        lines.append("| 排名 | 股票名称 | 股票代码 | 净利润(亿) | 营收(亿) | 报告期 |")
+        lines.append("|------|----------|----------|------------|----------|---------|")
+        
+        for i, row in enumerate(data, 1):
+            net_profit_yi = row.get('net_profit', 0) / 100000000  # 转换为亿元
+            revenue_yi = row.get('revenue', 0) / 100000000
+            line = f"| {i} | {row['name']} | {row['ts_code']} | {net_profit_yi:.2f} | {revenue_yi:.2f} | {row['end_date']} |"
+            lines.append(line)
+            
+        return "\n".join(lines)
+    
+    @staticmethod
+    def format_revenue_ranking(data: list) -> str:
+        """格式化营收排名结果"""
+        if not data:
+            return "未查询到营收排名数据"
+            
+        lines = [f"## 营业收入排名 - {data[0]['end_date']}\n"]
+        lines.append("| 排名 | 股票名称 | 股票代码 | 营收(亿) | 净利润(亿) | 报告期 |")
+        lines.append("|------|----------|----------|----------|------------|---------|")
+        
+        for i, row in enumerate(data, 1):
+            revenue_yi = row.get('revenue', 0) / 100000000
+            net_profit_yi = row.get('net_profit', 0) / 100000000
+            line = f"| {i} | {row['name']} | {row['ts_code']} | {revenue_yi:.2f} | {net_profit_yi:.2f} | {row['end_date']} |"
+            lines.append(line)
+            
+        return "\n".join(lines)
+    
+    @staticmethod
+    def format_roe_ranking(data: list) -> str:
+        """格式化ROE排名结果"""
+        if not data:
+            return "未查询到ROE排名数据"
+            
+        lines = [f"## 净资产收益率(ROE)排名 - {data[0]['end_date']}\n"]
+        lines.append("| 排名 | 股票名称 | 股票代码 | ROE(%) | ROA(%) | 报告期 |")
+        lines.append("|------|----------|----------|--------|--------|---------|")
+        
+        for i, row in enumerate(data, 1):
+            roe = row.get('roe', 0)
+            roa = row.get('roa', 0)
+            line = f"| {i} | {row['name']} | {row['ts_code']} | {roe:.2f} | {roa:.2f} | {row['end_date']} |"
+            lines.append(line)
+            
+        return "\n".join(lines)
+    
+    @staticmethod
     def get_template(query_type: str) -> Optional[str]:
         """根据查询类型获取SQL模板"""
         templates = {
@@ -645,6 +840,11 @@ class SQLTemplates:
             '指定日期估值': SQLTemplates.VALUATION_METRICS_BY_DATE,
             '历史K线': SQLTemplates.HISTORICAL_KLINE,
             'K线范围': SQLTemplates.KLINE_RANGE,
-            '板块股票': SQLTemplates.SECTOR_STOCKS
+            '板块股票': SQLTemplates.SECTOR_STOCKS,
+            'PE排名': SQLTemplates.PE_RANKING,
+            'PB排名': SQLTemplates.PB_RANKING,
+            '净利润排名': SQLTemplates.PROFIT_RANKING,
+            '营收排名': SQLTemplates.REVENUE_RANKING,
+            'ROE排名': SQLTemplates.ROE_RANKING
         }
         return templates.get(query_type)

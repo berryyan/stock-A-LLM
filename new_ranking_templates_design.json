@@ -1,0 +1,201 @@
+[
+  {
+    "name": "PE排名",
+    "description": "市盈率排名查询",
+    "test_cases": [
+      {
+        "query": "PE最高的前10",
+        "expected_behavior": "返回PE最高的10只股票",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "pe",
+          "close"
+        ],
+        "order_by": "pe DESC"
+      },
+      {
+        "query": "市盈率排名前20",
+        "expected_behavior": "返回PE最高的20只股票",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "pe",
+          "close"
+        ],
+        "order_by": "pe DESC"
+      },
+      {
+        "query": "PE最低的前10",
+        "expected_behavior": "返回PE最低的10只股票（排除负值）",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "pe",
+          "close"
+        ],
+        "order_by": "pe ASC",
+        "filter": "pe > 0"
+      },
+      {
+        "query": "今天PE排名",
+        "expected_behavior": "返回今天PE最高的10只股票",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "pe",
+          "close"
+        ],
+        "order_by": "pe DESC",
+        "default_limit": 10
+      }
+    ],
+    "pattern": "(?:PE|市盈率)(?:最高|最低|排名|前).*?(\\d+)?|.*前(\\d+).*(?:PE|市盈率)",
+    "sql_template": "SELECT ts_code, close, pe FROM tu_daily_basic WHERE trade_date = :trade_date AND pe > 0 ORDER BY pe {order} LIMIT :limit"
+  },
+  {
+    "name": "PB排名",
+    "description": "市净率排名查询",
+    "test_cases": [
+      {
+        "query": "PB最低的前10",
+        "expected_behavior": "返回PB最低的10只股票（破净股）",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "pb",
+          "close"
+        ],
+        "order_by": "pb ASC",
+        "filter": "pb > 0"
+      },
+      {
+        "query": "市净率排名前20",
+        "expected_behavior": "返回PB最高的20只股票",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "pb",
+          "close"
+        ],
+        "order_by": "pb DESC"
+      },
+      {
+        "query": "破净股排名",
+        "expected_behavior": "返回PB<1的股票，按PB升序",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "pb",
+          "close"
+        ],
+        "order_by": "pb ASC",
+        "filter": "pb < 1 AND pb > 0"
+      }
+    ],
+    "pattern": "(?:PB|市净率|破净)(?:最高|最低|排名|前).*?(\\d+)?|.*前(\\d+).*(?:PB|市净率)",
+    "sql_template": "SELECT ts_code, close, pb FROM tu_daily_basic WHERE trade_date = :trade_date AND pb > 0 ORDER BY pb {order} LIMIT :limit"
+  },
+  {
+    "name": "净利润排名",
+    "description": "净利润排名查询",
+    "test_cases": [
+      {
+        "query": "利润排名前20",
+        "expected_behavior": "返回最新报告期净利润最高的20家公司",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "net_profit",
+          "end_date"
+        ],
+        "order_by": "net_profit DESC"
+      },
+      {
+        "query": "净利润最高的前10",
+        "expected_behavior": "返回最新报告期净利润最高的10家公司",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "net_profit",
+          "end_date"
+        ],
+        "order_by": "net_profit DESC"
+      },
+      {
+        "query": "亏损最多的前10",
+        "expected_behavior": "返回净利润为负且亏损最多的10家公司",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "net_profit",
+          "end_date"
+        ],
+        "order_by": "net_profit ASC",
+        "filter": "net_profit < 0"
+      }
+    ],
+    "pattern": "(?:净利润|利润|盈利|亏损)(?:最高|最多|排名|前).*?(\\d+)?",
+    "sql_template": "\n                SELECT DISTINCT ts_code, net_profit, end_date \n                FROM tu_income \n                WHERE end_date = (SELECT MAX(end_date) FROM tu_income WHERE ts_code = t.ts_code)\n                ORDER BY net_profit {order} \n                LIMIT :limit\n            "
+  },
+  {
+    "name": "营收排名",
+    "description": "营业收入排名查询",
+    "test_cases": [
+      {
+        "query": "营收排名前10",
+        "expected_behavior": "返回最新报告期营收最高的10家公司",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "revenue",
+          "end_date"
+        ],
+        "order_by": "revenue DESC"
+      },
+      {
+        "query": "营业收入最高的前20",
+        "expected_behavior": "返回最新报告期营收最高的20家公司",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "revenue",
+          "end_date"
+        ],
+        "order_by": "revenue DESC"
+      }
+    ],
+    "pattern": "(?:营收|营业收入|收入)(?:最高|排名|前).*?(\\d+)?",
+    "sql_template": "\n                SELECT DISTINCT ts_code, revenue, end_date \n                FROM tu_income \n                WHERE end_date = (SELECT MAX(end_date) FROM tu_income WHERE ts_code = t.ts_code)\n                ORDER BY revenue DESC \n                LIMIT :limit\n            "
+  },
+  {
+    "name": "ROE排名",
+    "description": "净资产收益率排名查询",
+    "test_cases": [
+      {
+        "query": "ROE排名前10",
+        "expected_behavior": "返回ROE最高的10家公司",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "roe",
+          "end_date"
+        ],
+        "order_by": "roe DESC"
+      },
+      {
+        "query": "净资产收益率最高的前20",
+        "expected_behavior": "返回ROE最高的20家公司",
+        "required_fields": [
+          "ts_code",
+          "name",
+          "roe",
+          "end_date"
+        ],
+        "order_by": "roe DESC"
+      }
+    ],
+    "pattern": "(?:ROE|净资产收益率)(?:最高|排名|前).*?(\\d+)?",
+    "sql_template": "\n                SELECT DISTINCT ts_code, roe, end_date \n                FROM tu_fina_indicator \n                WHERE end_date = (SELECT MAX(end_date) FROM tu_fina_indicator WHERE ts_code = t.ts_code)\n                AND roe > 0\n                ORDER BY roe DESC \n                LIMIT :limit\n            "
+  }
+]
