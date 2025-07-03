@@ -1088,13 +1088,18 @@ class SQLAgent:
     
     def _get_last_trading_date(self) -> str:
         """获取最近的交易日期"""
-        # 直接从数据库查询最新交易日
+        # 使用tu_daily_detail表查询最新交易日，因为这是主要的数据表
         try:
             result = self.mysql_connector.execute_query(
-                'SELECT DISTINCT trade_date FROM tu_daily_basic ORDER BY trade_date DESC LIMIT 1'
+                'SELECT DISTINCT trade_date FROM tu_daily_detail ORDER BY trade_date DESC LIMIT 1'
             )
             if result and result[0]['trade_date']:
-                return str(result[0]['trade_date'])
+                # 转换为YYYYMMDD格式
+                trade_date = str(result[0]['trade_date'])
+                # 如果是YYYY-MM-DD格式，转换为YYYYMMDD
+                if '-' in trade_date:
+                    trade_date = trade_date.replace('-', '')
+                return trade_date
             else:
                 raise Exception("数据库中没有交易日数据")
         except Exception as e:
@@ -1217,6 +1222,631 @@ class SQLAgent:
         
         # 最后使用默认值
         return default
+    
+    # ==================== Phase 1.3.1: 统一查询处理方法 ====================
+    
+    def _extract_query_params(self, query: str, template: Any, params: Dict, 
+                            processed_question: str) -> Dict[str, Any]:
+        """统一的参数提取方法
+        
+        Args:
+            query: 原始查询
+            template: 查询模板
+            params: 模板匹配提取的参数
+            processed_question: 经过日期解析和中文数字规范化的查询
+            
+        Returns:
+            提取的参数字典
+        """
+        extracted_params = {}
+        
+        # 1. 获取最近交易日（很多查询都需要）
+        last_trading_date = self._get_last_trading_date()
+        extracted_params['last_trading_date'] = last_trading_date
+        
+        # 2. 提取股票代码（如果需要）
+        if hasattr(template, 'requires_stock') and template.requires_stock:
+            entities = params.get('entities', [])
+            if entities:
+                ts_code = convert_to_ts_code(entities[0])
+                if ts_code:
+                    extracted_params['ts_code'] = ts_code
+                    extracted_params['stock_name'] = get_stock_name(ts_code)
+                else:
+                    # 股票代码转换失败
+                    extracted_params['error'] = f"无法识别股票: {entities[0]}"
+                    return extracted_params
+        
+        # 2.5 特殊处理板块查询
+        if template.name == '板块主力资金':
+            entities = params.get('entities', [])
+            if entities:
+                # 提取板块名称
+                sector_name = entities[0]
+                extracted_params['sector_name'] = sector_name
+                self.logger.debug(f"提取板块名称: {sector_name}")
+        
+        # 3. 提取日期（如果需要）
+        if hasattr(template, 'requires_date') and template.requires_date:
+            trade_date = self._extract_date_from_query(processed_question)
+            extracted_params['trade_date'] = trade_date or last_trading_date
+        
+        # 3.5 对于排名查询，确保有trade_date参数
+        if template.name in ['涨跌幅排名', '总市值排名', '流通市值排名', '成交额排名', '成交量排名', 
+                            '主力净流入排行', '主力净流出排行', 'PE排名', 'PB排名']:
+            if 'trade_date' not in extracted_params:
+                # 使用最新交易日的格式化版本（YYYYMMDD）
+                extracted_params['trade_date'] = last_trading_date.replace('-', '')
+                self.logger.debug(f"为排名查询添加默认交易日: {extracted_params['trade_date']}")
+        
+        # 4. 提取数量限制（如果需要）
+        if hasattr(template, 'requires_limit') and template.requires_limit:
+            default_limit = getattr(template, 'default_limit', 10)
+            limit = self._extract_limit_with_chinese(query, params, default_limit)
+            extracted_params['limit'] = limit
+        
+        # 5. 提取日期范围（如果需要）
+        if hasattr(template, 'requires_date_range') and template.requires_date_range:
+            date_range = self._extract_date_range_from_query(processed_question)
+            if date_range:
+                extracted_params['start_date'], extracted_params['end_date'] = date_range
+            else:
+                # 如果需要日期范围但未提供，使用默认值
+                days = params.get('days', 90)
+                extracted_params['days'] = days
+        
+        # 6. 提取排序方向（涨幅/跌幅）
+        if template.name == '涨跌幅排名':
+            if '跌幅' in processed_question:
+                extracted_params['ranking_type'] = 'pct_chg_desc'
+                extracted_params['order'] = 'ASC'  # 跌幅用升序
+            else:
+                extracted_params['ranking_type'] = 'pct_chg'
+                extracted_params['order'] = 'DESC'  # 涨幅用降序
+        
+        # 7. 提取是否排除ST股票
+        if hasattr(template, 'supports_exclude_st') and template.supports_exclude_st:
+            exclude_st = '排除ST' in query or '不含ST' in query or '剔除ST' in query
+            extracted_params['exclude_st'] = exclude_st
+        
+        # 8. 提取PE/PB排名方向
+        if template.name in ['PE排名', 'PB排名']:
+            if '最低' in processed_question or '最小' in processed_question:
+                extracted_params['ranking_direction'] = 'low'
+            else:
+                extracted_params['ranking_direction'] = 'high'
+        
+        # 9. 处理主力净流入/流出排行的排序
+        if template.name in ['主力净流入排行', '主力净流出排行']:
+            if '流出' in template.name:
+                # 对于流出排行，使用升序（负值在前）
+                extracted_params['order_by'] = 'net_amount ASC'
+            else:
+                # 对于流入排行，使用降序（正值在前）
+                extracted_params['order_by'] = 'net_amount DESC'
+        
+        # 10. 合并原始参数（保留模板匹配的其他参数）
+        for key, value in params.items():
+            if key not in extracted_params:
+                extracted_params[key] = value
+        
+        return extracted_params
+    
+    def _execute_template_sql(self, template_name: str, params: Dict) -> Optional[List[Dict]]:
+        """统一的SQL执行方法
+        
+        Args:
+            template_name: 模板名称
+            params: SQL参数
+            
+        Returns:
+            查询结果或None
+        """
+        try:
+            # 根据模板名称获取对应的SQL
+            sql = self._get_sql_for_template(template_name, params)
+            if not sql:
+                self.logger.error(f"无法获取模板{template_name}的SQL")
+                return None
+            
+            self.logger.debug(f"执行SQL模板 {template_name}, 参数: {params}")
+            
+            # 动态修改ORDER BY子句（如果需要）
+            if template_name in ['主力净流入排行', '主力净流出排行'] and 'order_by' in params:
+                # 替换SQL中的ORDER BY子句
+                import re
+                order_pattern = r'ORDER BY\s+[^\s]+\s+(ASC|DESC)'
+                new_order = f"ORDER BY m.{params['order_by']}"
+                sql = re.sub(order_pattern, new_order, sql, flags=re.IGNORECASE)
+                # 从params中移除order_by，避免传给execute_query时出错
+                params_copy = params.copy()
+                params_copy.pop('order_by', None)
+            else:
+                params_copy = params
+            
+            # 执行查询
+            result = self.mysql_connector.execute_query(sql, params_copy)
+            
+            if result and len(result) > 0:
+                return result
+            else:
+                self.logger.info(f"模板{template_name}查询无结果")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"执行模板{template_name}的SQL失败: {e}")
+            return None
+    
+    def _get_sql_for_template(self, template_name: str, params: Dict) -> Optional[str]:
+        """根据模板名称获取对应的SQL
+        
+        Args:
+            template_name: 模板名称
+            params: 参数字典（用于动态选择SQL）
+            
+        Returns:
+            SQL语句或None
+        """
+        # SQL模板映射表
+        sql_map = {
+            '股价查询': SQLTemplates.STOCK_PRICE_BY_DATE if params.get('trade_date') else SQLTemplates.STOCK_PRICE_LATEST,
+            'K线查询': SQLTemplates.KLINE_RANGE,
+            '成交量查询': SQLTemplates.VOLUME_BY_DATE,
+            '估值指标查询': SQLTemplates.VALUATION_METRICS_BY_DATE if params.get('trade_date') else SQLTemplates.VALUATION_METRICS,
+            '涨跌幅排名': SQLTemplates.PCT_CHG_RANKING if params.get('order') == 'DESC' else SQLTemplates.PCT_CHG_RANKING_DESC,
+            '总市值排名': SQLTemplates.MARKET_CAP_RANKING,
+            '流通市值排名': SQLTemplates.CIRC_MV_RANKING,
+            '成交额排名': SQLTemplates.AMOUNT_RANKING,
+            '成交量排名': SQLTemplates.VOLUME_RANKING,
+            '主力净流入排行': SQLTemplates.MAIN_FORCE_RANKING,
+            '主力净流出排行': SQLTemplates.MAIN_FORCE_RANKING,  # 使用相同的SQL，通过排序处理
+            '个股主力资金': SQLTemplates.STOCK_MONEY_FLOW,
+            '板块主力资金': SQLTemplates.SECTOR_MONEY_FLOW,
+            'PE排名': SQLTemplates.PE_RANKING,
+            'PB排名': SQLTemplates.PB_RANKING,
+            '净利润排名': SQLTemplates.PROFIT_RANKING,
+            '营收排名': SQLTemplates.REVENUE_RANKING,
+            'ROE排名': SQLTemplates.ROE_RANKING,
+            '利润查询': SQLTemplates.FINANCIAL_LATEST,
+            '公告查询': SQLTemplates.ANNOUNCEMENT_BY_DATE if params.get('ann_date') else SQLTemplates.ANNOUNCEMENT_LATEST,
+        }
+        
+        return sql_map.get(template_name)
+    
+    def _format_template_result(self, template_name: str, result: List[Dict], 
+                               params: Dict) -> str:
+        """统一的结果格式化方法
+        
+        Args:
+            template_name: 模板名称
+            result: 查询结果
+            params: 参数（包含股票名称等信息）
+            
+        Returns:
+            格式化的结果字符串
+        """
+        try:
+            # 处理单条记录和列表结果
+            if result and len(result) == 1 and template_name not in ['涨跌幅排名', '总市值排名', '流通市值排名', 
+                                                                      '成交额排名', '成交量排名', '主力净流入排行', 
+                                                                      '主力净流出排行', 'PE排名', 'PB排名', 
+                                                                      '净利润排名', '营收排名', 'ROE排名']:
+                data = result[0]
+            else:
+                data = result
+            
+            # 根据模板名称选择格式化方法
+            if template_name == '股价查询':
+                return SQLTemplates.format_stock_price_result(data, params.get('stock_name'))
+            
+            elif template_name == '估值指标查询':
+                return SQLTemplates.format_valuation_result(data, params.get('stock_name'))
+            
+            elif template_name == '涨跌幅排名':
+                return SQLTemplates.format_ranking_result(data, 'pct_chg')
+                
+            elif template_name == '总市值排名':
+                return SQLTemplates.format_ranking_result(data, 'market_cap')
+                
+            elif template_name == '流通市值排名':
+                return SQLTemplates.format_ranking_result(data, 'circ_mv')
+            
+            elif template_name == '成交额排名':
+                return SQLTemplates.format_ranking_result(data, 'amount')
+                
+            elif template_name == '成交量排名':
+                return SQLTemplates.format_ranking_result(data, 'volume')
+            
+            elif template_name in ['主力净流入排行', '主力净流出排行']:
+                is_outflow = '流出' in template_name
+                return SQLTemplates.format_money_flow_ranking(data, is_outflow)
+            
+            elif template_name == '个股主力资金':
+                return SQLTemplates.format_money_flow_result(data, params.get('stock_name'))
+            
+            elif template_name == '板块主力资金':
+                return self._format_sector_money_flow(data)
+            
+            elif template_name == 'PE排名':
+                order = params.get('ranking_direction', 'DESC')
+                return SQLTemplates.format_pe_ranking(data, order)
+                
+            elif template_name == 'PB排名':
+                order = params.get('ranking_direction', 'DESC')
+                return SQLTemplates.format_pb_ranking(data, order)
+                
+            elif template_name == '净利润排名':
+                return SQLTemplates.format_profit_ranking(data)
+                
+            elif template_name == '营收排名':
+                return SQLTemplates.format_revenue_ranking(data)
+                
+            elif template_name == 'ROE排名':
+                return SQLTemplates.format_roe_ranking(data)
+            
+            elif template_name == '利润查询':
+                return self._format_profit_result(data, params.get('stock_name'))
+            
+            elif template_name == 'K线查询':
+                return self._format_kline_data(data)
+            
+            elif template_name == '成交量查询':
+                return SQLTemplates.format_volume_result(data, params.get('stock_name'))
+            
+            elif template_name == '公告查询':
+                return self._format_announcement_result(data, params)
+            
+            else:
+                # 默认格式化
+                return str(data)
+                
+        except Exception as e:
+            self.logger.error(f"格式化{template_name}结果失败: {e}")
+            return f"查询成功但格式化失败: {str(e)}"
+    
+    # 辅助格式化方法
+    def _format_sector_money_flow(self, data):
+        """格式化板块资金流向结果"""
+        if not data:
+            return "未查询到板块资金流向数据"
+        
+        if isinstance(data, list) and len(data) > 0:
+            # 如果是列表，格式化为表格
+            lines = [f"## 板块资金流向 - {data[0].get('trade_date', '')}\n"]
+            lines.append("| 股票名称 | 股票代码 | 主力净流入(万) | 涨跌幅 |")
+            lines.append("|----------|----------|--------------|--------|")
+            
+            for row in data[:10]:  # 只显示前10条
+                net_amount = row.get('net_amount', 0)
+                pct_change = row.get('pct_change', 0)
+                lines.append(f"| {row.get('name', '')} | {row.get('ts_code', '')} | {net_amount:.2f} | {pct_change:.2f}% |")
+            
+            return "\n".join(lines)
+        else:
+            # 单条记录
+            return SQLTemplates.format_money_flow_result(data, data.get('name'))
+    
+    def _format_profit_result(self, data, stock_name=None):
+        """格式化利润查询结果"""
+        if not data:
+            return "未查询到利润数据"
+        
+        if isinstance(data, dict):
+            # 单条记录
+            revenue = data.get('revenue', 0) / 100000000  # 转换为亿元
+            net_profit = data.get('n_income', 0) / 100000000
+            
+            stock_info = stock_name if stock_name else data.get('ts_code', '')
+            return f"""{stock_info}的财务数据（{data.get('end_date', '')}）：
+营业收入：{revenue:.2f}亿元
+净利润：{net_profit:.2f}亿元"""
+        else:
+            # 默认返回字符串表示
+            return str(data)
+    
+    def _format_kline_data(self, data):
+        """格式化K线数据"""
+        if not data:
+            return "未查询到K线数据"
+        
+        # 构建K线数据表格
+        lines = ["## K线数据\n"]
+        lines.append("| 日期 | 开盘 | 最高 | 最低 | 收盘 | 成交量(万手) | 涨跌幅 |")
+        lines.append("|------|------|------|------|------|------------|--------|")
+        
+        # 限制显示行数，避免过长
+        display_data = data[:30] if len(data) > 30 else data
+        
+        for row in display_data:
+            vol = row.get('vol', 0) / 10000
+            lines.append(f"| {row.get('trade_date', '')} | {row.get('open', 0):.2f} | {row.get('high', 0):.2f} | "
+                        f"{row.get('low', 0):.2f} | {row.get('close', 0):.2f} | {vol:.2f} | {row.get('pct_chg', 0):.2f}% |")
+        
+        if len(data) > 30:
+            lines.append(f"\n*显示了前30条记录，共{len(data)}条*")
+        
+        return "\n".join(lines)
+    
+    def _format_announcement_result(self, data, params):
+        """格式化公告查询结果"""
+        if not data:
+            return "未查询到公告信息"
+        
+        lines = [f"## 公告列表\n"]
+        
+        for i, row in enumerate(data, 1):
+            title = row.get('title', '无标题')
+            ann_date = row.get('ann_date', '')
+            url = row.get('url', '')
+            
+            lines.append(f"{i}. **{title}**")
+            lines.append(f"   - 发布日期：{ann_date}")
+            if url:
+                lines.append(f"   - 链接：{url}")
+            lines.append("")
+        
+        return "\n".join(lines)
+    
+    # ==================== Phase 1.3.2: 统一错误处理流程 ====================
+    
+    def _create_error_response(self, error_type: str, error_msg: str, 
+                             template_name: str = None) -> Dict[str, Any]:
+        """创建统一的错误响应
+        
+        Args:
+            error_type: 错误类型（PARAM_ERROR, QUERY_ERROR, SYSTEM_ERROR等）
+            error_msg: 错误消息
+            template_name: 模板名称（可选）
+            
+        Returns:
+            标准错误响应字典
+        """
+        return {
+            'success': False,
+            'error': error_msg,
+            'error_type': error_type,
+            'template': template_name,
+            'quick_path': True
+        }
+    
+    def _validate_template_params(self, template: Any, params: Dict) -> Tuple[bool, Optional[str]]:
+        """验证模板所需参数是否齐全
+        
+        Args:
+            template: 查询模板
+            params: 提取的参数
+            
+        Returns:
+            (是否有效, 错误消息)
+        """
+        # 检查是否有错误标记
+        if 'error' in params:
+            return False, params['error']
+        
+        # 检查必需的股票代码
+        if hasattr(template, 'requires_stock') and template.requires_stock:
+            if not params.get('ts_code'):
+                return False, "缺少必需的股票代码参数"
+        
+        # 检查必需的日期
+        if hasattr(template, 'requires_date') and template.requires_date:
+            if not params.get('trade_date'):
+                return False, "无法提取日期信息"
+        
+        # 检查必需的日期范围
+        if hasattr(template, 'requires_date_range') and template.requires_date_range:
+            if not (params.get('start_date') and params.get('end_date')) and not params.get('days'):
+                return False, "需要指定日期范围或天数"
+        
+        return True, None
+    
+    # ==================== 格式化辅助方法 ====================
+    
+    def _format_stock_money_flow(self, result: List[Dict], stock_name: str) -> str:
+        """格式化个股主力资金结果"""
+        if result and len(result) > 0:
+            data = result[0]
+            stock_info = f"{stock_name}（{data.get('ts_code', '')}）" if stock_name else data.get('ts_code', '')
+            return SQLTemplates.format_money_flow_result(data, stock_info)
+        return "查询无结果"
+    
+    def _format_sector_money_flow(self, result: List[Dict]) -> str:
+        """格式化板块主力资金结果"""
+        if not result:
+            return "查询无结果"
+            
+        # 板块资金流向返回多行数据（排名形式）
+        rows = []
+        rows.append(f"板块主力资金流向（{result[0].get('trade_date', '')}）：\n")
+        rows.append("排名 | 股票代码 | 股票名称 | 主力净流入（万元）")
+        rows.append("-" * 50)
+        
+        for i, row in enumerate(result[:20], 1):  # 最多显示20条
+            ts_code = row.get('ts_code', '')
+            stock_name = get_stock_name(ts_code) or '-'
+            net_mf_amount = row.get('net_mf_amount', 0)
+            
+            rows.append(f"{i:2d} | {ts_code} | {stock_name} | {net_mf_amount:,.2f}")
+        
+        rows.append(f"\n共{len(result)}条记录")
+        return '\n'.join(rows)
+    
+    def _format_profit_result(self, result: List[Dict], stock_name: str) -> str:
+        """格式化利润查询结果"""
+        if result and len(result) > 0:
+            data = result[0]
+            stock_info = f"{stock_name}（{data.get('ts_code', '')}）" if stock_name else data.get('ts_code', '')
+            
+            # 格式化报告期
+            period = str(data.get('end_date', ''))
+            if len(period) == 8:
+                year = period[:4]
+                month = period[4:6]
+                if month == '03':
+                    period_desc = f"{year}年一季度"
+                elif month == '06':
+                    period_desc = f"{year}年中报"
+                elif month == '09':
+                    period_desc = f"{year}年三季度"
+                elif month == '12':
+                    period_desc = f"{year}年年报"
+                else:
+                    period_desc = period
+            else:
+                period_desc = period
+            
+            rows = []
+            rows.append(f"{stock_info} {period_desc} 财务数据：\n")
+            
+            # 关键财务指标
+            revenue = data.get('revenue', 0) / 10000  # 转换为万元
+            net_profit = data.get('n_income', 0) / 10000  # 转换为万元
+            
+            rows.append(f"营业收入：{revenue:,.2f} 万元")
+            rows.append(f"净利润：{net_profit:,.2f} 万元")
+            
+            # 如果有同比数据
+            if 'revenue_yoy' in data:
+                rows.append(f"营收同比增长：{data['revenue_yoy']:.2f}%")
+            if 'n_income_yoy' in data:
+                rows.append(f"净利润同比增长：{data['n_income_yoy']:.2f}%")
+            
+            return '\n'.join(rows)
+        return "查询无结果"
+    
+    def _format_volume_result(self, result: List[Dict], stock_name: str) -> str:
+        """格式化成交量查询结果"""
+        if result and len(result) > 0:
+            data = result[0]
+            stock_info = f"{stock_name}（{data.get('ts_code', '')}）" if stock_name else data.get('ts_code', '')
+            
+            rows = []
+            rows.append(f"{stock_info} {data.get('trade_date', '')} 成交情况：\n")
+            
+            vol = data.get('vol', 0)
+            amount = data.get('amount', 0)
+            
+            rows.append(f"成交量：{vol:,.0f} 手")
+            rows.append(f"成交额：{amount:,.2f} 千元")
+            
+            # 如果有换手率数据
+            if 'turnover_rate' in data:
+                rows.append(f"换手率：{data['turnover_rate']:.2f}%")
+            
+            return '\n'.join(rows)
+        return "查询无结果"
+    
+    def _format_announcement_result(self, result: List[Dict], params: Dict) -> str:
+        """格式化公告查询结果"""
+        if not result:
+            return "未找到相关公告"
+            
+        rows = []
+        query_desc = ""
+        
+        # 构建查询描述
+        if params.get('stock_name'):
+            query_desc = params['stock_name']
+        if params.get('start_date') and params.get('end_date'):
+            query_desc += f" {params['start_date']}至{params['end_date']}"
+        elif params.get('trade_date'):
+            query_desc += f" {params['trade_date']}"
+        else:
+            query_desc += " 最新"
+            
+        rows.append(f"{query_desc}公告列表：\n")
+        rows.append("序号 | 公告标题 | 发布日期")
+        rows.append("-" * 60)
+        
+        for i, row in enumerate(result[:20], 1):  # 最多显示20条
+            title = row.get('title', '')[:50]  # 限制标题长度
+            pub_date = row.get('pub_date', '')
+            
+            rows.append(f"{i:2d} | {title} | {pub_date}")
+        
+        rows.append(f"\n共找到{len(result)}条公告")
+        return '\n'.join(rows)
+    
+    # ==================== Phase 1.3.3: 重构的_try_quick_query方法 ====================
+    
+    def _try_quick_query_v2(self, question: str) -> Optional[Dict[str, Any]]:
+        """重构后的快速查询方法 - 使用统一的处理流程
+        
+        处理流程：
+        1. 日期解析和中文数字规范化
+        2. 模板匹配
+        3. 统一参数提取
+        4. 参数验证
+        5. SQL执行
+        6. 结果格式化
+        """
+        try:
+            # 1. 预处理：日期解析和中文数字规范化
+            processed_question, parsing_result = date_intelligence.preprocess_question(question)
+            self.logger.info(f"日期解析前: {question}")
+            self.logger.info(f"日期解析后: {processed_question}")
+            
+            processed_question = normalize_quantity_expression(processed_question)
+            self.logger.info(f"中文数字规范化后: {processed_question}")
+            
+            # 2. 模板匹配
+            template_match = match_query_template(processed_question)
+            if not template_match:
+                self.logger.debug("没有匹配到任何查询模板")
+                return None
+                
+            template, params = template_match
+            self.logger.info(f"匹配到模板: {template.name}")
+            
+            # 只处理SQL查询类型
+            if template.route_type != 'SQL_ONLY':
+                self.logger.debug(f"模板路由类型不是SQL_ONLY: {template.route_type}")
+                return None
+            
+            # 3. 统一参数提取
+            extracted_params = self._extract_query_params(
+                question, template, params, processed_question
+            )
+            self.logger.debug(f"提取的参数: {extracted_params}")
+            
+            # 4. 参数验证
+            is_valid, error_msg = self._validate_template_params(template, extracted_params)
+            if not is_valid:
+                self.logger.warning(f"参数验证失败: {error_msg}")
+                return self._create_error_response('PARAM_ERROR', error_msg, template.name)
+            
+            # 5. 执行SQL
+            result = self._execute_template_sql(template.name, extracted_params)
+            if result is None:
+                self.logger.info(f"模板{template.name}查询无结果")
+                return self._create_error_response(
+                    'QUERY_ERROR', 
+                    '查询无结果', 
+                    template.name
+                )
+            
+            # 6. 格式化结果
+            formatted_result = self._format_template_result(
+                template.name, result, extracted_params
+            )
+            
+            # 7. 返回成功响应
+            return {
+                'success': True,
+                'result': formatted_result,
+                'sql': None,  # 不暴露SQL
+                'quick_path': True,
+                'template': template.name,
+                'execution_time': f"{time.time() - self.start_time:.2f}s" if hasattr(self, 'start_time') else None
+            }
+            
+        except Exception as e:
+            self.logger.error(f"快速查询失败: {e}", exc_info=True)
+            return self._create_error_response(
+                'SYSTEM_ERROR', 
+                f"查询处理失败: {str(e)}", 
+                template.name if 'template' in locals() else None
+            )
     
     def _create_sql_prompt(self) -> PromptTemplate:
         """创建自定义的SQL prompt"""
@@ -1411,11 +2041,13 @@ class SQLAgent:
             }
             
             # 尝试快速查询路径（避免LLM调用）
-            quick_result = self._try_quick_query(question)
+            # 使用重构后的版本
+            quick_result = self._try_quick_query_v2(question)
             if quick_result:
                 self.logger.info("使用快速查询路径")
-                # 缓存结果
-                self._query_cache[cache_key] = quick_result['result']
+                # 只有成功的结果才缓存
+                if quick_result.get('success') and quick_result.get('result'):
+                    self._query_cache[cache_key] = quick_result['result']
                 return quick_result
             
             # 早期股票实体验证（使用统一验证器与Financial Agent保持一致）

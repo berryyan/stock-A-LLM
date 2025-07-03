@@ -34,6 +34,13 @@ class QueryTemplate:
     optional_fields: List[str]  # 可选字段
     default_params: Dict        # 默认参数
     example: str               # 示例查询
+    # Phase 1.3新增字段 - 用于统一处理
+    requires_stock: bool = False      # 是否需要股票代码
+    requires_date: bool = False       # 是否需要日期
+    requires_date_range: bool = False # 是否需要日期范围
+    requires_limit: bool = False      # 是否需要数量限制
+    default_limit: int = 10          # 默认数量限制
+    supports_exclude_st: bool = False # 是否支持排除ST
 
 
 class QueryTemplateLibrary:
@@ -59,7 +66,9 @@ class QueryTemplateLibrary:
                     "time_range": "specified",
                     "metrics": ["open", "high", "low", "close", "vol", "amount", "pct_chg"]
                 },
-                example="贵州茅台20250627的股价"
+                example="贵州茅台20250627的股价",
+                requires_stock=True,
+                requires_date=True
             ),
             
             # K线查询模板（支持任意时间段）
@@ -107,7 +116,8 @@ class QueryTemplateLibrary:
                     "period_count": 4,
                     "metrics": ["revenue", "net_profit", "operate_profit"]
                 },
-                example="贵州茅台2024年的净利润"
+                example="贵州茅台2024年的净利润",
+                requires_stock=True
             ),
             
             # PE/PB查询模板（支持任意日期）
@@ -231,7 +241,8 @@ class QueryTemplateLibrary:
                     "time_range": "specified",
                     "query_type": "sector"
                 },
-                example="银行板块昨天的主力资金流入"
+                example="银行板块昨天的主力资金流入",
+                requires_date=True
             ),
             
             # 个股主力资金查询模板（SQL快速路径）
@@ -245,7 +256,9 @@ class QueryTemplateLibrary:
                 default_params={
                     "time_range": "specified"
                 },
-                example="贵州茅台昨天的主力净流入"
+                example="贵州茅台昨天的主力净流入",
+                requires_stock=True,
+                requires_date=True
             ),
             
             # 资金流向模板
@@ -319,7 +332,10 @@ class QueryTemplateLibrary:
                     "limit": 10,
                     "time_range": "specified"
                 },
-                example="20250627涨幅前10"
+                example="20250627涨幅前10",
+                requires_date=True,
+                requires_limit=True,
+                supports_exclude_st=True
             ),
             
             # 总市值排名模板（支持历史日期，兼容"市值排名"，支持无数字默认前10）
