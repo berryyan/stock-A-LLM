@@ -37,6 +37,7 @@ from utils.query_templates import match_query_template
 from utils.stock_code_mapper import convert_to_ts_code, get_stock_name
 from utils.unified_stock_validator import validate_stock_input, UnifiedStockValidator
 from utils.security_filter import clean_llm_output, validate_query
+from utils.chinese_number_converter import extract_limit_from_query, normalize_quantity_expression
 
 
 
@@ -148,6 +149,10 @@ class SQLAgent:
             self.logger.info(f"日期解析前: {question}")
             self.logger.info(f"日期解析后: {processed_question}")
             
+            # 中文数字规范化
+            processed_question = normalize_quantity_expression(processed_question)
+            self.logger.info(f"中文数字规范化后: {processed_question}")
+            
             # 使用处理后的问题进行模板匹配
             template_match = match_query_template(processed_question)
             if not template_match:
@@ -240,7 +245,7 @@ class SQLAgent:
                     
             elif template.name in ['涨跌幅排名', '总市值排名', '流通市值排名']:
                 # 排名查询
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 
                 # 从处理后的查询中提取日期
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
@@ -481,7 +486,7 @@ class SQLAgent:
                     
             elif template.name == '主力净流入排行':
                 # 主力净流入排行
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 
                 # 从处理后的查询中提取日期
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
@@ -507,7 +512,7 @@ class SQLAgent:
                     
             elif template.name == '主力净流出排行':
                 # 主力净流出排行（与流入相反，按ASC排序）
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 
                 # 从处理后的查询中提取日期
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
@@ -534,7 +539,7 @@ class SQLAgent:
                     
             elif template.name == '成交额排名':
                 # 成交额排名
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 
                 # 从处理后的查询中提取日期
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
@@ -559,7 +564,7 @@ class SQLAgent:
                     
             elif template.name == '成交量排名':
                 # 成交量排名
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 
                 # 从处理后的查询中提取日期
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
@@ -672,7 +677,7 @@ class SQLAgent:
                     
             elif template.name == 'PE排名':
                 # PE排名查询
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
                 
                 # 判断是最高还是最低
@@ -699,7 +704,7 @@ class SQLAgent:
                     
             elif template.name == 'PB排名':
                 # PB排名查询
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
                 
                 # 判断是最高还是最低
@@ -726,7 +731,7 @@ class SQLAgent:
                     
             elif template.name == '净利润排名':
                 # 净利润排名查询
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 
                 # 判断是盈利还是亏损
                 if '亏损' in processed_question:
@@ -748,7 +753,7 @@ class SQLAgent:
                     
             elif template.name == '营收排名':
                 # 营收排名查询
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 sql = SQLTemplates.REVENUE_RANKING
                 
                 result = self.mysql_connector.execute_query(sql, {'limit': limit})
@@ -764,7 +769,7 @@ class SQLAgent:
                     
             elif template.name == 'ROE排名':
                 # ROE排名查询
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 sql = SQLTemplates.ROE_RANKING
                 
                 result = self.mysql_connector.execute_query(sql, {'limit': limit})
@@ -933,7 +938,7 @@ class SQLAgent:
                 
                 # 尝试先提取日期范围
                 date_range = self._extract_date_range_from_query(processed_question)
-                limit = params.get('limit', 10)
+                limit = self._extract_limit_with_chinese(question, params, 10)
                 
                 try:
                     # 判断查询类型并执行相应SQL
@@ -1192,6 +1197,26 @@ class SQLAgent:
             if len(numbers) == 3:
                 return ''.join(numbers)
         return None
+    
+    def _extract_limit_with_chinese(self, query: str, params: Dict, default: int = 10) -> int:
+        """提取查询限制数量，支持中文数字
+        
+        优先级：
+        1. 从原始查询中提取中文数字
+        2. 使用params中的limit
+        3. 使用默认值
+        """
+        # 首先尝试从原始查询中提取（支持中文）
+        extracted_limit = extract_limit_from_query(query, default=None)
+        if extracted_limit:
+            return extracted_limit
+        
+        # 其次使用params中的limit
+        if params and 'limit' in params:
+            return params.get('limit', default)
+        
+        # 最后使用默认值
+        return default
     
     def _create_sql_prompt(self) -> PromptTemplate:
         """创建自定义的SQL prompt"""
