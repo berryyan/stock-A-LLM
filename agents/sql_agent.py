@@ -931,17 +931,15 @@ class SQLAgent:
                 # 获取股票名称
                 stock_name = get_stock_name(ts_code)
                 
-                # 从处理后的查询中提取日期信息
-                ann_date = self._extract_date_from_query(processed_question)
+                # 尝试先提取日期范围
+                date_range = self._extract_date_range_from_query(processed_question)
                 limit = params.get('limit', 10)
                 
                 try:
                     # 判断查询类型并执行相应SQL
-                    if '至' in processed_question and ann_date and '至' in ann_date:
+                    if date_range:
                         # 日期范围查询
-                        dates = ann_date.split('至')
-                        start_date = dates[0].strip()
-                        end_date = dates[1].strip() if len(dates) > 1 else start_date
+                        start_date, end_date = date_range
                         
                         result = self.mysql_connector.execute_query(
                             SQLTemplates.ANNOUNCEMENT_BY_RANGE,
@@ -954,28 +952,31 @@ class SQLAgent:
                         )
                         period_desc = f"{start_date}至{end_date}"
                         
-                    elif ann_date and ann_date != last_trading_date:
-                        # 特定日期查询
-                        result = self.mysql_connector.execute_query(
-                            SQLTemplates.ANNOUNCEMENT_BY_DATE,
-                            {
-                                'ts_code': ts_code,
-                                'ann_date': ann_date,
-                                'limit': limit
-                            }
-                        )
-                        period_desc = ann_date
-                        
                     else:
-                        # 最新公告查询
-                        result = self.mysql_connector.execute_query(
-                            SQLTemplates.ANNOUNCEMENT_LATEST,
-                            {
-                                'ts_code': ts_code,
-                                'limit': limit
-                            }
-                        )
-                        period_desc = "最新"
+                        # 只有在没有日期范围时才提取单个日期
+                        ann_date = self._extract_date_from_query(processed_question)
+                        
+                        if ann_date:
+                            # 特定日期查询
+                            result = self.mysql_connector.execute_query(
+                                SQLTemplates.ANNOUNCEMENT_BY_DATE,
+                                {
+                                    'ts_code': ts_code,
+                                    'ann_date': ann_date,
+                                    'limit': limit
+                                }
+                            )
+                            period_desc = ann_date
+                        else:
+                            # 最新公告查询
+                            result = self.mysql_connector.execute_query(
+                                SQLTemplates.ANNOUNCEMENT_LATEST,
+                                {
+                                    'ts_code': ts_code,
+                                    'limit': limit
+                                }
+                            )
+                            period_desc = "最新"
                     
                     if not result:
                         return {
@@ -1156,6 +1157,40 @@ class SQLAgent:
             if match:
                 return formatter(match)
         
+        return None
+    
+    def _extract_date_range_from_query(self, query: str) -> Optional[Tuple[str, str]]:
+        """从查询中提取日期范围（返回开始和结束日期的YYYYMMDD格式）"""
+        # 日期格式模式
+        date_pattern = r'(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日)'
+        
+        # 匹配日期范围（支持"到"和"至"）
+        range_pattern = rf'{date_pattern}(?:到|至){date_pattern}'
+        match = re.search(range_pattern, query)
+        
+        if match:
+            start_date_str = match.group(1)
+            end_date_str = match.group(2)
+            
+            # 规范化日期格式
+            start_date = self._normalize_single_date(start_date_str)
+            end_date = self._normalize_single_date(end_date_str)
+            
+            if start_date and end_date:
+                return (start_date, end_date)
+        
+        return None
+    
+    def _normalize_single_date(self, date_str: str) -> Optional[str]:
+        """将单个日期字符串规范化为YYYYMMDD格式"""
+        if re.match(r'^\d{8}$', date_str):
+            return date_str
+        elif re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
+            return date_str.replace('-', '')
+        elif re.match(r'^\d{4}年\d{2}月\d{2}日$', date_str):
+            numbers = re.findall(r'\d+', date_str)
+            if len(numbers) == 3:
+                return ''.join(numbers)
         return None
     
     def _create_sql_prompt(self) -> PromptTemplate:

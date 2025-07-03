@@ -3,6 +3,7 @@ import { Message } from './components/chat/Message';
 import { DocumentViewer } from './components/document/DocumentViewer';
 import { SmartInput } from './components/input/SmartInput';
 import { useStreamingResponse } from './hooks/useStreamingResponse';
+import { ThemeToggle } from './components/common/ThemeToggle';
 import type { Message as MessageType } from './types';
 import stockAPI from './services/api';
 
@@ -152,16 +153,16 @@ function App() {
 
 
   return (
-    <div className="flex h-screen bg-claude-background">
-      {/* 主容器 - 使用flex布局，背景色#262626（深色主题） */}
+    <div className="flex h-screen bg-white dark:bg-claude-background">
+      {/* 主容器 - 使用flex布局，支持亮色和暗色主题 */}
       {/* 
         侧边栏 - 支持折叠
         展开宽度：w-sidebar (260px)
         折叠宽度：w-12 (48px)
-        背景色：bg-claude-surface (#ffffff)
-        边框：border-claude-border (#e5e5e7)
+        背景色：亮色模式白色，暗色模式深灰
+        边框：亮色模式浅灰，暗色模式深灰
       */}
-      <aside className={`${sidebarCollapsed ? 'w-12' : 'w-sidebar'} bg-claude-surface border-r border-claude-border transition-all duration-300 relative`}>
+      <aside className={`${sidebarCollapsed ? 'w-12' : 'w-sidebar'} bg-gray-50 dark:bg-claude-surface border-r border-gray-200 dark:border-claude-border transition-all duration-300 relative`}>
         {/* 折叠按钮 */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -175,23 +176,28 @@ function App() {
         
         {sidebarCollapsed ? (
           /* 折叠状态 - 只显示图标 */
-          <div className="p-2">
-            <button 
-              onClick={() => {
-                setMessages([]);
-                setSidebarCollapsed(false);
-              }}
-              className="w-8 h-8 flex items-center justify-center text-claude-primary hover:bg-[#1E1E1E] rounded"
-              title="New Chat"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
+          <div className="flex flex-col h-full">
+            <div className="p-2">
+              <button 
+                onClick={() => {
+                  setMessages([]);
+                  setSidebarCollapsed(false);
+                }}
+                className="w-8 h-8 flex items-center justify-center text-claude-primary hover:bg-[#1E1E1E] rounded"
+                title="New Chat"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+            <div className="mt-auto p-2">
+              <ThemeToggle />
+            </div>
           </div>
         ) : (
           /* 展开状态 - 完整侧边栏 */
-          <>
+          <div className="flex flex-col h-full">
             <div className="p-4">
               <button 
                 onClick={() => {
@@ -202,12 +208,18 @@ function App() {
                 New Chat
               </button>
             </div>
-            <nav className="p-2">
-              <div className="text-claude-text-secondary text-sm p-2">
+            <nav className="flex-1 p-2">
+              <div className="text-gray-500 dark:text-claude-text-secondary text-sm p-2">
                 No previous chats
               </div>
             </nav>
-          </>
+            <div className="border-t border-gray-200 dark:border-claude-border p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600 dark:text-claude-text-secondary">主题</span>
+                <ThemeToggle />
+              </div>
+            </div>
+          </div>
         )}
       </aside>
 
@@ -308,19 +320,19 @@ function App() {
           <div 
             className="absolute inset-x-0 bottom-0 pointer-events-none"
             style={{
-              background: 'linear-gradient(to top, rgb(38,38,38) 0%, rgb(38,38,38) 60%, transparent 100%)',  // 深色主题渐变
               height: '120px'
             }}
-          />
+          >
+            <div className="h-full bg-gradient-to-t from-white dark:from-[#262626] via-white dark:via-[#262626] to-transparent"></div>
+          </div>
           
           {/* 输入框包装器 - 减少底部留空 */}
           <div className="relative mx-auto px-6 pb-1" style={{ maxWidth: '48rem' }}>
             <div 
-              className="input-wrapper rounded-2xl"
+              className="input-wrapper rounded-2xl bg-gray-50 dark:bg-[#303030] border border-gray-200 dark:border-gray-700"
               style={{
-                backgroundColor: '#303030',  // 深色主题：输入框背景色
-                // 深色主题阴影效果
-                boxShadow: '0 0 0 1px rgba(255, 255, 255, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2)'
+                // 亮色主题阴影效果
+                boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.05), 0 4px 8px rgba(0, 0, 0, 0.05)'
               }}
             >
               <SmartInput

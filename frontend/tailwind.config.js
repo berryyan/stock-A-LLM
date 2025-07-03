@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class', // 使用class模式而不是media查询
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",

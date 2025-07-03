@@ -70,10 +70,9 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
           marginLeft: '0'
         }}>
           <div 
-            className="user-message-bubble flex gap-2.5"
+            className="user-message-bubble flex gap-2.5 bg-gray-100 dark:bg-[#141413]"
             style={{
               width: 'fit-content',
-              backgroundColor: '#141413',     // 深色主题：气泡背景色（深黑）
               padding: '10px 16px 10px 10px',
               borderRadius: '16px',
               wordBreak: 'normal',
@@ -89,8 +88,7 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
               <Avatar role="user" size={26} /> {/* 头像大小26px，标准型 */}
             </div>
             <div className="flex-grow flex items-center" style={{ minHeight: '24px' }}>
-              <p className="text-[15px] leading-relaxed m-0 text-left" style={{ 
-                color: '#F5F5F5',     // 深色主题：气泡文字颜色（浅白）
+              <p className="text-[15px] leading-relaxed m-0 text-left text-gray-900 dark:text-[#F5F5F5]" style={{ 
                 wordBreak: 'normal',   // 正常换行，避免过早换行
                 overflowWrap: 'break-word'  // 长单词自动换行
               }}>

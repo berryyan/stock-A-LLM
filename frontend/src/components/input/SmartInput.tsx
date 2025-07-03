@@ -94,7 +94,7 @@ export const SmartInput: React.FC<SmartInputProps> = ({
             onCompositionEnd={handleCompositionEnd}
             placeholder={placeholder}
             disabled={isLoading}
-            className="w-full px-4 py-2 bg-transparent border-0 rounded-lg focus:outline-none resize-none transition-all duration-200 text-white placeholder-gray-400"
+            className="w-full px-4 py-2 bg-transparent border-0 rounded-lg focus:outline-none resize-none transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             style={{
               minHeight: '40px',
               maxHeight: '240px',
@@ -108,7 +108,7 @@ export const SmartInput: React.FC<SmartInputProps> = ({
           样式：text-xs (小字体), text-gray-500 (灰色文字)
         */}
         {showCharCount && (
-          <div className="absolute bottom-2 right-2 text-xs text-gray-400 bg-[#262626] px-1 rounded">
+          <div className="absolute bottom-2 right-2 text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-[#262626] px-1 rounded">
             {charCount} 字
           </div>
         )}
@@ -162,14 +162,14 @@ export const SmartInput: React.FC<SmartInputProps> = ({
       </div>
       
       {/* 工具栏 - Claude.ai风格 */}
-      <div className="flex items-center justify-between px-4 py-2 border-t border-gray-700">
-        <button className="text-gray-400 hover:text-gray-200 p-1">
+      <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-700">
+        <button className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 p-1">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
         </button>
         
-        <div className="text-xs text-gray-400">
+        <div className="text-xs text-gray-600 dark:text-gray-400">
           按 Enter 发送查询，Shift+Enter 换行
         </div>
       </div>

@@ -99,12 +99,12 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
         },
 
         thead({ children }) {
-          return <thead className="bg-gray-100 dark:bg-gray-800">{children}</thead>;
+          return <thead className="bg-gray-100 dark:bg-gray-200">{children}</thead>;
         },
 
         th({ children }) {
           return (
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-200 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-900 uppercase tracking-wider">
               {children}
             </th>
           );

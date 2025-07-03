@@ -14,9 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v2.1.12)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v2.1.15)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 多个后端崩溃问题修复完成，利润查询、净利润排名、RAG查询稳定性大幅提升。利润查询模板增强，支持报告期参数。前端Markdown表格暗色模式显示优化。个股/板块主力资金查询格式优化，路由准确性提升。营收排名模板正则表达式增强。测试文档更新至v4.7版本。财务指标排名快速路径实现完成，PE/PB/ROE等5个新模板已上线，查询性能提升20-600倍。资金类型术语标准化完成，支持16种非标准术语自动映射。市值排名查询全面优化，支持无数字默认前10和TOP格式。日期智能解析DISTINCT问题修复，交易日范围计算恢复正常。股票识别修复完成，解决"平安"歧义问题。路由机制修复，TEMPLATE_ROUTE_OVERRIDE冲突解决。SQL Agent快速模板完成，支持7种新查询类型，实现2481.5倍加速。路由机制文档化完成，7-Agent架构Phase 0&1完成。代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
+**Current Status**: ✅ 前端主题系统完整实现，支持亮色/暗色主题切换，主题偏好本地存储，Markdown表格样式优化，侧边栏主题切换按钮，全局组件主题适配。公告日期范围查询功能完善，支持"到"和"至"两种日期分隔符，测试用例全部通过。SQL Agent公告查询功能实现，支持灵活日期描述、日期范围查询，SQL与RAG查询边界明确。多个后端崩溃问题修复完成，利润查询、净利润排名、RAG查询稳定性大幅提升。利润查询模板增强，支持报告期参数。前端Markdown表格暗色模式显示优化。个股/板块主力资金查询格式优化，路由准确性提升。营收排名模板正则表达式增强。测试文档更新至v4.8版本。财务指标排名快速路径实现完成，PE/PB/ROE等5个新模板已上线，查询性能提升20-600倍。资金类型术语标准化完成，支持16种非标准术语自动映射。市值排名查询全面优化，支持无数字默认前10和TOP格式。日期智能解析DISTINCT问题修复，交易日范围计算恢复正常。股票识别修复完成，解决"平安"歧义问题。路由机制修复，TEMPLATE_ROUTE_OVERRIDE冲突解决。SQL Agent快速模板完成，支持7种新查询类型，实现2481.5倍加速。路由机制文档化完成，7-Agent架构Phase 0&1完成。代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
 ## Development Commands
 
@@ -337,6 +337,77 @@ The system supports six main query types:
 - 更新test-guide-comprehensive.md，添加1.18公告查询测试用例
 - 创建功能边界说明文档
 - 保持"查询公告："触发词给未来ANNS Agent
+
+#### v2.1.15 - 前端主题系统完整实现 (2025-07-04)
+
+**主题系统实现** ✅:
+- **完整的主题切换系统**: 
+  - 创建 `ThemeContext` 上下文管理主题状态
+  - 支持手动切换亮色/暗色主题
+  - 主题偏好保存到 localStorage
+  - 智能初始化（用户设置 > 系统偏好 > 默认亮色）
+- **UI组件更新**: 
+  - 侧边栏添加主题切换按钮（支持折叠/展开状态）
+  - 太阳/月亮图标切换
+  - 优雅的过渡动画效果
+- **样式系统升级**: 
+  - Tailwind配置 `darkMode: 'class'`
+  - 全局组件支持 `dark:` 前缀样式
+  - 移除CSS媒体查询依赖
+
+**Markdown表格优化** ✅:
+- 修复暗色模式下表格标题可读性问题
+- 暗色模式：浅色背景+黑色文字
+- 亮色模式：浅灰背景+黑色文字
+- 确保两种主题下的良好对比度
+
+**组件主题适配** ✅:
+- **App主容器**: 亮色白色背景，暗色深灰背景
+- **侧边栏**: 亮色浅灰，暗色深灰，边框适配
+- **消息气泡**: 用户消息支持两种主题配色
+- **输入框**: 文字、占位符、边框主题适配
+- **工具栏**: 图标和文字颜色主题适配
+
+**技术实现** ✅:
+- React Context API 管理主题状态
+- localStorage 持久化用户偏好
+- 系统偏好检测作为默认值
+- 类名切换而非CSS变量
+
+#### v2.1.14 - 公告日期范围查询功能完善 (2025-07-04)
+
+**功能增强** ✅:
+- **日期范围查询支持**: 
+  - 支持"到"和"至"两种日期分隔符
+  - 新增`_extract_date_range_from_query()`方法
+  - 支持多种日期格式（YYYYMMDD、YYYY-MM-DD、YYYY年MM月DD日）
+- **公告查询模板增强**: 
+  - 更新正则表达式支持日期范围匹配
+  - 修复普通路由的逻辑判断
+  - 确保快速路径和普通路由行为一致
+- **测试覆盖**: 
+  - 创建专门的测试脚本验证功能
+  - 所有测试用例通过
+
+**技术实现** ✅:
+- 新增日期范围提取和规范化方法
+- 优化公告查询处理逻辑的条件分支
+- 确保日期范围正确显示在查询结果中
+
+#### v2.1.13 - SQL Agent公告查询功能实现 (2025-07-04)
+
+**新功能实现** ✅:
+- **公告查询完整支持**:
+  - 最新公告查询
+  - 指定日期公告查询
+  - 日期范围公告查询（本月、本周、最近N天等）
+- **三个SQL模板**:
+  - ANNOUNCEMENT_LATEST
+  - ANNOUNCEMENT_BY_DATE
+  - ANNOUNCEMENT_BY_RANGE
+- **功能边界明确**:
+  - SQL Agent: 返回公告列表（标题、日期、链接）
+  - RAG Agent: 分析公告内容
 
 #### v2.1.12 - 多个后端崩溃问题修复与功能增强 (2025-07-03)
 
