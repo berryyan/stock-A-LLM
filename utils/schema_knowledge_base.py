@@ -236,6 +236,18 @@ class SchemaKnowledgeBase:
                 '大单买入': 'buy_lg_vol',
                 '大单卖出': 'sell_lg_vol',
                 '主力净流入': 'net_mf_vol'
+            },
+            'tu_anns_d': {
+                '证券代码': 'ts_code',
+                '股票代码': 'ts_code',
+                '股票名称': 'name',
+                '公告日期': 'ann_date',
+                '标题': 'title',
+                '公告标题': 'title',
+                '链接': 'url',
+                '公告链接': 'url',
+                '原文链接': 'url',
+                '发布时间': 'rec_time'
             }
         }
         
@@ -280,6 +292,10 @@ class SchemaKnowledgeBase:
             table_info['primary_fields'] = ['ts_code', 'trade_date', 'buy_elg_vol', 'sell_elg_vol', 'net_mf_vol']
             table_info['common_filters'] = ['ts_code', 'trade_date']
             
+        elif table_name == 'tu_anns_d':
+            table_info['primary_fields'] = ['ts_code', 'name', 'ann_date', 'title', 'url']
+            table_info['common_filters'] = ['ts_code', 'ann_date']
+            
     def _build_topic_classification(self):
         """构建主题分类知识"""
         self.topic_knowledge = {
@@ -300,7 +316,7 @@ class SchemaKnowledgeBase:
             },
             '公告': {
                 'tables': ['tu_anns_d'],
-                'key_fields': ['ann_date', 'title', 'content'],
+                'key_fields': ['ann_date', 'title', 'url', 'ts_code', 'name'],
                 'description': '上市公司公告数据'
             },
             '基本信息': {

@@ -106,17 +106,49 @@ class SQLTemplates:
         LIMIT :days
     """
     
-    # 公告查询模板
+    # 公告查询模板 - 最新公告
     ANNOUNCEMENT_LATEST = """
         SELECT 
             ts_code,
+            name,
             ann_date,
             title,
-            type
+            url
         FROM tu_anns_d
         WHERE ts_code = :ts_code
         ORDER BY ann_date DESC
-        LIMIT 10
+        LIMIT :limit
+    """
+    
+    # 公告查询模板 - 指定日期
+    ANNOUNCEMENT_BY_DATE = """
+        SELECT 
+            ts_code,
+            name,
+            ann_date,
+            title,
+            url
+        FROM tu_anns_d
+        WHERE ts_code = :ts_code
+          AND ann_date = :ann_date
+        ORDER BY rec_time DESC
+        LIMIT :limit
+    """
+    
+    # 公告查询模板 - 日期范围
+    ANNOUNCEMENT_BY_RANGE = """
+        SELECT 
+            ts_code,
+            name,
+            ann_date,
+            title,
+            url
+        FROM tu_anns_d
+        WHERE ts_code = :ts_code
+          AND ann_date >= :start_date
+          AND ann_date <= :end_date
+        ORDER BY ann_date DESC
+        LIMIT :limit
     """
     
     # 市值排名模板

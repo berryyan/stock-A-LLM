@@ -37,7 +37,7 @@ class RoutingConfig:
         # "总市值排名": "rank",    # SQL Agent已实现快速模板
         # "流通市值排名": "rank",  # SQL Agent已实现快速模板
         
-        "最新公告": "anns",      # 公告查询路由到ANNS Agent
+        # "最新公告": "anns",      # 注释掉，让"最新公告"使用SQL Agent的快速路径
         # 未来可添加更多需要覆盖的模板路由
     }
     

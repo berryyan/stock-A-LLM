@@ -20,9 +20,9 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
     message.sources.rag ||
     message.sources.financial ||
     message.sources.money_flow ||
-    // 兼容旧格式
-    (message.sources.documents && message.sources.documents.length > 0) ||
-    (message.sources.sql_data && message.sources.sql_data.length > 0) ||
+    // 兼容旧格式（安全检查）
+    (message.sources.documents && Array.isArray(message.sources.documents) && message.sources.documents.length > 0) ||
+    (message.sources.sql_data && Array.isArray(message.sources.sql_data) && message.sources.sql_data.length > 0) ||
     message.sources.table_data
   );
 
@@ -137,12 +137,18 @@ export const Message: React.FC<MessageProps> = ({ message, onViewSource, isLastF
           )}
           
           {/* RAG文档 */}
-          {message.sources?.rag?.documents && (
+          {message.sources?.rag?.sources && (
             <button
               onClick={() => {
-                const docs = message.sources!.rag!.documents;
-                if (Array.isArray(docs) && docs.length > 0) {
-                  onViewSource?.(docs[0], 'document');
+                const sources = message.sources!.rag!.sources;
+                if (Array.isArray(sources) && sources.length > 0) {
+                  // 将sources信息格式化为文档格式
+                  const formattedDoc = {
+                    sources: sources,
+                    answer: message.sources!.rag!.answer,
+                    document_count: message.sources!.rag!.document_count
+                  };
+                  onViewSource?.(formattedDoc, 'document');
                 }
               }}
               className="text-claude-primary hover:underline text-xs"

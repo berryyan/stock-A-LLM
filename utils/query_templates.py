@@ -277,19 +277,19 @@ class QueryTemplateLibrary:
                 example="贵州茅台的超大单资金流入情况"
             ),
             
-            # 公告查询模板
+            # 公告查询模板（支持灵活的日期描述）
             QueryTemplate(
-                name="最新公告",
+                name="公告查询",
                 type=TemplateType.ANNOUNCEMENT,
-                pattern=r"(.+?)(?:的)?最新公告|(.+?)最近.*公告",
-                route_type="RAG_ONLY",
-                required_fields=["title", "ann_date"],
-                optional_fields=["content", "ann_type"],
+                pattern=r"(.+?)(?:的)?(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|最新|最近|昨天|前天|今天|本周|本月|本年|上周|上月|去年|\d+天前|\d+天内|最近\d+天?))?(?:的)?公告(?:列表|信息|标题)?",
+                route_type="SQL_ONLY",  # SQL Agent处理公告列表查询
+                required_fields=["title", "ann_date", "url"],
+                optional_fields=["name", "type"],
                 default_params={
-                    "time_range": "recent_30d",
-                    "limit": 5
+                    "limit": 10,
+                    "time_range": "latest"
                 },
-                example="贵州茅台最新公告内容"
+                example="贵州茅台最新公告"
             ),
             
             QueryTemplate(

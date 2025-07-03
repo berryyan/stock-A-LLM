@@ -916,6 +916,111 @@ class SQLAgent:
                         'quick_path': True
                     }
                     
+            # 处理公告查询
+            if template.name == "公告查询":
+                # 提取股票代码（与股价查询保持一致）
+                entities = params.get('entities', [])
+                if not entities:
+                    return None
+                    
+                # 转换为ts_code
+                ts_code = convert_to_ts_code(entities[0])
+                if not ts_code:
+                    return None
+                    
+                # 获取股票名称
+                stock_name = get_stock_name(ts_code)
+                
+                # 从处理后的查询中提取日期信息
+                ann_date = self._extract_date_from_query(processed_question)
+                limit = params.get('limit', 10)
+                
+                try:
+                    # 判断查询类型并执行相应SQL
+                    if '至' in processed_question and ann_date and '至' in ann_date:
+                        # 日期范围查询
+                        dates = ann_date.split('至')
+                        start_date = dates[0].strip()
+                        end_date = dates[1].strip() if len(dates) > 1 else start_date
+                        
+                        result = self.mysql_connector.execute_query(
+                            SQLTemplates.ANNOUNCEMENT_BY_RANGE,
+                            {
+                                'ts_code': ts_code,
+                                'start_date': start_date,
+                                'end_date': end_date,
+                                'limit': limit
+                            }
+                        )
+                        period_desc = f"{start_date}至{end_date}"
+                        
+                    elif ann_date and ann_date != last_trading_date:
+                        # 特定日期查询
+                        result = self.mysql_connector.execute_query(
+                            SQLTemplates.ANNOUNCEMENT_BY_DATE,
+                            {
+                                'ts_code': ts_code,
+                                'ann_date': ann_date,
+                                'limit': limit
+                            }
+                        )
+                        period_desc = ann_date
+                        
+                    else:
+                        # 最新公告查询
+                        result = self.mysql_connector.execute_query(
+                            SQLTemplates.ANNOUNCEMENT_LATEST,
+                            {
+                                'ts_code': ts_code,
+                                'limit': limit
+                            }
+                        )
+                        period_desc = "最新"
+                    
+                    if not result:
+                        return {
+                            'success': True,
+                            'result': f"未找到{stock_name}({ts_code}){period_desc}的公告信息。",
+                            'sql': None,
+                            'quick_path': True
+                        }
+                    
+                    # 格式化结果为Markdown表格
+                    lines = [
+                        f"## {stock_name}({ts_code}) {period_desc}公告",
+                        f"*共找到 {len(result)} 条公告*",
+                        "",
+                        "| 公告日期 | 公告标题 | 查看链接 |",
+                        "|----------|----------|----------|"
+                    ]
+                    
+                    for row in result:
+                        ann_date = row.get('ann_date', '')
+                        title = row.get('title', '').replace('|', '｜')  # 替换管道符避免表格错乱
+                        url = row.get('url', '')
+                        
+                        # 处理链接显示
+                        if url:
+                            link = f"[查看原文]({url})"
+                        else:
+                            link = "无链接"
+                        
+                        line = f"| {ann_date} | {title} | {link} |"
+                        lines.append(line)
+                    
+                    formatted_result = "\n".join(lines)
+                    
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,
+                        'quick_path': True
+                    }
+                    
+                except Exception as e:
+                    logger.error(f"公告查询执行出错: {str(e)}")
+                    return None
+                    
             # 其他模板类型暂不支持快速路径
             return None
             
