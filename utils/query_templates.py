@@ -95,11 +95,11 @@ class QueryTemplateLibrary:
                 example="平安银行昨天的成交量"
             ),
             
-            # 利润查询模板
+            # 利润查询模板 - SQL_ONLY路由，快速返回财务数据
             QueryTemplate(
                 name="利润查询",
                 type=TemplateType.FINANCIAL_HEALTH,
-                pattern=r"(.+?)(?:的)?(?:利润|营收|净利润|营业收入)",
+                pattern=r"(.+?)(?:的)?(?:(\d{4}年(?:第[一二三四]季度)?|\d{4}Q[1-4]|\d{4}年\d{1,2}月|最新))?(?:的)?(?:利润|营收|净利润|营业收入|赚了多少|盈利|收入)",
                 route_type="SQL_ONLY",
                 required_fields=["revenue", "net_profit"],
                 optional_fields=["operate_profit", "total_profit"],
@@ -107,7 +107,7 @@ class QueryTemplateLibrary:
                     "period_count": 4,
                     "metrics": ["revenue", "net_profit", "operate_profit"]
                 },
-                example="贵州茅台的净利润"
+                example="贵州茅台2024年的净利润"
             ),
             
             # PE/PB查询模板（支持任意日期）
@@ -223,7 +223,7 @@ class QueryTemplateLibrary:
             QueryTemplate(
                 name="板块主力资金",
                 type=TemplateType.MONEY_FLOW,
-                pattern=r"(.+?)(?:板块|行业)(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)?(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP|分析|如何))",
+                pattern=r"(?:.*(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|最新).*)?(.+?)(?:板块|行业)(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)?(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP|分析|如何))",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "net_amount", "buy_elg_amount"],
                 optional_fields=["buy_lg_amount", "buy_md_amount", "buy_sm_amount"],
@@ -231,21 +231,21 @@ class QueryTemplateLibrary:
                     "time_range": "specified",
                     "query_type": "sector"
                 },
-                example="银行板块的主力资金流入"
+                example="银行板块昨天的主力资金流入"
             ),
             
             # 个股主力资金查询模板（SQL快速路径）
             QueryTemplate(
                 name="个股主力资金",
                 type=TemplateType.MONEY_FLOW,
-                pattern=r"(.+?)(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)?(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP|分析|如何))",
+                pattern=r"(?:.*(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|最新).*)?(.+?)(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)?(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP|分析|如何|游资|散户))",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "net_amount", "buy_elg_amount"],
                 optional_fields=["buy_lg_amount", "buy_md_amount", "buy_sm_amount"],
                 default_params={
                     "time_range": "specified"
                 },
-                example="贵州茅台的主力净流入"
+                example="贵州茅台昨天的主力净流入"
             ),
             
             # 资金流向模板
@@ -406,7 +406,7 @@ class QueryTemplateLibrary:
             QueryTemplate(
                 name="营收排名",
                 type=TemplateType.RANKING,
-                pattern=r"(?:营收|营业收入|收入)(?:最高|排名|前).*?(\d+)?",
+                pattern=r"(?:营收|营业收入|收入)(?:最高的?|排名|排行|前)(?:.*?(\d+))?(?!.*分析)",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "name", "revenue", "net_profit", "end_date"],
                 optional_fields=["report_type"],

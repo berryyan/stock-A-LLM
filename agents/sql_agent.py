@@ -778,6 +778,144 @@ class SQLAgent:
                         'quick_path': True
                     }
                     
+            elif template.name == '利润查询':
+                # 利润查询（净利润、营收等）
+                entities = params.get('entities', [])
+                if not entities:
+                    return None
+                    
+                ts_code = convert_to_ts_code(entities[0])
+                if not ts_code:
+                    return None
+                    
+                stock_name = get_stock_name(ts_code)
+                
+                # 解析报告期参数
+                period = None
+                import re
+                
+                # 提取时间参数的各种格式
+                # 2024年、2024年第三季度、2024Q3、2024年9月、最新
+                time_patterns = [
+                    (r'(\d{4})年第([一二三四])季度', 'quarter_cn'),
+                    (r'(\d{4})Q([1-4])', 'quarter_en'),
+                    (r'(\d{4})年(\d{1,2})月', 'month'),
+                    (r'(\d{4})年(?!第)', 'year'),
+                    (r'最新', 'latest')
+                ]
+                
+                for pattern, pattern_type in time_patterns:
+                    match = re.search(pattern, processed_question)
+                    if match:
+                        if pattern_type == 'quarter_cn':
+                            year = match.group(1)
+                            quarter_map = {'一': '03', '二': '06', '三': '09', '四': '12'}
+                            month = quarter_map.get(match.group(2), '12')
+                            period = f"{year}{month}31"
+                        elif pattern_type == 'quarter_en':
+                            year = match.group(1)
+                            quarter_map = {'1': '0331', '2': '0630', '3': '0930', '4': '1231'}
+                            period = f"{year}{quarter_map[match.group(2)]}"
+                        elif pattern_type == 'month':
+                            year = match.group(1)
+                            month = match.group(2).zfill(2)
+                            # 转换为季度末
+                            if month in ['01', '02', '03']:
+                                period = f"{year}0331"
+                            elif month in ['04', '05', '06']:
+                                period = f"{year}0630"
+                            elif month in ['07', '08', '09']:
+                                period = f"{year}0930"
+                            else:
+                                period = f"{year}1231"
+                        elif pattern_type == 'year':
+                            # 年度查询，返回该年所有季度
+                            year = match.group(1)
+                            period = f"{year}%"  # 用于LIKE查询
+                        break
+                
+                # 构建SQL查询
+                if period and '%' in period:
+                    # 年度查询
+                    sql = """
+                        SELECT 
+                            i.ts_code,
+                            s.name,
+                            i.revenue,
+                            i.n_income as net_profit,
+                            i.end_date,
+                            i.report_type
+                        FROM tu_income i
+                        JOIN tu_stock_basic s ON i.ts_code = s.ts_code
+                        WHERE i.ts_code = :ts_code
+                            AND i.end_date LIKE :period
+                            AND i.report_type = '1'
+                        ORDER BY i.end_date DESC
+                    """
+                    params = {'ts_code': ts_code, 'period': period}
+                elif period:
+                    # 特定期间查询
+                    sql = """
+                        SELECT 
+                            i.ts_code,
+                            s.name,
+                            i.revenue,
+                            i.n_income as net_profit,
+                            i.end_date,
+                            i.report_type
+                        FROM tu_income i
+                        JOIN tu_stock_basic s ON i.ts_code = s.ts_code
+                        WHERE i.ts_code = :ts_code
+                            AND i.end_date = :period
+                            AND i.report_type = '1'
+                    """
+                    params = {'ts_code': ts_code, 'period': period}
+                else:
+                    # 默认查询最近4期
+                    sql = """
+                        SELECT 
+                            i.ts_code,
+                            s.name,
+                            i.revenue,
+                            i.n_income as net_profit,
+                            i.end_date,
+                            i.report_type
+                        FROM tu_income i
+                        JOIN tu_stock_basic s ON i.ts_code = s.ts_code
+                        WHERE i.ts_code = :ts_code
+                            AND i.report_type = '1'
+                        ORDER BY i.end_date DESC
+                        LIMIT 4
+                    """
+                    params = {'ts_code': ts_code}
+                
+                result = self.mysql_connector.execute_query(sql, params)
+                
+                if result and len(result) > 0:
+                    stock_info = f"{stock_name}（{ts_code}）" if stock_name else ts_code
+                    
+                    # 格式化输出
+                    lines = [f"## {stock_info} 财务数据\n"]
+                    lines.append("| 报告期 | 营业收入(亿) | 净利润(亿) |")
+                    lines.append("|--------|-------------|-----------|")
+                    
+                    for row in result:
+                        revenue_yi = (row.get('revenue', 0) or 0) / 100000000
+                        profit_yi = (row.get('net_profit', 0) or 0) / 100000000
+                        end_date = row.get('end_date', '')
+                        
+                        line = f"| {end_date} | {revenue_yi:.2f} | {profit_yi:.2f} |"
+                        lines.append(line)
+                    
+                    formatted_result = "\n".join(lines)
+                    
+                    return {
+                        'success': True,
+                        'result': formatted_result,
+                        'sql': None,
+                        'quick_path': True
+                    }
+                    
             # 其他模板类型暂不支持快速路径
             return None
             

@@ -504,12 +504,18 @@ class RAGAgent:
         context_parts = []
         
         for i, doc in enumerate(documents):
+            # 安全获取文档字段
+            ts_code = doc.get('ts_code', '未知')
+            title = doc.get('title', '未知标题')
+            ann_date = doc.get('ann_date', '未知日期')
+            text = doc.get('text', '无内容')
+            
             context_part = f"""
 文档{i+1}:
-公司: {doc['ts_code']}
-标题: {doc['title']}
-日期: {doc['ann_date']}
-内容: {doc['text']}
+公司: {ts_code}
+标题: {title}
+日期: {ann_date}
+内容: {text}
 ---
 """
             context_parts.append(context_part)
@@ -525,12 +531,17 @@ class RAGAgent:
         company_docs = defaultdict(list)
         
         for doc in documents:
-            company_docs[doc['ts_code']].append(doc)
+            ts_code = doc.get('ts_code', '未知')
+            company_docs[ts_code].append(doc)
         
         for ts_code, docs in company_docs.items():
             company_part = f"\n【{ts_code}】\n"
             for doc in docs:
-                company_part += f"- {doc['title']} ({doc['ann_date']}): {doc['text'][:200]}...\n"
+                title = doc.get('title', '未知标题')
+                ann_date = doc.get('ann_date', '未知日期')
+                text = doc.get('text', '')
+                preview = text[:200] + '...' if len(text) > 200 else text
+                company_part += f"- {title} ({ann_date}): {preview}\n"
             formatted_parts.append(company_part)
         
         return "\n".join(formatted_parts)
@@ -541,13 +552,17 @@ class RAGAgent:
         seen = set()
         
         for doc in documents:
-            source_key = f"{doc['ts_code']}_{doc['title']}_{doc['ann_date']}"
+            ts_code = doc.get('ts_code', '未知')
+            title = doc.get('title', '未知标题')
+            ann_date = doc.get('ann_date', '未知日期')
+            
+            source_key = f"{ts_code}_{title}_{ann_date}"
             if source_key not in seen:
                 seen.add(source_key)
                 sources.append({
-                    'ts_code': doc['ts_code'],
-                    'title': doc['title'],
-                    'ann_date': doc['ann_date']
+                    'ts_code': ts_code,
+                    'title': title,
+                    'ann_date': ann_date
                 })
         
         return sources

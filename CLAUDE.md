@@ -14,9 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v2.1.11)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v2.1.12)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 财务指标排名快速路径实现完成，PE/PB/ROE等5个新模板已上线，查询性能提升20-600倍。资金类型术语标准化完成，支持16种非标准术语自动映射。市值排名查询全面优化，支持无数字默认前10和TOP格式。日期智能解析DISTINCT问题修复，交易日范围计算恢复正常。股票识别修复完成，解决"平安"歧义问题。路由机制修复，TEMPLATE_ROUTE_OVERRIDE冲突解决。SQL Agent快速模板完成，支持7种新查询类型，实现2481.5倍加速。路由机制文档化完成，7-Agent架构Phase 0&1完成。代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
+**Current Status**: ✅ 多个后端崩溃问题修复完成，利润查询、净利润排名、RAG查询稳定性大幅提升。利润查询模板增强，支持报告期参数。前端Markdown表格暗色模式显示优化。个股/板块主力资金查询格式优化，路由准确性提升。营收排名模板正则表达式增强。测试文档更新至v4.7版本。财务指标排名快速路径实现完成，PE/PB/ROE等5个新模板已上线，查询性能提升20-600倍。资金类型术语标准化完成，支持16种非标准术语自动映射。市值排名查询全面优化，支持无数字默认前10和TOP格式。日期智能解析DISTINCT问题修复，交易日范围计算恢复正常。股票识别修复完成，解决"平安"歧义问题。路由机制修复，TEMPLATE_ROUTE_OVERRIDE冲突解决。SQL Agent快速模板完成，支持7种新查询类型，实现2481.5倍加速。路由机制文档化完成，7-Agent架构Phase 0&1完成。代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
 ## Development Commands
 
@@ -318,6 +318,35 @@ The system supports six main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v2.1.12 - 多个后端崩溃问题修复与功能增强 (2025-07-03)
+
+**后端稳定性修复** ✅:
+- **利润查询崩溃修复**: 修复period参数缺失导致的KeyError，增加默认值处理
+- **净利润排名崩溃修复**: 修复字段映射错误（n_income字段在财务表中实际为净利润）
+- **RAG查询崩溃修复**: 修复limit参数类型错误，确保转换为整数类型
+- **错误处理增强**: 所有修复点都添加了try-except保护和详细日志
+
+**功能优化** ✅:
+- **利润查询模板增强**: 
+  - 支持指定报告期查询（如"贵州茅台2025年一季度利润"）
+  - 默认查询最新报告期数据
+  - 自动格式化报告期显示（如20250331→2025年一季度）
+- **前端表格显示优化**: 
+  - 修复Markdown表格在暗色模式下的背景色问题
+  - 统一表格样式，提升可读性
+- **资金查询格式优化**: 
+  - 个股主力资金返回单行数据
+  - 板块主力资金返回多行排名
+  - 路由准确性提升，避免误判
+- **营收排名模板增强**: 
+  - 支持更多自然语言表达（"营业收入"、"营收"、"收入"）
+  - 提升模板匹配成功率
+
+**测试与文档** ✅:
+- 更新test-guide-comprehensive.md至v4.7版本
+- 添加新功能测试用例
+- 更新错误处理测试用例
 
 #### v2.1.11 - 财务指标排名快速路径实现 (2025-07-02)
 
@@ -922,8 +951,8 @@ ts_code = convert_to_ts_code("诺德股份")        # Returns: "600110.SH"
 ### Git版本管理
 ```bash
 # 当前分支: dev-react-frontend-v2
-# 版本: v2.1.1 → v2.2.0
-git add -A && git commit -m "docs: 更新v2.2.0开发计划 - 7-Agent架构"
+# 版本: v2.1.12 → v2.2.0
+git add -A && git commit -m "docs: 更新v2.1.12版本 - 多个后端崩溃修复"
 ```
 
 The system is designed for production use with comprehensive error handling, logging, monitoring capabilities, and full LangChain modernization (v1.3.8).

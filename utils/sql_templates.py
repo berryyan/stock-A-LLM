@@ -686,16 +686,22 @@ class SQLTemplates:
         md_rate = data.get('buy_md_amount_rate', 0)
         sm_rate = data.get('buy_sm_amount_rate', 0)
         
-        return f"""{stock_info}在{data['trade_date']}的资金流向：
-主力净流入：{net_amount:.2f}万元（占比{net_rate:.2f}%）
-  - 超大单净流入：{elg_net:.2f}万元（占比{elg_rate:.2f}%）
-  - 大单净流入：{lg_net:.2f}万元（占比{lg_rate:.2f}%）
-中单净流入：{md_net:.2f}万元（占比{md_rate:.2f}%）
-小单净流入：{sm_net:.2f}万元（占比{sm_rate:.2f}%）
+        # 使用Markdown格式优化显示
+        return f"""## {stock_info} - {data['trade_date']}资金流向
 
-股价表现：
-收盘价：{data.get('close', 0):.2f}元
-涨跌幅：{data.get('pct_change', 0):.2f}%"""
+### 资金流向汇总
+| 资金类型 | 净流入(万元) | 占比(%) |
+|----------|-------------|---------|
+| **主力资金** | **{net_amount:.2f}** | **{net_rate:.2f}** |
+| 超大单 | {elg_net:.2f} | {elg_rate:.2f} |
+| 大单 | {lg_net:.2f} | {lg_rate:.2f} |
+| 中单 | {md_net:.2f} | {md_rate:.2f} |
+| 小单 | {sm_net:.2f} | {sm_rate:.2f} |
+
+### 股价表现
+- **收盘价**: {data.get('close', 0):.2f}元
+- **涨跌幅**: {data.get('pct_change', 0):.2f}%
+- **成交额**: {data.get('amount', 0)/10000:.2f}万元"""
     
     @staticmethod
     def format_money_flow_ranking(data: list, is_outflow: bool = False) -> str:
@@ -734,13 +740,18 @@ class SQLTemplates:
         title = "市盈率(PE)最低排名" if order == 'ASC' else "市盈率(PE)最高排名"
         
         lines = [f"## {title} - {data[0]['trade_date']}\n"]
-        lines.append("| 排名 | 股票名称 | 股票代码 | 股价(元) | PE | PE(TTM) | 涨跌幅 |")
-        lines.append("|------|----------|----------|----------|------|---------|--------|")
+        lines.append("**注**: PE(静态)=股价/每股收益(年报)，PE(TTM)=股价/每股收益(最近四季度)\n")
+        lines.append("| 排名 | 股票名称 | 股票代码 | 股价(元) | PE(静态) | PE(TTM) | 涨跌幅 |")
+        lines.append("|------|----------|----------|----------|----------|---------|--------|")
         
         for i, row in enumerate(data, 1):
+            # 安全处理PE值，NULL或0显示为"--"
             pe = row.get('pe', 0) or 0
             pe_ttm = row.get('pe_ttm', 0) or 0
-            line = f"| {i} | {row['name']} | {row['ts_code']} | {row['close']:.2f} | {pe:.2f} | {pe_ttm:.2f} | {row['pct_chg']:.2f}% |"
+            pe_str = f"{pe:.2f}" if pe > 0 else "--"
+            pe_ttm_str = f"{pe_ttm:.2f}" if pe_ttm > 0 else "--"
+            
+            line = f"| {i} | {row['name']} | {row['ts_code']} | {row['close']:.2f} | {pe_str} | {pe_ttm_str} | {row['pct_chg']:.2f}% |"
             lines.append(line)
             
         return "\n".join(lines)
@@ -769,15 +780,26 @@ class SQLTemplates:
         """格式化净利润排名结果"""
         if not data:
             return "未查询到净利润排名数据"
-            
-        lines = [f"## 净利润排名 - {data[0]['end_date']}\n"]
+        
+        # 安全获取报告期
+        report_date = data[0].get('end_date', '最新') if data else '最新'
+        lines = [f"## 净利润排名 - {report_date}\n"]
         lines.append("| 排名 | 股票名称 | 股票代码 | 净利润(亿) | 营收(亿) | 报告期 |")
         lines.append("|------|----------|----------|------------|----------|---------|")
         
         for i, row in enumerate(data, 1):
-            net_profit_yi = row.get('net_profit', 0) / 100000000  # 转换为亿元
-            revenue_yi = row.get('revenue', 0) / 100000000
-            line = f"| {i} | {row['name']} | {row['ts_code']} | {net_profit_yi:.2f} | {revenue_yi:.2f} | {row['end_date']} |"
+            # 安全处理可能的None值
+            net_profit = row.get('net_profit', 0)
+            revenue = row.get('revenue', 0)
+            net_profit_yi = (net_profit / 100000000 if net_profit else 0)  # 转换为亿元
+            revenue_yi = (revenue / 100000000 if revenue else 0)
+            
+            # 安全获取字段值
+            name = row.get('name', '未知')
+            ts_code = row.get('ts_code', '未知')
+            end_date = row.get('end_date', '未知')
+            
+            line = f"| {i} | {name} | {ts_code} | {net_profit_yi:.2f} | {revenue_yi:.2f} | {end_date} |"
             lines.append(line)
             
         return "\n".join(lines)
@@ -787,15 +809,26 @@ class SQLTemplates:
         """格式化营收排名结果"""
         if not data:
             return "未查询到营收排名数据"
-            
-        lines = [f"## 营业收入排名 - {data[0]['end_date']}\n"]
+        
+        # 安全获取报告期
+        report_date = data[0].get('end_date', '最新') if data else '最新'    
+        lines = [f"## 营业收入排名 - {report_date}\n"]
         lines.append("| 排名 | 股票名称 | 股票代码 | 营收(亿) | 净利润(亿) | 报告期 |")
         lines.append("|------|----------|----------|----------|------------|---------|")
         
         for i, row in enumerate(data, 1):
-            revenue_yi = row.get('revenue', 0) / 100000000
-            net_profit_yi = row.get('net_profit', 0) / 100000000
-            line = f"| {i} | {row['name']} | {row['ts_code']} | {revenue_yi:.2f} | {net_profit_yi:.2f} | {row['end_date']} |"
+            # 安全处理可能的None值
+            revenue = row.get('revenue', 0)
+            net_profit = row.get('net_profit', 0)
+            revenue_yi = (revenue / 100000000 if revenue else 0)
+            net_profit_yi = (net_profit / 100000000 if net_profit else 0)
+            
+            # 安全获取字段值
+            name = row.get('name', '未知')
+            ts_code = row.get('ts_code', '未知')
+            end_date = row.get('end_date', '未知')
+            
+            line = f"| {i} | {name} | {ts_code} | {revenue_yi:.2f} | {net_profit_yi:.2f} | {end_date} |"
             lines.append(line)
             
         return "\n".join(lines)
@@ -805,15 +838,23 @@ class SQLTemplates:
         """格式化ROE排名结果"""
         if not data:
             return "未查询到ROE排名数据"
-            
-        lines = [f"## 净资产收益率(ROE)排名 - {data[0]['end_date']}\n"]
+        
+        # 安全获取报告期
+        report_date = data[0].get('end_date', '最新') if data else '最新'    
+        lines = [f"## 净资产收益率(ROE)排名 - {report_date}\n"]
         lines.append("| 排名 | 股票名称 | 股票代码 | ROE(%) | ROA(%) | 报告期 |")
         lines.append("|------|----------|----------|--------|--------|---------|")
         
         for i, row in enumerate(data, 1):
             roe = row.get('roe', 0)
             roa = row.get('roa', 0)
-            line = f"| {i} | {row['name']} | {row['ts_code']} | {roe:.2f} | {roa:.2f} | {row['end_date']} |"
+            
+            # 安全获取字段值
+            name = row.get('name', '未知')
+            ts_code = row.get('ts_code', '未知')
+            end_date = row.get('end_date', '未知')
+            
+            line = f"| {i} | {name} | {ts_code} | {roe:.2f} | {roa:.2f} | {end_date} |"
             lines.append(line)
             
         return "\n".join(lines)
