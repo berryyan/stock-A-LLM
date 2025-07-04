@@ -463,6 +463,10 @@ class ChineseTimeParser:
         # 相对时间点 - 上一个周期
         'previous_cycle': {
             "上一个交易日": 1,
+            "上个交易日": 1,      # 新增
+            "前一个交易日": 1,    # 新增
+            "最后一个交易日": 1,  # 新增
+            "最近一个交易日": 1,  # 新增
             "昨天": 1,
             "前天": 2,
             "大前天": 3,
@@ -477,6 +481,9 @@ class ChineseTimeParser:
         'n_units_ago': [
             (r'(\d+)天前', 'days'),
             (r'(\d+)个?交易日前', 'days'),
+            (r'前(\d+)个交易日', 'days'),        # 新增
+            (r'上(\d+)个交易日', 'days'),        # 新增
+            (r'前第(\d+)个交易日', 'days'),      # 新增
             (r'(\d+)周前', 'weeks'),
             (r'(\d+)个?月前', 'months'),
             (r'(\d+)个?季度?前', 'quarters'),
@@ -484,6 +491,8 @@ class ChineseTimeParser:
             (r'一年前', 'year'),
             (r'([一二三四五六七八九十]+)天前', 'chinese_days'),
             (r'([一二三四五六七八九十]+)个?月前', 'chinese_months'),
+            (r'前([一二三四五六七八九十]+)个交易日', 'chinese_days'),  # 新增
+            (r'上([一二三四五六七八九十]+)个交易日', 'chinese_days'),  # 新增
         ],
         
         # 时间段 - 最近N个周期
@@ -681,10 +690,20 @@ class ChineseTimeParser:
                 )
                 expressions.append(expr)
         
-        # 按位置排序
-        expressions.sort(key=lambda x: x.start_pos)
+        # 去重：如果多个表达式在同一位置，保留第一个
+        unique_expressions = []
+        seen_positions = set()
         
-        return expressions
+        for expr in expressions:
+            position_key = (expr.start_pos, expr.end_pos)
+            if position_key not in seen_positions:
+                seen_positions.add(position_key)
+                unique_expressions.append(expr)
+        
+        # 按位置排序
+        unique_expressions.sort(key=lambda x: x.start_pos)
+        
+        return unique_expressions
 
 class DateIntelligenceModule:
     """智能日期解析模块 v2.0"""
@@ -772,6 +791,10 @@ class DateIntelligenceModule:
         for expr in sorted(expressions, key=lambda x: x.start_pos, reverse=True):
             if expr.confidence > 0.5:  # 只替换高置信度的表达
                 replacement = self.generate_replacement_text(expr)
+                # 智能添加空格：如果替换位置前后都不是空格，则在替换文本前添加空格
+                if (expr.start_pos > 0 and text[expr.start_pos - 1] != ' ' and 
+                    expr.end_pos < len(text) and text[expr.end_pos] != ' '):
+                    replacement = ' ' + replacement
                 text = text[:expr.start_pos] + replacement + text[expr.end_pos:]
         
         return text

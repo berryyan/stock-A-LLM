@@ -1360,45 +1360,59 @@ class SQLAgent:
         
         # 2. 提取股票代码（如果需要）
         if hasattr(template, 'requires_stock') and template.requires_stock:
-            # 重要：对于股票提取，我们需要从原始查询中提取，而不是从processed_question
-            # 因为日期智能解析可能会改变查询格式，导致股票提取失败
-            original_match = re.search(template.pattern, query, re.IGNORECASE)
-            if original_match:
-                original_entities = [g for g in original_match.groups() if g]
-                if original_entities:
-                    # 对于某些模板（如个股主力资金），第一个捕获组是日期，第二个是股票名称
-                    # 需要智能判断哪个是股票名称
-                    stock_entity = None
-                    for entity in original_entities:
-                        # 跳过日期格式的实体
-                        if re.match(r'^\d{8}$|^\d{4}-\d{2}-\d{2}$|^\d{4}年\d{2}月\d{2}日$|^今天$|^昨天$|^最新$', entity):
-                            continue
-                        # 尝试转换为股票代码
-                        if convert_to_ts_code(entity):
-                            stock_entity = entity
-                            break
-                    
-                    if not stock_entity and original_entities:
-                        # 如果没有找到有效的股票实体，使用第一个非日期实体
+            # 首先尝试使用UnifiedStockValidator从处理后的查询中提取
+            stock_validator = UnifiedStockValidator()
+            stocks = stock_validator.extract_multiple_stocks(processed_question)
+            
+            if stocks and len(stocks) > 0:
+                # 如果成功提取，直接使用第一个股票
+                ts_code = stocks[0]
+                extracted_params['ts_code'] = ts_code
+                extracted_params['stock_name'] = get_stock_name(ts_code)
+                self.logger.debug(f"UnifiedStockValidator成功提取: {ts_code}")
+            else:
+                # 如果UnifiedStockValidator失败，使用原有的复杂逻辑
+                # 重要：对于股票提取，我们需要从原始查询中提取，而不是从processed_question
+                # 因为日期智能解析可能会改变查询格式，导致股票提取失败
+                original_match = re.search(template.pattern, query, re.IGNORECASE)
+                if original_match:
+                    original_entities = [g for g in original_match.groups() if g]
+                    if original_entities:
+                        # 对于某些模板（如个股主力资金），第一个捕获组是日期，第二个是股票名称
+                        # 需要智能判断哪个是股票名称
+                        stock_entity = None
                         for entity in original_entities:
-                            if not re.match(r'^\d{8}$|^\d{4}-\d{2}-\d{2}$|^\d{4}年\d{2}月\d{2}日$|^今天$|^昨天$|^最新$', entity):
+                            # 跳过日期格式的实体
+                            if re.match(r'^\d{8}$|^\d{4}-\d{2}-\d{2}$|^\d{4}年\d{2}月\d{2}日$|^今天$|^昨天$|^最新$', entity):
+                                continue
+                            # 尝试转换为股票代码
+                            if convert_to_ts_code(entity):
                                 stock_entity = entity
                                 break
                     
-                    if stock_entity:
-                        # 处理可能包含日期词的股票名称（如"万科A前天"）
-                        # 尝试去除常见的时间词尾
-                        cleaned_entity = stock_entity
-                        time_suffixes = ['前天', '昨天', '今天', '明天', '后天', '最新', '当前', '现在', '上个月', '本月', '这个月', '上月']
-                        for suffix in time_suffixes:
-                            if cleaned_entity.endswith(suffix):
-                                cleaned_entity = cleaned_entity[:-len(suffix)]
-                                self.logger.debug(f"清理股票实体: '{stock_entity}' -> '{cleaned_entity}'")
-                                break
+                        if not stock_entity and original_entities:
+                            # 如果没有找到有效的股票实体，使用第一个非日期实体
+                            for entity in original_entities:
+                                if not re.match(r'^\d{8}$|^\d{4}-\d{2}-\d{2}$|^\d{4}年\d{2}月\d{2}日$|^今天$|^昨天$|^最新$', entity):
+                                    stock_entity = entity
+                                    break
+                    
+                        if stock_entity:
+                            # 处理可能包含日期词的股票名称（如"万科A前天"）
+                            # 尝试去除常见的时间词尾
+                            cleaned_entity = stock_entity
+                            time_suffixes = ['前一个交易日', '上个交易日', '最近一个交易日', '最后一个交易日',
+                                           '前天', '昨天', '今天', '明天', '后天', '最新', '当前', '现在', 
+                                           '上个月', '本月', '这个月', '上月']
+                            for suffix in time_suffixes:
+                                if cleaned_entity.endswith(suffix):
+                                    cleaned_entity = cleaned_entity[:-len(suffix)]
+                                    self.logger.debug(f"清理股票实体: '{stock_entity}' -> '{cleaned_entity}'")
+                                    break
                         
-                        # 处理包含日期范围的情况（如"贵州茅台2025-06-01至2025-06-30"）
-                        # 检查是否包含日期格式
-                        date_patterns = [
+                            # 处理包含日期范围的情况（如"贵州茅台2025-06-01至2025-06-30"）
+                            # 检查是否包含日期格式
+                            date_patterns = [
                             r'\d{8}',  # 20250601
                             r'\d{4}-\d{2}-\d{2}',  # 2025-06-01
                             r'\d{4}/\d{2}/\d{2}',  # 2025/06/01
@@ -1409,42 +1423,42 @@ class SQLAgent:
                             r'\d{4}年第[一二三四\d]季度',  # 2025年第二季度
                         ]
                         
-                        for pattern in date_patterns:
-                            match = re.search(pattern, cleaned_entity)
-                            if match:
-                                # 找到日期模式，截取日期之前的部分作为股票名称
-                                date_start = match.start()
-                                if date_start > 0:
-                                    potential_stock = cleaned_entity[:date_start].strip()
-                                    if potential_stock and convert_to_ts_code(potential_stock):
-                                        cleaned_entity = potential_stock
-                                        self.logger.debug(f"从日期范围中提取股票: '{stock_entity}' -> '{cleaned_entity}'")
-                                        break
+                            for pattern in date_patterns:
+                                match = re.search(pattern, cleaned_entity)
+                                if match:
+                                    # 找到日期模式，截取日期之前的部分作为股票名称
+                                    date_start = match.start()
+                                    if date_start > 0:
+                                        potential_stock = cleaned_entity[:date_start].strip()
+                                        if potential_stock and convert_to_ts_code(potential_stock):
+                                            cleaned_entity = potential_stock
+                                            self.logger.debug(f"从日期范围中提取股票: '{stock_entity}' -> '{cleaned_entity}'")
+                                            break
                         
-                        ts_code = convert_to_ts_code(cleaned_entity)
+                            ts_code = convert_to_ts_code(cleaned_entity)
+                            if ts_code:
+                                extracted_params['ts_code'] = ts_code
+                                extracted_params['stock_name'] = get_stock_name(ts_code)
+                            else:
+                                # 股票代码转换失败
+                                extracted_params['error'] = f"无法识别股票: {cleaned_entity}"
+                                return extracted_params
+                        else:
+                            # 没有找到股票实体
+                            extracted_params['error'] = "未找到股票名称"
+                            return extracted_params
+                else:
+                    # 如果原始查询匹配失败，尝试使用params中的entities
+                    entities = params.get('entities', [])
+                    if entities:
+                        ts_code = convert_to_ts_code(entities[0])
                         if ts_code:
                             extracted_params['ts_code'] = ts_code
                             extracted_params['stock_name'] = get_stock_name(ts_code)
                         else:
                             # 股票代码转换失败
-                            extracted_params['error'] = f"无法识别股票: {cleaned_entity}"
+                            extracted_params['error'] = f"无法识别股票: {entities[0]}"
                             return extracted_params
-                    else:
-                        # 没有找到股票实体
-                        extracted_params['error'] = "未找到股票名称"
-                        return extracted_params
-            else:
-                # 如果原始查询匹配失败，尝试使用params中的entities
-                entities = params.get('entities', [])
-                if entities:
-                    ts_code = convert_to_ts_code(entities[0])
-                    if ts_code:
-                        extracted_params['ts_code'] = ts_code
-                        extracted_params['stock_name'] = get_stock_name(ts_code)
-                    else:
-                        # 股票代码转换失败
-                        extracted_params['error'] = f"无法识别股票: {entities[0]}"
-                        return extracted_params
         
         # 2.5 特殊处理板块查询
         if template.name == '板块主力资金':
@@ -2478,9 +2492,11 @@ class SQLAgent:
         try:
             # 提取股票实体并转换
             stock_validator = UnifiedStockValidator()
-            ts_code, _ = stock_validator.extract_stock_entities(processed)
+            stocks = stock_validator.extract_multiple_stocks(processed)
             
-            if ts_code:
+            if stocks and len(stocks) > 0:
+                # 取第一个股票代码
+                ts_code = stocks[0]
                 # 成功提取到股票代码
                 stock_name = get_stock_name(ts_code)
                 if stock_name:
