@@ -112,7 +112,7 @@ class QueryTemplateLibrary:
             QueryTemplate(
                 name="利润查询",
                 type=TemplateType.FINANCIAL_HEALTH,
-                pattern=r"(.+?)(?:的)?(?:(\d{4}年(?:第[一二三四]季度)?|\d{4}Q[1-4]|\d{4}年\d{1,2}月|最新))?(?:的)?(?:利润|营收|净利润|营业收入|赚了多少|盈利|收入)",
+                pattern=r"(.+?)(?:的)?(?:(\d{4}年(?:第[一二三四]季度)?|\d{4}Q[1-4]|\d{4}年\d{1,2}月|最新))?(?:的)?(?:利润|营收|净利润|营业收入|赚了多少|盈利|收入)(?!.*(?:排名|排行|前\d+|最高|最多))",
                 route_type="SQL_ONLY",
                 required_fields=["revenue", "net_profit"],
                 optional_fields=["operate_profit", "total_profit"],
