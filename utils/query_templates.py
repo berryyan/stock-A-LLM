@@ -239,7 +239,7 @@ class QueryTemplateLibrary:
             QueryTemplate(
                 name="板块主力资金",
                 type=TemplateType.MONEY_FLOW,
-                pattern=r"(?:.*(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|最新).*)?(.+?)(?:板块|行业)(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)?(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP|分析|如何))",
+                pattern=r"(.+?)(?:板块|行业)(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|最新))?(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)?(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP|分析|如何))",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "net_amount", "buy_elg_amount"],
                 optional_fields=["buy_lg_amount", "buy_md_amount", "buy_sm_amount"],
@@ -255,7 +255,7 @@ class QueryTemplateLibrary:
             QueryTemplate(
                 name="个股主力资金",
                 type=TemplateType.MONEY_FLOW,
-                pattern=r"(?:.*(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|最新).*)?(.+?)(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)?(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP|分析|如何|游资|散户))",
+                pattern=r"(.+?)(?:(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日|今天|昨天|最新))?(?:的)?(?:主力|机构|大资金)(?:资金|净)?(?:流[入出向]|情况|动向)?(?!.*(?:排名|排行|榜|前\d+|最[多大]|TOP|分析|如何|游资|散户))",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "net_amount", "buy_elg_amount"],
                 optional_fields=["buy_lg_amount", "buy_md_amount", "buy_sm_amount"],

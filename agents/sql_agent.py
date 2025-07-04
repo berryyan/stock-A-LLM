@@ -1252,15 +1252,37 @@ class SQLAgent:
             if original_match:
                 original_entities = [g for g in original_match.groups() if g]
                 if original_entities:
-                    # 使用原始查询中的第一个实体作为股票名称
-                    stock_entity = original_entities[0]
-                    ts_code = convert_to_ts_code(stock_entity)
-                    if ts_code:
-                        extracted_params['ts_code'] = ts_code
-                        extracted_params['stock_name'] = get_stock_name(ts_code)
+                    # 对于某些模板（如个股主力资金），第一个捕获组是日期，第二个是股票名称
+                    # 需要智能判断哪个是股票名称
+                    stock_entity = None
+                    for entity in original_entities:
+                        # 跳过日期格式的实体
+                        if re.match(r'^\d{8}$|^\d{4}-\d{2}-\d{2}$|^\d{4}年\d{2}月\d{2}日$|^今天$|^昨天$|^最新$', entity):
+                            continue
+                        # 尝试转换为股票代码
+                        if convert_to_ts_code(entity):
+                            stock_entity = entity
+                            break
+                    
+                    if not stock_entity and original_entities:
+                        # 如果没有找到有效的股票实体，使用第一个非日期实体
+                        for entity in original_entities:
+                            if not re.match(r'^\d{8}$|^\d{4}-\d{2}-\d{2}$|^\d{4}年\d{2}月\d{2}日$|^今天$|^昨天$|^最新$', entity):
+                                stock_entity = entity
+                                break
+                    
+                    if stock_entity:
+                        ts_code = convert_to_ts_code(stock_entity)
+                        if ts_code:
+                            extracted_params['ts_code'] = ts_code
+                            extracted_params['stock_name'] = get_stock_name(ts_code)
+                        else:
+                            # 股票代码转换失败
+                            extracted_params['error'] = f"无法识别股票: {stock_entity}"
+                            return extracted_params
                     else:
-                        # 股票代码转换失败
-                        extracted_params['error'] = f"无法识别股票: {stock_entity}"
+                        # 没有找到股票实体
+                        extracted_params['error'] = "未找到股票名称"
                         return extracted_params
             else:
                 # 如果原始查询匹配失败，尝试使用params中的entities
@@ -1277,12 +1299,26 @@ class SQLAgent:
         
         # 2.5 特殊处理板块查询
         if template.name == '板块主力资金':
-            entities = params.get('entities', [])
-            if entities:
-                # 提取板块名称
-                sector_name = entities[0]
-                extracted_params['sector_name'] = sector_name
-                self.logger.debug(f"提取板块名称: {sector_name}")
+            # 从原始查询中提取板块名称
+            original_match = re.search(template.pattern, query, re.IGNORECASE)
+            if original_match:
+                original_entities = [g for g in original_match.groups() if g]
+                if original_entities:
+                    # 找到板块名称（跳过日期）
+                    sector_name = None
+                    for entity in original_entities:
+                        # 跳过日期格式的实体
+                        if re.match(r'^\d{8}$|^\d{4}-\d{2}-\d{2}$|^\d{4}年\d{2}月\d{2}日$|^今天$|^昨天$|^最新$', entity):
+                            continue
+                        sector_name = entity
+                        break
+                    
+                    if sector_name:
+                        extracted_params['sector_name'] = sector_name
+                        self.logger.debug(f"提取板块名称: {sector_name}")
+                    else:
+                        extracted_params['error'] = "未找到板块名称"
+                        return extracted_params
         
         # 3. 提取日期（如果需要）
         if hasattr(template, 'requires_date') and template.requires_date:
