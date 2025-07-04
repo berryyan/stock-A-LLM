@@ -1172,22 +1172,46 @@ class SQLAgent:
     def _extract_date_range_from_query(self, query: str) -> Optional[Tuple[str, str]]:
         """从查询中提取日期范围（返回开始和结束日期的YYYYMMDD格式）"""
         # 日期格式模式
-        date_pattern = r'(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}年\d{2}月\d{2}日)'
+        date_pattern = r'(\d{8}|\d{4}-\d{2}-\d{2}|\d{4}/\d{2}/\d{2}|\d{4}年\d{2}月\d{2}日)'
         
-        # 匹配日期范围（支持"到"和"至"）
-        range_pattern = rf'{date_pattern}(?:到|至){date_pattern}'
-        match = re.search(range_pattern, query)
+        # 尝试多种连接符模式
+        # 1. 中文连接符："到"、"至"
+        range_pattern1 = rf'{date_pattern}(?:到|至){date_pattern}'
+        match = re.search(range_pattern1, query)
         
         if match:
             start_date_str = match.group(1)
             end_date_str = match.group(2)
+        else:
+            # 2. 英文连接符："-"（需要避免与日期格式冲突）
+            # 使用更精确的模式，确保"-"前后都是完整的日期
+            range_pattern2 = rf'({date_pattern})\s*-\s*({date_pattern})'
+            match = re.search(range_pattern2, query)
             
-            # 规范化日期格式
-            start_date = self._normalize_single_date(start_date_str)
-            end_date = self._normalize_single_date(end_date_str)
-            
-            if start_date and end_date:
-                return (start_date, end_date)
+            if match:
+                start_date_str = match.group(1)
+                end_date_str = match.group(2)
+            else:
+                # 3. 波浪号连接符："~"
+                range_pattern3 = rf'{date_pattern}\s*~\s*{date_pattern}'
+                match = re.search(range_pattern3, query)
+                
+                if match:
+                    start_date_str = match.group(1)
+                    end_date_str = match.group(2)
+                else:
+                    # 4. 尝试提取月份或年份范围
+                    month_year_range = self._extract_month_year_range(query)
+                    if month_year_range:
+                        return month_year_range
+                    return None
+        
+        # 规范化日期格式
+        start_date = self._normalize_single_date(start_date_str)
+        end_date = self._normalize_single_date(end_date_str)
+        
+        if start_date and end_date:
+            return (start_date, end_date)
         
         return None
     
@@ -1197,10 +1221,100 @@ class SQLAgent:
             return date_str
         elif re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
             return date_str.replace('-', '')
+        elif re.match(r'^\d{4}/\d{2}/\d{2}$', date_str):
+            return date_str.replace('/', '')
         elif re.match(r'^\d{4}年\d{2}月\d{2}日$', date_str):
             numbers = re.findall(r'\d+', date_str)
             if len(numbers) == 3:
                 return ''.join(numbers)
+        return None
+    
+    def _extract_month_year_range(self, query: str) -> Optional[Tuple[str, str]]:
+        """从查询中提取月份或年份并转换为日期范围"""
+        from datetime import datetime, date
+        import calendar
+        
+        # 获取当前日期
+        today = date.today()
+        current_year = today.year
+        current_month = today.month
+        
+        # 1. 年份模式（如"2024年"）
+        year_pattern = r'(\d{4})年(?!\d{1,2}月)'
+        year_match = re.search(year_pattern, query)
+        if year_match:
+            year = int(year_match.group(1))
+            start_date = f"{year}0101"
+            end_date = f"{year}1231"
+            return (start_date, end_date)
+        
+        # 2. 月份模式（如"6月"、"2024年6月"）
+        # 带年份的月份
+        month_with_year_pattern = r'(\d{4})年(\d{1,2})月(?!\d{1,2}日)'
+        month_match = re.search(month_with_year_pattern, query)
+        if month_match:
+            year = int(month_match.group(1))
+            month = int(month_match.group(2))
+            if 1 <= month <= 12:
+                last_day = calendar.monthrange(year, month)[1]
+                start_date = f"{year}{month:02d}01"
+                end_date = f"{year}{month:02d}{last_day:02d}"
+                return (start_date, end_date)
+        
+        # 不带年份的月份（默认当前年）
+        month_only_pattern = r'(?<![\d年])(\d{1,2})月(?!\d{1,2}日)'
+        month_match = re.search(month_only_pattern, query)
+        if month_match:
+            month = int(month_match.group(1))
+            if 1 <= month <= 12:
+                year = current_year
+                last_day = calendar.monthrange(year, month)[1]
+                start_date = f"{year}{month:02d}01"
+                end_date = f"{year}{month:02d}{last_day:02d}"
+                return (start_date, end_date)
+        
+        # 3. 相对月份（本月、上个月、上月）
+        if "本月" in query or "这个月" in query or "当月" in query:
+            year = current_year
+            month = current_month
+            last_day = calendar.monthrange(year, month)[1]
+            start_date = f"{year}{month:02d}01"
+            end_date = f"{year}{month:02d}{last_day:02d}"
+            return (start_date, end_date)
+        
+        if "上个月" in query or "上月" in query:
+            if current_month == 1:
+                year = current_year - 1
+                month = 12
+            else:
+                year = current_year
+                month = current_month - 1
+            last_day = calendar.monthrange(year, month)[1]
+            start_date = f"{year}{month:02d}01"
+            end_date = f"{year}{month:02d}{last_day:02d}"
+            return (start_date, end_date)
+        
+        # 4. 季度模式
+        quarter_pattern = r'(\d{4})年第([一二三四123４])季度'
+        quarter_match = re.search(quarter_pattern, query)
+        if quarter_match:
+            year = int(quarter_match.group(1))
+            quarter_str = quarter_match.group(2)
+            quarter_map = {'一': 1, '二': 2, '三': 3, '四': 4, '1': 1, '2': 2, '3': 3, '4': 4}
+            quarter = quarter_map.get(quarter_str, 0)
+            if quarter:
+                quarter_months = {
+                    1: (1, 3),   # 第一季度：1-3月
+                    2: (4, 6),   # 第二季度：4-6月
+                    3: (7, 9),   # 第三季度：7-9月
+                    4: (10, 12)  # 第四季度：10-12月
+                }
+                start_month, end_month = quarter_months[quarter]
+                start_date = f"{year}{start_month:02d}01"
+                last_day = calendar.monthrange(year, end_month)[1]
+                end_date = f"{year}{end_month:02d}{last_day:02d}"
+                return (start_date, end_date)
+        
         return None
     
     def _extract_limit_with_chinese(self, query: str, params: Dict, default: int = 10) -> int:
@@ -1272,13 +1386,48 @@ class SQLAgent:
                                 break
                     
                     if stock_entity:
-                        ts_code = convert_to_ts_code(stock_entity)
+                        # 处理可能包含日期词的股票名称（如"万科A前天"）
+                        # 尝试去除常见的时间词尾
+                        cleaned_entity = stock_entity
+                        time_suffixes = ['前天', '昨天', '今天', '明天', '后天', '最新', '当前', '现在', '上个月', '本月', '这个月', '上月']
+                        for suffix in time_suffixes:
+                            if cleaned_entity.endswith(suffix):
+                                cleaned_entity = cleaned_entity[:-len(suffix)]
+                                self.logger.debug(f"清理股票实体: '{stock_entity}' -> '{cleaned_entity}'")
+                                break
+                        
+                        # 处理包含日期范围的情况（如"贵州茅台2025-06-01至2025-06-30"）
+                        # 检查是否包含日期格式
+                        date_patterns = [
+                            r'\d{8}',  # 20250601
+                            r'\d{4}-\d{2}-\d{2}',  # 2025-06-01
+                            r'\d{4}/\d{2}/\d{2}',  # 2025/06/01
+                            r'\d{4}年\d{1,2}月\d{1,2}日',  # 2025年6月1日
+                            r'\d{4}年\d{1,2}月',  # 2025年6月
+                            r'\d{1,2}月',  # 6月
+                            r'\d{4}年',  # 2024年
+                            r'\d{4}年第[一二三四\d]季度',  # 2025年第二季度
+                        ]
+                        
+                        for pattern in date_patterns:
+                            match = re.search(pattern, cleaned_entity)
+                            if match:
+                                # 找到日期模式，截取日期之前的部分作为股票名称
+                                date_start = match.start()
+                                if date_start > 0:
+                                    potential_stock = cleaned_entity[:date_start].strip()
+                                    if potential_stock and convert_to_ts_code(potential_stock):
+                                        cleaned_entity = potential_stock
+                                        self.logger.debug(f"从日期范围中提取股票: '{stock_entity}' -> '{cleaned_entity}'")
+                                        break
+                        
+                        ts_code = convert_to_ts_code(cleaned_entity)
                         if ts_code:
                             extracted_params['ts_code'] = ts_code
                             extracted_params['stock_name'] = get_stock_name(ts_code)
                         else:
                             # 股票代码转换失败
-                            extracted_params['error'] = f"无法识别股票: {stock_entity}"
+                            extracted_params['error'] = f"无法识别股票: {cleaned_entity}"
                             return extracted_params
                     else:
                         # 没有找到股票实体
