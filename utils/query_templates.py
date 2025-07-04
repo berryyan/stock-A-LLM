@@ -85,7 +85,9 @@ class QueryTemplateLibrary:
                     "days": 90,
                     "metrics": ["open", "high", "low", "close", "vol", "amount", "pct_chg"]
                 },
-                example="贵州茅台从2025-06-01到2025-06-27的K线"
+                example="贵州茅台从2025-06-01到2025-06-27的K线",
+                requires_stock=True,
+                requires_date_range=True
             ),
             
             # 成交量查询模板（支持任意日期）- 修改为不匹配"成交额排名"
@@ -101,7 +103,9 @@ class QueryTemplateLibrary:
                     "days": 1,
                     "metrics": ["vol", "amount"]
                 },
-                example="平安银行昨天的成交量"
+                example="平安银行昨天的成交量",
+                requires_stock=True,
+                requires_date=True
             ),
             
             # 利润查询模板 - SQL_ONLY路由，快速返回财务数据
@@ -132,7 +136,9 @@ class QueryTemplateLibrary:
                     "time_range": "specified",
                     "metrics": ["pe", "pe_ttm", "pb", "ps", "ps_ttm"]
                 },
-                example="中国平安昨天的市盈率"
+                example="中国平安昨天的市盈率",
+                requires_stock=True,
+                requires_date=True
             ),
             
             # 主力净流入排行模板（必须包含排名相关关键词）
@@ -273,7 +279,8 @@ class QueryTemplateLibrary:
                     "days": 30,
                     "focus": "main_force"
                 },
-                example="茅台的资金流向如何"
+                example="茅台的资金流向如何",
+                requires_stock=True
             ),
             
             QueryTemplate(
@@ -287,7 +294,8 @@ class QueryTemplateLibrary:
                     "days": 30,
                     "focus": "super_large"
                 },
-                example="贵州茅台的超大单资金流入情况"
+                example="贵州茅台的超大单资金流入情况",
+                requires_stock=True
             ),
             
             # 公告查询模板（支持灵活的日期描述，包括日期范围）
