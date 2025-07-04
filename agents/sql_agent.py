@@ -1246,16 +1246,34 @@ class SQLAgent:
         
         # 2. 提取股票代码（如果需要）
         if hasattr(template, 'requires_stock') and template.requires_stock:
-            entities = params.get('entities', [])
-            if entities:
-                ts_code = convert_to_ts_code(entities[0])
-                if ts_code:
-                    extracted_params['ts_code'] = ts_code
-                    extracted_params['stock_name'] = get_stock_name(ts_code)
-                else:
-                    # 股票代码转换失败
-                    extracted_params['error'] = f"无法识别股票: {entities[0]}"
-                    return extracted_params
+            # 重要：对于股票提取，我们需要从原始查询中提取，而不是从processed_question
+            # 因为日期智能解析可能会改变查询格式，导致股票提取失败
+            original_match = re.search(template.pattern, query, re.IGNORECASE)
+            if original_match:
+                original_entities = [g for g in original_match.groups() if g]
+                if original_entities:
+                    # 使用原始查询中的第一个实体作为股票名称
+                    stock_entity = original_entities[0]
+                    ts_code = convert_to_ts_code(stock_entity)
+                    if ts_code:
+                        extracted_params['ts_code'] = ts_code
+                        extracted_params['stock_name'] = get_stock_name(ts_code)
+                    else:
+                        # 股票代码转换失败
+                        extracted_params['error'] = f"无法识别股票: {stock_entity}"
+                        return extracted_params
+            else:
+                # 如果原始查询匹配失败，尝试使用params中的entities
+                entities = params.get('entities', [])
+                if entities:
+                    ts_code = convert_to_ts_code(entities[0])
+                    if ts_code:
+                        extracted_params['ts_code'] = ts_code
+                        extracted_params['stock_name'] = get_stock_name(ts_code)
+                    else:
+                        # 股票代码转换失败
+                        extracted_params['error'] = f"无法识别股票: {entities[0]}"
+                        return extracted_params
         
         # 2.5 特殊处理板块查询
         if template.name == '板块主力资金':
