@@ -14,9 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v2.1.15)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v2.1.17)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 前端主题系统完整实现，支持亮色/暗色主题切换，主题偏好本地存储，Markdown表格样式优化，侧边栏主题切换按钮，全局组件主题适配。公告日期范围查询功能完善，支持"到"和"至"两种日期分隔符，测试用例全部通过。SQL Agent公告查询功能实现，支持灵活日期描述、日期范围查询，SQL与RAG查询边界明确。多个后端崩溃问题修复完成，利润查询、净利润排名、RAG查询稳定性大幅提升。利润查询模板增强，支持报告期参数。前端Markdown表格暗色模式显示优化。个股/板块主力资金查询格式优化，路由准确性提升。营收排名模板正则表达式增强。测试文档更新至v4.8版本。财务指标排名快速路径实现完成，PE/PB/ROE等5个新模板已上线，查询性能提升20-600倍。资金类型术语标准化完成，支持16种非标准术语自动映射。市值排名查询全面优化，支持无数字默认前10和TOP格式。日期智能解析DISTINCT问题修复，交易日范围计算恢复正常。股票识别修复完成，解决"平安"歧义问题。路由机制修复，TEMPLATE_ROUTE_OVERRIDE冲突解决。SQL Agent快速模板完成，支持7种新查询类型，实现2481.5倍加速。路由机制文档化完成，7-Agent架构Phase 0&1完成。代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
+**Current Status**: ✅ SQL Agent提取功能增强完成，支持"-"和"~"日期范围连接符，月份/年份自动转换为日期范围，季度查询支持，股票名称智能清理修复日期替换问题。测试文档更新至v5.1版本，27/27模板测试全部通过。前端主题系统完整实现，支持亮色/暗色主题切换，主题偏好本地存储，Markdown表格样式优化，侧边栏主题切换按钮，全局组件主题适配。公告日期范围查询功能完善，支持"到"和"至"两种日期分隔符，测试用例全部通过。SQL Agent公告查询功能实现，支持灵活日期描述、日期范围查询，SQL与RAG查询边界明确。多个后端崩溃问题修复完成，利润查询、净利润排名、RAG查询稳定性大幅提升。利润查询模板增强，支持报告期参数。前端Markdown表格暗色模式显示优化。个股/板块主力资金查询格式优化，路由准确性提升。营收排名模板正则表达式增强。测试文档更新至v4.8版本。财务指标排名快速路径实现完成，PE/PB/ROE等5个新模板已上线，查询性能提升20-600倍。资金类型术语标准化完成，支持16种非标准术语自动映射。市值排名查询全面优化，支持无数字默认前10和TOP格式。日期智能解析DISTINCT问题修复，交易日范围计算恢复正常。股票识别修复完成，解决"平安"歧义问题。路由机制修复，TEMPLATE_ROUTE_OVERRIDE冲突解决。SQL Agent快速模板完成，支持7种新查询类型，实现2481.5倍加速。路由机制文档化完成，7-Agent架构Phase 0&1完成。代码清理完成，删除未使用的Schema相关文件。确认SchemaKnowledgeBase为实际使用的Schema系统（<10ms查询速度）。设计7-Agent架构方案，准备扩展系统功能。流式响应功能完整实现，停止查询按钮已添加。分屏布局一致性修复完成，React前端UI细节优化。React前端初版实现完成，Claude.ai风格界面上线。财务分析系统错误处理完善，前端错误显示修复。RAG系统深度优化完成，WebSocket实时通信已恢复，股票代码智能映射上线。系统全面修复完成，Phase 2核心功能已验证正常。Windows兼容性100%，RAG查询功能完全恢复，智能日期解析精准识别最新交易日，资金流向分析100%正常运行。Phase 1 深度财务分析系统开发完成, Phase 2 资金流向分析系统开发完成, 智能日期解析v2.0系统开发完成。
 
 ## Development Commands
 
@@ -373,6 +373,29 @@ The system supports six main query types:
 - localStorage 持久化用户偏好
 - 系统偏好检测作为默认值
 - 类名切换而非CSS变量
+
+#### v2.1.17 - SQL Agent提取功能增强 (2025-07-04)
+
+**提取功能增强** ✅:
+- **日期范围连接符扩展**: 
+  - 支持 "-" 和 "~" 作为日期范围连接符
+  - 扩展 `_extract_date_range_from_query()` 支持多种格式
+  - 示例：`贵州茅台2025-06-01至2025-06-30的K线`
+- **月份/年份转日期范围**: 
+  - 新增 `_extract_month_year_range()` 方法
+  - 支持"6月"→(20250601, 20250630)转换
+  - 支持"2024年"→(20240101, 20241231)转换
+  - 支持季度："2025年第二季度"→(20250401, 20250630)
+- **股票名称智能清理**: 
+  - 修复"万科A前天的成交量"等提取问题
+  - 智能去除时间后缀，保证股票名称准确
+  - 优化 `_extract_query_params()` 逻辑
+
+**测试验证** ✅:
+- K线查询：支持日期范围、月份、年份、季度等多种格式
+- 成交量查询：修复日期替换导致的股票名称提取错误
+- 综合测试：27/27 模板测试全部通过
+- 测试文档更新至v5.1版本
 
 #### v2.1.14 - 公告日期范围查询功能完善 (2025-07-04)
 
