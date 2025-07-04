@@ -182,7 +182,16 @@ class UnifiedStockValidator:
                 intent = self._determine_intent(question)
                 return intent, 'USE_FULL_NAME', suggestion
         
-        # 5. 未找到任何股票信息
+        # 5. 再次检查是否包含常见简称（确保简称能被检测到）
+        for short_name, full_name in self.common_short_names.items():
+            if short_name in question:
+                # 确认这不是完整名称的一部分
+                if full_name not in question:
+                    self.logger.warning(f"发现简称 '{short_name}'，建议使用: {full_name}")
+                    intent = self._determine_intent(question)
+                    return intent, 'USE_FULL_NAME', full_name
+        
+        # 6. 未找到任何股票信息
         intent = self._determine_intent(question)
         return intent, 'NOT_FOUND', None
     
@@ -215,10 +224,12 @@ class UnifiedStockValidator:
         try:
             # 提取可能的公司名称
             name_patterns = [
-                # 带后缀的公司名（优先级最高）
-                r'([一-龥]{2,6}(?:股份|集团|银行|科技|电子|医药|能源|地产|证券|保险|汽车|新材料|新能源|电力|电器|电工))',
-                # 支持"中国XX"格式
-                r'(中国[一-龥]{2,4})',
+                # 带后缀的公司名（优先级最高）- 增强模式
+                r'([一-龥]{2,8}(?:股份|集团|银行|科技|电子|医药|能源|地产|证券|保险|汽车|新材料|新能源|电力|电器|电工))',
+                # 支持"XX银行股份"等复合后缀
+                r'([一-龥]{2,6}银行股份)',
+                # 支持"中国XX保险"等格式
+                r'(中国[一-龥]{2,4}(?:保险|银行|证券|集团)?)',
                 # "XX的PE/财务/股价"等模式
                 r'([一-龥]{2,6})(?:的)?(?:PE|PB|财务|股价|市盈率|市净率|分析|资金|年报|公告)',
                 # "分析XX的"模式

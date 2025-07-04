@@ -38,6 +38,7 @@ from utils.stock_code_mapper import convert_to_ts_code, get_stock_name
 from utils.unified_stock_validator import validate_stock_input, UnifiedStockValidator
 from utils.security_filter import clean_llm_output, validate_query
 from utils.chinese_number_converter import extract_limit_from_query, normalize_quantity_expression
+from utils.stock_validation_helper import validate_and_convert_stock, extract_and_validate_stock_from_entities
 
 
 
@@ -169,18 +170,20 @@ class SQLAgent:
             
             # 检查是否有对应的SQL模板
             if template.name == '股价查询':
-                # 提取股票代码
+                # 提取并验证股票代码
                 entities = params.get('entities', [])
-                if not entities:
-                    return None
-                    
-                # 转换为ts_code
-                ts_code = convert_to_ts_code(entities[0])
-                if not ts_code:
-                    return None
-                    
-                # 获取股票名称
-                stock_name = get_stock_name(ts_code)
+                success, ts_code, stock_name, error_message = extract_and_validate_stock_from_entities(entities)
+                
+                # 调试日志
+                self.logger.info(f"股价查询验证结果 - entities: {entities}, success: {success}, ts_code: {ts_code}, error: {error_message}")
+                
+                if not success:
+                    return {
+                        'success': False,
+                        'error': error_message,
+                        'sql': None,
+                        'quick_path': True
+                    }
                 
                 # 从处理后的查询中提取日期
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
@@ -213,14 +216,15 @@ class SQLAgent:
             elif template.name == '估值指标查询':
                 # PE/PB查询
                 entities = params.get('entities', [])
-                if not entities:
-                    return None
-                    
-                ts_code = convert_to_ts_code(entities[0])
-                if not ts_code:
-                    return None
-                    
-                stock_name = get_stock_name(ts_code)
+                success, ts_code, stock_name, error_message = extract_and_validate_stock_from_entities(entities)
+                
+                if not success:
+                    return {
+                        'success': False,
+                        'error': error_message,
+                        'sql': None,
+                        'quick_path': True
+                    }
                 
                 # 从处理后的查询中提取日期
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
@@ -297,26 +301,31 @@ class SQLAgent:
                     r'^(.+?)(?:的)?K线'                            # 直接匹配"XXX的K线"
                 ]
                 
+                # 先尝试从原始查询中提取股票
+                success = False
                 ts_code = None
+                stock_name = None
+                error_message = None
+                
                 for pattern in stock_name_patterns:
                     stock_name_match = re.search(pattern, question.strip())
                     if stock_name_match:
                         stock_name_text = stock_name_match.group(1).strip()
-                        ts_code = convert_to_ts_code(stock_name_text)
-                        if ts_code:  # 如果成功转换，就跳出循环
+                        success, ts_code, stock_name, error_message = validate_and_convert_stock(stock_name_text)
+                        if success:
                             break
                 
-                if not ts_code:
-                    # 回退到实体提取
-                    entity_text = entities[0]
-                    # 从复杂实体中提取股票名称部分
-                    clean_entity = re.sub(r'\d{4}-\d{2}-\d{2}.*', '', entity_text).strip()
-                    ts_code = convert_to_ts_code(clean_entity)
+                # 如果从原始查询提取失败，尝试从entities提取
+                if not success:
+                    success, ts_code, stock_name, error_message = extract_and_validate_stock_from_entities(entities)
                 
-                if not ts_code:
-                    return None
-                    
-                stock_name = get_stock_name(ts_code)
+                if not success:
+                    return {
+                        'success': False,
+                        'error': error_message,
+                        'sql': None,
+                        'quick_path': True
+                    }
                 
                 # 优先处理直接指定的日期范围
                 if params.get('time_range') == 'date_range' and params.get('start_date') and params.get('end_date'):
@@ -447,14 +456,15 @@ class SQLAgent:
             elif template.name == '成交量查询':
                 # 成交量查询
                 entities = params.get('entities', [])
-                if not entities:
-                    return None
-                    
-                ts_code = convert_to_ts_code(entities[0])
-                if not ts_code:
-                    return None
-                    
-                stock_name = get_stock_name(ts_code)
+                success, ts_code, stock_name, error_message = extract_and_validate_stock_from_entities(entities)
+                
+                if not success:
+                    return {
+                        'success': False,
+                        'error': error_message,
+                        'sql': None,
+                        'quick_path': True
+                    }
                 
                 # 从处理后的查询中提取日期
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
@@ -590,14 +600,15 @@ class SQLAgent:
             elif template.name == '个股主力资金':
                 # 个股主力资金查询
                 entities = params.get('entities', [])
-                if not entities:
-                    return None
-                    
-                ts_code = convert_to_ts_code(entities[0])
-                if not ts_code:
-                    return None
-                    
-                stock_name = get_stock_name(ts_code)
+                success, ts_code, stock_name, error_message = extract_and_validate_stock_from_entities(entities)
+                
+                if not success:
+                    return {
+                        'success': False,
+                        'error': error_message,
+                        'sql': None,
+                        'quick_path': True
+                    }
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
                 
                 sql = SQLTemplates.STOCK_MONEY_FLOW
@@ -786,14 +797,15 @@ class SQLAgent:
             elif template.name == '利润查询':
                 # 利润查询（净利润、营收等）
                 entities = params.get('entities', [])
-                if not entities:
-                    return None
-                    
-                ts_code = convert_to_ts_code(entities[0])
-                if not ts_code:
-                    return None
-                    
-                stock_name = get_stock_name(ts_code)
+                success, ts_code, stock_name, error_message = extract_and_validate_stock_from_entities(entities)
+                
+                if not success:
+                    return {
+                        'success': False,
+                        'error': error_message,
+                        'sql': None,
+                        'quick_path': True
+                    }
                 
                 # 解析报告期参数
                 period = None
@@ -928,8 +940,16 @@ class SQLAgent:
                 if not entities:
                     return None
                     
-                # 转换为ts_code
-                ts_code = convert_to_ts_code(entities[0])
+                # 从entities中找到第一个可以转换为ts_code的实体
+                ts_code = None
+                for entity in entities:
+                    # 跳过日期格式的实体
+                    if re.match(r'\d{4}-\d{2}-\d{2}', entity.strip()):
+                        continue
+                    ts_code = convert_to_ts_code(entity.strip())
+                    if ts_code:
+                        break
+                
                 if not ts_code:
                     return None
                     
@@ -1435,13 +1455,14 @@ class SQLAgent:
                                             self.logger.debug(f"从日期范围中提取股票: '{stock_entity}' -> '{cleaned_entity}'")
                                             break
                         
-                            ts_code = convert_to_ts_code(cleaned_entity)
-                            if ts_code:
+                            # 使用公用验证方法
+                            success, ts_code, stock_name, error_message = validate_and_convert_stock(cleaned_entity)
+                            if success:
                                 extracted_params['ts_code'] = ts_code
-                                extracted_params['stock_name'] = get_stock_name(ts_code)
+                                extracted_params['stock_name'] = stock_name
                             else:
-                                # 股票代码转换失败
-                                extracted_params['error'] = f"无法识别股票: {cleaned_entity}"
+                                # 股票验证失败
+                                extracted_params['error'] = error_message
                                 return extracted_params
                         else:
                             # 没有找到股票实体
@@ -1451,13 +1472,14 @@ class SQLAgent:
                     # 如果原始查询匹配失败，尝试使用params中的entities
                     entities = params.get('entities', [])
                     if entities:
-                        ts_code = convert_to_ts_code(entities[0])
-                        if ts_code:
+                        # 使用公用验证方法
+                        success, ts_code, stock_name, error_message = extract_and_validate_stock_from_entities(entities)
+                        if success:
                             extracted_params['ts_code'] = ts_code
-                            extracted_params['stock_name'] = get_stock_name(ts_code)
+                            extracted_params['stock_name'] = stock_name
                         else:
-                            # 股票代码转换失败
-                            extracted_params['error'] = f"无法识别股票: {entities[0]}"
+                            # 股票验证失败
+                            extracted_params['error'] = error_message
                             return extracted_params
         
         # 2.5 特殊处理板块查询
@@ -1807,24 +1829,49 @@ class SQLAgent:
     # ==================== Phase 1.3.2: 统一错误处理流程 ====================
     
     def _create_error_response(self, error_type: str, error_msg: str, 
-                             template_name: str = None) -> Dict[str, Any]:
+                             template_name: str = None, suggestion: str = None) -> Dict[str, Any]:
         """创建统一的错误响应
         
         Args:
             error_type: 错误类型（PARAM_ERROR, QUERY_ERROR, SYSTEM_ERROR等）
             error_msg: 错误消息
             template_name: 模板名称（可选）
+            suggestion: 改进建议（可选）
             
         Returns:
             标准错误响应字典
         """
-        return {
+        # 根据错误类型生成更具体的建议
+        if suggestion is None:
+            if error_type == 'PARAM_ERROR':
+                if '股票' in error_msg:
+                    suggestion = '请输入正确的股票名称（如：贵州茅台）、股票代码（如：600519）或证券代码（如：600519.SH）'
+                elif '日期' in error_msg:
+                    suggestion = '请检查日期格式，支持"昨天"、"2025-07-04"、"最近5天"等格式'
+                elif '板块' in error_msg:
+                    suggestion = '请输入完整的板块名称，如：银行板块、新能源板块'
+            elif error_type == 'QUERY_ERROR':
+                suggestion = '查询无结果，请检查输入的股票代码和日期是否正确'
+            elif error_type == 'SYSTEM_ERROR':
+                suggestion = '系统处理出错，请稍后重试或联系技术支持'
+        
+        response = {
             'success': False,
             'error': error_msg,
             'error_type': error_type,
             'template': template_name,
             'quick_path': True
         }
+        
+        # 如果有建议，添加到响应中
+        if suggestion:
+            response['suggestion'] = suggestion
+            # 将建议附加到错误消息中，便于显示
+            response['result'] = f"{error_msg}\n建议：{suggestion}"
+        else:
+            response['result'] = error_msg
+            
+        return response
     
     def _validate_template_params(self, template: Any, params: Dict) -> Tuple[bool, Optional[str]]:
         """验证模板所需参数是否齐全
@@ -2262,8 +2309,14 @@ class SQLAgent:
             quick_result = self._try_quick_query_v2(question)
             if quick_result:
                 self.logger.info("使用快速查询路径")
-                # 只有成功的结果才缓存
-                if quick_result.get('success') and quick_result.get('result'):
+                # 只有成功的结果才缓存，并且要确保不是错误响应
+                if (quick_result.get('success') and 
+                    quick_result.get('result') and 
+                    not quick_result.get('error') and
+                    # 额外检查：如果是快速路径的错误响应，不缓存
+                    not (quick_result.get('template') and 
+                         any(err_word in str(quick_result.get('result', '')).lower() 
+                             for err_word in ['错误', 'error', '失败', '无法识别', '不存在']))):
                     self._query_cache[cache_key] = quick_result['result']
                 return quick_result
             
@@ -2427,10 +2480,38 @@ class SQLAgent:
                 'cached': False
             }
     
-    def _get_cache_key(self, question: str) -> str:
-        """生成缓存键"""
-        # 简单的缓存键生成，可以根据需要优化
-        return f"{question.lower().strip()}_{self._get_last_trading_date()}"
+    def _get_cache_key(self, question: str, include_context: bool = True) -> str:
+        """
+        生成缓存键
+        
+        Args:
+            question: 查询问题
+            include_context: 是否包含上下文信息
+            
+        Returns:
+            缓存键字符串
+        """
+        # 规范化查询
+        normalized_query = question.lower().strip()
+        
+        # 构建缓存键的各个部分
+        key_parts = [normalized_query]
+        
+        if include_context:
+            # 添加日期上下文
+            key_parts.append(self._get_last_trading_date())
+            
+            # 检查是否包含大小写敏感的股票代码
+            # 如果查询中包含证券代码格式（如600519.sh），保留大小写信息
+            ts_code_pattern = r'\d{6}\.[a-zA-Z]{2}'
+            if re.search(ts_code_pattern, question):
+                # 提取所有证券代码并保留其原始大小写
+                ts_codes = re.findall(ts_code_pattern, question)
+                if ts_codes:
+                    # 添加原始大小写标记
+                    key_parts.append(f"case_{'_'.join(ts_codes)}")
+        
+        return "_".join(key_parts)
     
     def _format_dict_result(self, result_dict: dict) -> str:
         """格式化字典结果为字符串"""

@@ -131,8 +131,9 @@ class StockCodeMapper:
         entity = entity.strip()
         
         # 检查是否已经是ts_code格式 (XXXXXX.SH/SZ)
-        if re.match(r'^\d{6}\.[A-Z]{2}$', entity.upper()):
-            return entity.upper()
+        # 注意：不自动转换大小写，让验证器能够检测大小写错误
+        if re.match(r'^\d{6}\.[A-Z]{2}$', entity):
+            return entity
         
         # 检查并刷新缓存
         if self._is_cache_expired():

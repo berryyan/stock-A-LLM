@@ -457,7 +457,8 @@ class ChineseTimeParser:
     TIME_PATTERNS = {
         # 当前时间点
         'current_point': [
-            "最新", "今天", "今日", "现在", "当前", "目前", "本交易日"
+            "最新", "今天", "今日", "现在", "当前", "目前", "本交易日",
+            "最后一个交易日", "最近一个交易日"  # 修正：这两个应该等同于"最新"
         ],
         
         # 相对时间点 - 上一个周期
@@ -465,8 +466,6 @@ class ChineseTimeParser:
             "上一个交易日": 1,
             "上个交易日": 1,      # 新增
             "前一个交易日": 1,    # 新增
-            "最后一个交易日": 1,  # 新增
-            "最近一个交易日": 1,  # 新增
             "昨天": 1,
             "前天": 2,
             "大前天": 3,
@@ -530,7 +529,14 @@ class ChineseTimeParser:
             "上上年": -2,
             "去年同期": -1,
             "上年同期": -1,
-        }
+        },
+        
+        # 月日范围（新增）
+        'month_day_range': [
+            (r'从?(\d{1,2})月(\d{1,2})日?到(\d{1,2})月(\d{1,2})日?', 'month_day'),  # 6月1日到6月30日
+            (r'(\d{1,2})月(\d{1,2})日?至(\d{1,2})月(\d{1,2})日?', 'month_day'),      # 6月1日至6月30日
+            (r'(\d{1,2})月(\d{1,2})日?[-－](\d{1,2})月(\d{1,2})日?', 'month_day'),   # 6月1日-6月30日
+        ]
     }
     
     def __init__(self):
@@ -690,6 +696,26 @@ class ChineseTimeParser:
                 )
                 expressions.append(expr)
         
+        # 7. 检查月日范围（新增）
+        if 'month_day_range' in self.TIME_PATTERNS:
+            for pattern, unit in self.TIME_PATTERNS['month_day_range']:
+                for match in re.finditer(pattern, text):
+                    # 提取月日信息
+                    start_month = int(match.group(1))
+                    start_day = int(match.group(2))
+                    end_month = int(match.group(3))
+                    end_day = int(match.group(4))
+                    
+                    expr = TimeExpression(
+                        type=TimeExpressionType.TIME_RANGE,
+                        original_text=match.group(0),
+                        start_pos=match.start(),
+                        end_pos=match.end(),
+                        value=(start_month, start_day, end_month, end_day),  # 存储月日信息
+                        unit='month_day_range'
+                    )
+                    expressions.append(expr)
+        
         # 去重：如果多个表达式在同一位置，保留第一个
         unique_expressions = []
         seen_positions = set()
@@ -750,7 +776,31 @@ class DateIntelligenceModule:
                     
             elif expr.type == TimeExpressionType.TIME_RANGE:
                 # 时间段
-                if expr.value and expr.unit == 'days':
+                if expr.unit == 'month_day_range' and isinstance(expr.value, tuple):
+                    # 月日范围
+                    start_month, start_day, end_month, end_day = expr.value
+                    current_year = datetime.now().year
+                    
+                    try:
+                        # 构造日期
+                        start_date = datetime(current_year, start_month, start_day)
+                        end_date = datetime(current_year, end_month, end_day)
+                        
+                        # 如果结束日期早于开始日期，可能跨年
+                        if end_date < start_date:
+                            end_date = datetime(current_year + 1, end_month, end_day)
+                        
+                        # 格式化为字符串
+                        start_date_str = start_date.strftime('%Y-%m-%d')
+                        end_date_str = end_date.strftime('%Y-%m-%d')
+                        
+                        expr.result_range = (start_date_str, end_date_str)
+                        expr.confidence = 0.9
+                    except ValueError as e:
+                        logger.warning(f"无效的月日范围: {expr.value}, 错误: {e}")
+                        expr.confidence = 0.0
+                        
+                elif expr.value and expr.unit == 'days':
                     result_range = self.calculator.get_trading_days_range(expr.value)
                     expr.result_range = result_range
                     
