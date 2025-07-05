@@ -293,6 +293,3 @@ class FinancialAgentModular(FinancialAgentBase):
             'details': error_info.details if self.error_handler.debug_mode else None
         }
     
-    def _identify_analysis_type(self, query: str) -> Optional[str]:
-        """识别分析类型 - 使用父类方法"""
-        return super()._identify_analysis_type(query)
