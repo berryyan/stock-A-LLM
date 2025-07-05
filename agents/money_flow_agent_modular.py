@@ -244,8 +244,16 @@ class MoneyFlowAgentModular(MoneyFlowAgentBase):
     
     def _standardize_fund_type(self, query: str) -> tuple:
         """标准化资金类型术语 - 使用父类方法"""
-        return super()._standardize_fund_type(query)
+        # 使用父类的standardize_fund_terms方法
+        return self.standardize_fund_terms(query)
     
     def _identify_query_type(self, query: str) -> str:
-        """识别查询类型 - 使用父类方法"""
-        return super()._identify_query_type(query)
+        """识别查询类型"""
+        # 基于父类的is_money_flow_query逻辑
+        if self.is_money_flow_query(query):
+            # 进一步细分查询类型
+            if any(keyword in query for keyword in ['分析', '详细', '深度', '如何', '趋势']):
+                return 'analysis'
+            else:
+                return 'data_query'
+        return 'unknown'

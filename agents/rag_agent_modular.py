@@ -24,6 +24,7 @@ from utils.result_formatter import ResultFormatter, FormattedResult, ResultType
 from utils.error_handler import ErrorHandler, ErrorCategory
 from utils.logger import setup_logger
 from utils.unified_stock_validator import UnifiedStockValidator
+from utils import date_intelligence
 
 
 class RAGAgentModular(RAGAgentBase):
@@ -199,27 +200,18 @@ class RAGAgentModular(RAGAgentBase):
         """执行实际的文档搜索"""
         try:
             # 生成查询向量
-            query_vector = self.embedding_model.encode_text(query)
+            query_vector = self.embedding_model.encode([query])[0].tolist()
             
             # 执行向量搜索
             results = self.milvus.search(
                 query_vectors=[query_vector],
                 top_k=top_k,
-                expr=self._build_milvus_expr(filter_dict) if filter_dict else None
+                filter_expr=self._build_milvus_expr(filter_dict) if filter_dict else None
             )
             
             if results and results[0]:
-                # 处理搜索结果
-                documents = []
-                for hit in results[0]:
-                    doc = {
-                        'id': hit.id,
-                        'score': hit.score,
-                        'entity': hit.entity
-                    }
-                    documents.append(doc)
-                
-                return documents
+                # 使用父类的_extract_documents方法处理搜索结果
+                return self._extract_documents(results[0])
             
             return []
             
@@ -231,20 +223,21 @@ class RAGAgentModular(RAGAgentBase):
         """构建Milvus过滤表达式"""
         expressions = []
         
-        # 股票过滤
+        # 股票过滤 - 修正字段名
         if 'stock_filter' in filter_dict:
             stock_conditions = []
             for stock in filter_dict['stock_filter']:
-                stock_conditions.append(f'(ts_code == "{stock}" or stock_code == "{stock}" or stock_name == "{stock}")')
+                # 只使用实际存在的字段 ts_code
+                stock_conditions.append(f'ts_code == "{stock}"')
             if stock_conditions:
                 expressions.append(f"({' or '.join(stock_conditions)})")
         
-        # 日期过滤
+        # 日期过滤 - 修正字段名
         if 'date' in filter_dict:
-            expressions.append(f'announcement_date == "{filter_dict["date"]}"')
+            expressions.append(f'ann_date == "{filter_dict["date"]}"')
         elif 'date_range' in filter_dict:
             start, end = filter_dict['date_range']
-            expressions.append(f'announcement_date >= "{start}" and announcement_date <= "{end}"')
+            expressions.append(f'ann_date >= "{start}" and ann_date <= "{end}"')
         
         return ' and '.join(expressions) if expressions else ""
     
@@ -277,12 +270,12 @@ class RAGAgentModular(RAGAgentBase):
             if return_source and documents:
                 sources = []
                 for i, doc in enumerate(documents[:3]):  # 只显示前3个
-                    entity = doc.get('entity', {})
+                    # 文档已经被_extract_documents处理成字典格式
                     source = {
-                        "title": entity.get('announcement_title', '未知标题'),
-                        "date": entity.get('announcement_date', '未知日期'),
-                        "stock": f"{entity.get('stock_name', '')}({entity.get('ts_code', '')})",
-                        "excerpt": entity.get('content', '')[:200] + "..."
+                        "title": doc.get('title', '未知标题'),
+                        "date": doc.get('ann_date', '未知日期'),
+                        "stock": doc.get('ts_code', ''),
+                        "excerpt": doc.get('text', '')[:200] + "..." if doc.get('text') else "..."
                     }
                     sources.append(source)
                 
@@ -312,5 +305,6 @@ class RAGAgentModular(RAGAgentBase):
         }
     
     def _build_context(self, documents: List[Dict]) -> str:
-        """构建上下文 - 保持原有逻辑"""
-        return super()._build_context(documents)
+        """构建上下文 - 调用父类的_format_context方法"""
+        # 文档已经被_extract_documents处理过，直接使用
+        return super()._format_context(documents)

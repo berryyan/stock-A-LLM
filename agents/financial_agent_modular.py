@@ -133,6 +133,16 @@ class FinancialAgentModular(FinancialAgentBase):
             self.logger.error(f"股票提取失败: {str(e)}")
             return [], f"股票提取失败: {str(e)}"
     
+    def _identify_analysis_type(self, query: str) -> str:
+        """识别财务分析类型"""
+        # 使用父类的query_patterns
+        for pattern_type, patterns in self.query_patterns.items():
+            if any(pattern in query for pattern in patterns):
+                return pattern_type
+        
+        # 默认返回综合分析
+        return 'financial_health'
+    
     def _execute_analysis(self, analysis_type: str, params: ExtractedParams, query: str) -> Dict[str, Any]:
         """执行具体的分析 - 调用父类方法并增强"""
         try:

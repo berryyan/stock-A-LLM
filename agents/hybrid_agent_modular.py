@@ -46,18 +46,9 @@ class HybridAgentModular(HybridAgent):
     
     def __init__(self, llm_model_name: str = "deepseek-chat"):
         """初始化HybridAgent"""
-        # 调用父类的初始化，但不让它创建Agent
         # 先设置基础属性
         self.logger = setup_logger("hybrid_agent_modular")
         self.logger.info("初始化模块化版本的HybridAgent...")
-        
-        # 初始化LLM
-        self.llm = ChatOpenAI(
-            model=llm_model_name,
-            temperature=0,
-            api_key=settings.api_key,
-            base_url=settings.base_url
-        )
         
         # 初始化模块化版本的各个Agent
         try:
@@ -88,15 +79,22 @@ class HybridAgentModular(HybridAgent):
             self.logger.error(f"Money Flow Agent初始化失败: {e}")
             raise
         
-        # 初始化路由相关的属性
-        self.routing_config = routing_config
-        self.schema_router = schema_router
+        # 初始化路由LLM（与父类保持一致）
+        self.router_llm = ChatOpenAI(
+            model=llm_model_name,
+            temperature=0,
+            api_key=settings.DEEPSEEK_API_KEY,
+            base_url=settings.DEEPSEEK_BASE_URL
+        )
         
-        # 路由监控器
-        self.routing_monitor = routing_monitor
+        # 创建路由链（复用父类的方法）
+        self.router_chain = self._create_router_chain()
         
-        # 创建路由提示模板
-        self._create_routing_prompt()
+        # 创建整合链（复用父类的方法）
+        self.integration_chain = self._create_integration_chain()
+        
+        # 查询模式配置（复用父类的方法）
+        self.query_patterns = self._init_query_patterns()
         
         self.logger.info("✅ 模块化版本HybridAgent初始化完成")
     
