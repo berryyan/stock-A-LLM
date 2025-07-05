@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Claude项目注意事项 (Important Notes for Claude)
+
+1. **语言使用**: 请坚持使用中文进行思考和输出。所有的分析、解释、代码注释都应该使用中文，以保持项目的一致性。
+
+2. **测试执行**: 运行测试脚本时必须：
+   - 先激活虚拟环境：`source venv/bin/activate`
+   - 设置合理的超时时间（建议5分钟）：`timeout 300`
+   - 完整命令示例：`source venv/bin/activate && timeout 300 python test_script.py`
+
 ## 重要目录说明 (Important Directory Structure)
 
 - **主前端目录**: `/frontend` - React + TypeScript + Claude.ai风格界面
