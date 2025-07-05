@@ -458,7 +458,8 @@ class ChineseTimeParser:
         # 当前时间点
         'current_point': [
             "最新", "今天", "今日", "现在", "当前", "目前", "本交易日",
-            "最后一个交易日", "最近一个交易日"  # 修正：这两个应该等同于"最新"
+            "最后一个交易日", "最近一个交易日",  # 修正：这两个应该等同于"最新"
+            "最后的"  # 新增：支持"最后的价格"等表达
         ],
         
         # 相对时间点 - 上一个周期
@@ -486,10 +487,12 @@ class ChineseTimeParser:
             (r'(\d+)周前', 'weeks'),
             (r'(\d+)个?月前', 'months'),
             (r'(\d+)个?季度?前', 'quarters'),
+            (r'(\d+)年前', 'years'),  # 新增：支持"1年前"、"2年前"等
             (r'半年前', 'half_year'),
             (r'一年前', 'year'),
             (r'([一二三四五六七八九十]+)天前', 'chinese_days'),
             (r'([一二三四五六七八九十]+)个?月前', 'chinese_months'),
+            (r'([一二三四五六七八九十]+)年前', 'chinese_years'),  # 新增：支持中文年份
             (r'前([一二三四五六七八九十]+)个交易日', 'chinese_days'),  # 新增
             (r'上([一二三四五六七八九十]+)个交易日', 'chinese_days'),  # 新增
         ],
@@ -594,30 +597,56 @@ class ChineseTimeParser:
             for match in re.finditer(pattern, text):
                 if unit == 'chinese_days':
                     value = self.chinese_to_number(match.group(1))
+                    expr_unit = 'days'
+                    expr_type = TimeExpressionType.RELATIVE_POINT
                 elif unit == 'chinese_months':
                     value = self.chinese_to_number(match.group(1)) * 21
+                    expr_unit = 'days'
+                    expr_type = TimeExpressionType.RELATIVE_POINT
+                elif unit == 'chinese_years':
+                    value = -self.chinese_to_number(match.group(1))  # 负数表示N年前
+                    expr_unit = 'years'
+                    expr_type = TimeExpressionType.YEAR_RELATIVE
                 elif unit == 'days':
                     value = int(match.group(1))
+                    expr_unit = 'days'
+                    expr_type = TimeExpressionType.RELATIVE_POINT
                 elif unit == 'weeks':
                     value = int(match.group(1)) * 5
+                    expr_unit = 'days'
+                    expr_type = TimeExpressionType.RELATIVE_POINT
                 elif unit == 'months':
                     value = int(match.group(1)) * 21
+                    expr_unit = 'days'
+                    expr_type = TimeExpressionType.RELATIVE_POINT
                 elif unit == 'quarters':
                     value = int(match.group(1)) * 61
+                    expr_unit = 'days'
+                    expr_type = TimeExpressionType.RELATIVE_POINT
+                elif unit == 'years':
+                    value = -int(match.group(1))  # 负数表示N年前
+                    expr_unit = 'years'
+                    expr_type = TimeExpressionType.YEAR_RELATIVE
                 elif unit == 'half_year':
                     value = 120
+                    expr_unit = 'days'
+                    expr_type = TimeExpressionType.RELATIVE_POINT
                 elif unit == 'year':
                     value = 250
+                    expr_unit = 'days'
+                    expr_type = TimeExpressionType.RELATIVE_POINT
                 else:
                     value = 1
+                    expr_unit = 'days'
+                    expr_type = TimeExpressionType.RELATIVE_POINT
                 
                 expr = TimeExpression(
-                    type=TimeExpressionType.RELATIVE_POINT,
+                    type=expr_type,
                     original_text=match.group(0),
                     start_pos=match.start(),
                     end_pos=match.end(),
                     value=value,
-                    unit='days'
+                    unit=expr_unit
                 )
                 expressions.append(expr)
         

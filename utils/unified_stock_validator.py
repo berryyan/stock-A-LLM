@@ -152,23 +152,8 @@ class UnifiedStockValidator:
             intent = self._determine_intent(question)
             return intent, extracted_ts_code, None
         
-        # 3. 尝试提取纯数字股票代码
-        number_pattern = r'(?:^|[\s\u4e00-\u9fa5])(\d+)(?:[\s\u4e00-\u9fa5]|$)'
-        numbers = re.findall(number_pattern, question)
-        for number in numbers:
-            if len(number) == 6:
-                # 使用股票代码映射器转换
-                extracted_ts_code = convert_to_ts_code(number)
-                if extracted_ts_code:
-                    self.logger.info(f"从查询中提取到股票代码 {number}，转换为: {extracted_ts_code}")
-                    intent = self._determine_intent(question)
-                    return intent, extracted_ts_code, None
-            elif len(number) >= 3:  # 可能是错误的股票代码
-                self.logger.warning(f"股票代码长度不正确: {number} (应为6位)")
-                intent = self._determine_intent(question)
-                return intent, 'INVALID_LENGTH', str(len(number))
-        
-        # 4. 尝试通过股票名称查找（包括简称处理）
+        # 3. 先尝试通过股票名称查找（包括简称处理）- 优先级提高
+        stock_found = False
         extracted_info = self._extract_stock_by_name_enhanced(question)
         if extracted_info:
             ts_code, suggestion = extracted_info
@@ -182,6 +167,24 @@ class UnifiedStockValidator:
                 intent = self._determine_intent(question)
                 return intent, 'USE_FULL_NAME', suggestion
         
+        # 4. 尝试提取纯数字股票代码（放在股票名称查找之后）
+        number_pattern = r'(?:^|[\s\u4e00-\u9fa5])(\d+)(?:[\s\u4e00-\u9fa5]|$)'
+        numbers = re.findall(number_pattern, question)
+        
+        # 先收集所有错误，但不立即返回
+        number_errors = []
+        for number in numbers:
+            if len(number) == 6:
+                # 使用股票代码映射器转换
+                extracted_ts_code = convert_to_ts_code(number)
+                if extracted_ts_code:
+                    self.logger.info(f"从查询中提取到股票代码 {number}，转换为: {extracted_ts_code}")
+                    intent = self._determine_intent(question)
+                    return intent, extracted_ts_code, None
+            elif len(number) >= 3:  # 可能是错误的股票代码
+                self.logger.warning(f"股票代码长度不正确: {number} (应为6位)")
+                number_errors.append((number, len(number)))
+        
         # 5. 再次检查是否包含常见简称（确保简称能被检测到）
         for short_name, full_name in self.common_short_names.items():
             if short_name in question:
@@ -191,7 +194,12 @@ class UnifiedStockValidator:
                     intent = self._determine_intent(question)
                     return intent, 'USE_FULL_NAME', full_name
         
-        # 6. 未找到任何股票信息
+        # 6. 如果有数字错误且没有找到任何股票，返回数字错误
+        if number_errors:
+            intent = self._determine_intent(question)
+            return intent, 'INVALID_LENGTH', str(number_errors[0][1])
+        
+        # 7. 未找到任何股票信息
         intent = self._determine_intent(question)
         return intent, 'NOT_FOUND', None
     
@@ -224,8 +232,24 @@ class UnifiedStockValidator:
         try:
             # 提取可能的公司名称
             name_patterns = [
-                # 带后缀的公司名（优先级最高）- 增强模式
-                r'([一-龥]{2,8}(?:股份|集团|银行|科技|电子|医药|能源|地产|证券|保险|汽车|新材料|新能源|电力|电器|电工))',
+                # 带后缀-U/-W/-UW的股票（优先级最高，如埃夫特-U、思特威-W、奥比中光-UW）
+                r'([一-龥]{2,6})-(?:UW|U|W)\b',
+                # 带A/B后缀的股票（如万科A、南玻A、特力A、渝三峡A）
+                r'([一-龥]{2,4}[AB])(?![A-Za-z])',
+                # ST和*ST股票（如ST葫芦娃、*ST国华）
+                r'(\*?ST[一-龥]{2,6})',
+                # S股票（如S佳通）
+                r'(S[一-龥]{2,6})',
+                # XD股票（临时除息标记，如XD国睿科）
+                r'(XD[一-龥]{2,6})',
+                # 英文+中文组合（如GQY视讯、TCL科技、TCL智家、TCL中环）
+                r'([A-Z]{2,5}[一-龥]{2,4})',
+                # C开头的股票（如C信通）
+                r'(C[一-龥]{2,4})',
+                # 数字开头的特殊股票（如三六零、七一二、六九一二）
+                r'([一二三四五六七八九十百千万]{1,3}[一-龥]{0,3}[零一二三四五六七八九十])',
+                # 带后缀的公司名（优先级高）- 增强模式
+                r'([一-龥]{2,8}(?:股份|集团|银行|科技|电子|医药|能源|地产|证券|保险|汽车|新材料|新能源|电力|电器|电工|重工|农业|视讯))',
                 # 支持"XX银行股份"等复合后缀
                 r'([一-龥]{2,6}银行股份)',
                 # 支持"中国XX保险"等格式
@@ -357,13 +381,50 @@ class UnifiedStockValidator:
         """
         stocks = []
         
-        # 分割可能的连接词
-        parts = re.split(r'[和与及、，,]', question)
+        # 首先尝试直接从整个查询中提取所有股票名称
+        # 使用与_extract_stock_by_name_enhanced相同的模式
+        stock_patterns = [
+            # 带后缀-U/-W/-UW的股票（需要包含后缀）
+            r'([一-龥]{2,6}-(?:UW|U|W))(?=\s|、|，|,|和|与|及|在|的|$)',
+            # 带A/B后缀的股票
+            r'([一-龥]{2,4}[AB])(?![A-Za-z])',
+            # ST和*ST股票
+            r'(\*?ST[一-龥]{2,6})(?=[和与及、，,]|$|\s|的|最|从)',
+            # S股票
+            r'(S[一-龥]{2,6})(?=[和与及、，,]|$|\s|的)',
+            # 英文+中文组合
+            r'([A-Z]{2,5}[一-龥]{2,4})(?=[和与及、，,]|$|\s|的|\d)',
+            # 数字股票名
+            r'([一二三四五六七八九十]{1,3}[一-龥]{0,3}[零一二三四五六七八九十])(?=[和与及、，,]|$|\s|的)',
+            # 普通中文股票名（重要！添加这个模式）
+            r'([一-龥]{2,6})(?=[和与及、，,]|$|\s|的|\d|vs|VS)',
+        ]
         
-        for part in parts:
-            success, ts_code, _ = self.validate_and_extract(part.strip())
-            if success and ts_code:
+        # 提取所有匹配的股票名称
+        potential_stocks = []
+        for pattern in stock_patterns:
+            matches = re.findall(pattern, question)
+            potential_stocks.extend(matches)
+        
+        # 验证每个潜在的股票
+        for stock_name in potential_stocks:
+            success, ts_code, _ = self.validate_and_extract(stock_name)
+            if success and ts_code and ts_code not in stocks:
                 stocks.append(ts_code)
+        
+        # 如果没有找到股票，再尝试分割方法
+        if not stocks:
+            # 分割可能的连接词
+            if any(connector in question for connector in ['和', '与', '及', '、', '，', ',', 'vs', 'VS']):
+                parts = re.split(r'[和与及、，,]|(?:vs)|(?:VS)', question)
+            else:
+                # 如果没有明确连接词，尝试用空格分割
+                parts = re.split(r'\s+', question)
+            
+            for part in parts:
+                success, ts_code, _ = self.validate_and_extract(part.strip())
+                if success and ts_code and ts_code not in stocks:
+                    stocks.append(ts_code)
         
         return stocks
 

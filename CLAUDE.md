@@ -14,9 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v2.1.19)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v2.1.18)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ 股票验证公用模块化完成，创建stock_validation_helper统一验证模块，SQL Agent全面使用公用验证方法，大小写错误验证完全修复，错误信息准确性从6.2%提升至81.2%。股票验证逻辑统一化，验证失败立即返回错误，不尝试"修复"。缓存键生成问题识别，_extract_query_params方法修复，convert_to_ts_code直接调用全部替换为验证方法。测试通过率大幅提升：股价查询/估值查询/成交量查询100%通过，K线查询验证逻辑增强，个股主力资金/利润查询验证完善。公用方法原则全面贯彻，所有Agent共享相同的验证逻辑。SQL Agent边界测试问题修复完成，股票代码无后缀识别支持，日期模式识别增强，日期替换空格智能添加。股票提取方法统一化，UnifiedStockValidator集成，所有模板股票识别能力一致性提升。SQL Agent提取功能增强完成，日期范围连接符扩展，月份/年份转日期范围实现，股票名称智能清理修复。综合测试27/27全部通过。前端主题系统完整实现，支持亮色/暗色主题切换，主题偏好本地存储。公告日期范围查询功能完善，SQL Agent公告查询功能实现。多个后端崩溃问题修复，利润查询模板增强，净利润排名字段映射修复，RAG查询参数类型修复。前端Markdown表格暗色模式优化，个股/板块主力资金查询格式优化，营收排名模板正则增强。财务指标排名快速路径实现，PE/PB/ROE等5个新模板已上线，响应时间1-2秒。资金类型术语标准化，支持16种非标准术语映射。市值排名查询优化，支持无数字默认前10。日期智能解析DISTINCT问题修复，股票识别修复，路由机制修复。SQL Agent快速模板完成，路由机制文档化，7-Agent架构Phase 0&1完成。代码清理完成，SchemaKnowledgeBase确认为实际使用系统。流式响应功能完整实现，React前端Phase 1完成。RAG系统优化完成，WebSocket通信恢复，股票代码映射上线。系统全面修复完成，Windows兼容性100%，Phase 1深度财务分析系统完成，Phase 2资金流向分析系统完成，智能日期解析v2.0系统完成。
+**Current Status**: ✅ 参数提取器增强完成，支持特殊股票名称100%准确率提取。修复ST股票提取正则表达式，使用负向预查避免过度匹配。股票验证错误消息传递机制修复，月份/年份范围模式匹配完整实现。日期智能解析增强，支持"最后的"、"N年前"等相对日期表达。限制提取逻辑优化，在提取前排除已识别的股票名称。特殊股票名称支持完善：ST/*ST/S/XD前缀、-U/-W/-UW后缀、英文+中文组合（GQY视讯）、中文数字名称（三六零）、A/B后缀股票（万科A）全部支持。多股票提取改进，extract_multiple_stocks方法增强，支持各种连接词（和/与/及/、/，/vs/VS）。边界条件处理优化，支持数字作为边界。测试覆盖率100%：原始15个测试全部通过，特殊股票名称测试全部通过，扩展参数提取器测试全部通过。复杂查询支持完善，如"GQY视讯、七一二和大北农的对比"、"TCL科技和TCL智家财务对比"等。股票验证公用模块化完成，创建stock_validation_helper统一验证模块，SQL Agent全面使用公用验证方法，大小写错误验证完全修复，错误信息准确性从6.2%提升至81.2%。股票验证逻辑统一化，验证失败立即返回错误，不尝试"修复"。缓存键生成问题识别，_extract_query_params方法修复，convert_to_ts_code直接调用全部替换为验证方法。测试通过率大幅提升：股价查询/估值查询/成交量查询100%通过，K线查询验证逻辑增强，个股主力资金/利润查询验证完善。公用方法原则全面贯彻，所有Agent共享相同的验证逻辑。SQL Agent边界测试问题修复完成，股票代码无后缀识别支持，日期模式识别增强，日期替换空格智能添加。股票提取方法统一化，UnifiedStockValidator集成，所有模板股票识别能力一致性提升。SQL Agent提取功能增强完成，日期范围连接符扩展，月份/年份转日期范围实现，股票名称智能清理修复。综合测试27/27全部通过。前端主题系统完整实现，支持亮色/暗色主题切换，主题偏好本地存储。公告日期范围查询功能完善，SQL Agent公告查询功能实现。多个后端崩溃问题修复，利润查询模板增强，净利润排名字段映射修复，RAG查询参数类型修复。前端Markdown表格暗色模式优化，个股/板块主力资金查询格式优化，营收排名模板正则增强。财务指标排名快速路径实现，PE/PB/ROE等5个新模板已上线，响应时间1-2秒。资金类型术语标准化，支持16种非标准术语映射。市值排名查询优化，支持无数字默认前10。日期智能解析DISTINCT问题修复，股票识别修复，路由机制修复。SQL Agent快速模板完成，路由机制文档化，7-Agent架构Phase 0&1完成。代码清理完成，SchemaKnowledgeBase确认为实际使用系统。流式响应功能完整实现，React前端Phase 1完成。RAG系统优化完成，WebSocket通信恢复，股票代码映射上线。系统全面修复完成，Windows兼容性100%，Phase 1深度财务分析系统完成，Phase 2资金流向分析系统完成，智能日期解析v2.0系统完成。
 
 ## Development Commands
 
@@ -118,6 +118,10 @@ source venv/bin/activate && python utils/stock_code_mapper.py
 # Test financial ranking features (v2.1.11 new)
 source venv/bin/activate && python test_ranking_comprehensive.py
 source venv/bin/activate && python test_ranking_simple.py
+
+# Test parameter extractor features (v2.1.18 new)
+source venv/bin/activate && python tests/test_parameter_extractor_extended.py
+source venv/bin/activate && python tests/test_special_stock_names.py
 
 # Bug fix verification tests (v1.4.1 fixes)
 source venv/bin/activate && python test_bug_fixes.py
@@ -319,18 +323,39 @@ The system supports six main query types:
 
 ### Recent Updates
 
-#### v2.1.18 - SQL Agent边界测试修复与股票提取统一化 (2025-07-05)
+#### v2.1.18 - 参数提取器增强与特殊股票名称支持 (2025-07-05)
 
-**边界测试问题修复** ✅:
-- **股票代码无后缀识别**: 修复方法调用错误，支持600519/000001/430047等格式
-- **日期模式识别增强**: 新增"上个交易日"、"前一个交易日"、"最近一个交易日"等模式
-- **日期替换空格处理**: 智能添加空格，避免"6005192025-07-04"这样的错误
-- **重复日期匹配去重**: 解决同一日期表达被多次匹配的问题
+**参数提取器增强** ✅:
+- **股票验证错误消息传递**: 修复`_extract_stocks`方法，确保验证失败时正确传递错误信息
+- **月份/年份范围提取**: 完整实现`_extract_month_year_range`方法，支持"1月到3月"、"2024年"等表达
+- **相对日期提取改进**: 添加"最后的"、"N年前"等模式支持，提升日期智能解析能力
+- **限制提取逻辑优化**: 在提取数量限制前先排除已识别的股票名称，避免误匹配
 
-**股票提取方法统一化** ✅:
-- **统一参数提取升级**: UnifiedStockValidator集成到`_extract_query_params`方法
-- **所有模板一致性**: 删除各模板特殊处理，共享相同的高级股票提取能力
-- **代码结构优化**: 遵循Phase 1.3.1设计原则，避免代码重复
+**特殊股票名称支持** ✅:
+- **ST股票提取修复**: 使用负向预查`(?=[和与及、，,]|$|\s|的|最|从)`避免过度匹配
+- **特殊前缀支持**: ST/*ST/S/XD等前缀股票完美识别
+- **特殊后缀支持**: -U/-W/-UW后缀股票（如埃夫特-U、思特威-W、奥比中光-UW）
+- **英文+中文组合**: GQY视讯、TCL科技、TCL智家、TCL中环等
+- **中文数字名称**: 三六零、七一二、六九一二等
+- **A/B后缀股票**: 万科A、南玻A、特力A、渝三峡A等
+
+**多股票提取改进** ✅:
+- **extract_multiple_stocks增强**: 添加所有必要的股票名称提取模式
+- **连接词支持扩展**: 支持和、与、及、、、，、vs、VS等多种连接词
+- **边界条件优化**: 支持数字作为边界（如"TCL智家2025年"）
+- **普通中文股票名**: 添加通用模式确保"大北农"等普通名称不被遗漏
+
+**测试覆盖与验证** ✅:
+- **参数提取器扩展测试**: 15个测试100%通过
+- **特殊股票名称测试**: 7个测试100%通过，覆盖所有特殊格式
+- **复杂查询验证**: "GQY视讯、七一二和大北农的对比"完美提取
+- **TCL系列测试**: "TCL科技和TCL智家2025年一季度财务对比"正确识别两个股票
+
+**技术实现细节** ✅:
+- 修改`utils/parameter_extractor.py`优化股票提取逻辑
+- 更新`utils/unified_stock_validator.py`的`extract_multiple_stocks`方法
+- 增强正则表达式边界条件，添加`\d`、`vs`、`VS`等边界
+- 创建专门的测试文件验证特殊股票名称提取能力
 
 #### v2.1.17 - SQL Agent提取功能增强 (2025-07-04)
 

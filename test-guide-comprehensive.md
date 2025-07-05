@@ -1,8 +1,16 @@
-# 股票分析系统综合测试指南 v5.2
+# 股票分析系统综合测试指南 v5.3
 
 **更新日期**: 2025-07-05  
 **文档说明**: 综合所有Agent的测试用例，包括已实现功能和未来规划功能
 
+> 📝 **v5.3 更新内容**:
+> - 新增参数提取器测试用例（test_parameter_extractor_extended.py）
+> - 新增特殊股票名称测试（test_special_stock_names.py）
+> - 支持ST/*ST/S/XD前缀股票、-U/-W/-UW后缀股票、英文+中文组合股票
+> - 修复"最后的"、"N年前"等相对日期提取
+> - 增强多股票连接词支持（vs/VS等）
+> - 测试覆盖率提升至100%
+>
 > 📝 **v5.2 更新内容**:
 > - 修正SQL Agent模板数量为18个（原错误标注为10个）
 > - 每个模板增加参数提取需求说明
@@ -1511,6 +1519,12 @@ npm run dev
 3. Money Flow Agent功能测试
 4. RAG Agent功能测试
 5. Hybrid Agent路由测试
+6. 参数提取器功能测试（v2.1.18新增）
+   - 股票名称提取（含特殊格式）
+   - 日期和日期范围提取
+   - 数量限制提取
+   - 多股票提取
+   - 中文数字转换
 
 ### Phase 2 测试（新Agent开发后）
 1. Rank Agent功能测试
@@ -1549,6 +1563,10 @@ test_financial_agent.py
 test_advanced_financial_features.py
 test_financial_comparison.py
 
+# 参数提取器测试（v2.1.18新增）
+test_parameter_extractor_extended.py
+test_special_stock_names.py
+
 # 系统集成测试
 test_date_intelligence.py
 test_routing_fix.py
@@ -1576,6 +1594,7 @@ test_routing_accuracy.py
 
 ## 更新日志
 
+- v5.3 (2025-07-05): 新增参数提取器测试用例和特殊股票名称测试，支持ST/*ST/S/XD前缀、-U/-W/-UW后缀、英文+中文组合股票，修复相对日期提取，增强多股票连接词支持，测试覆盖率提升至100%
 - v5.2 (2025-07-05): 修正SQL Agent模板数量为18个（原错误标注为10个），每个模板增加参数提取需求说明，增强边界测试和错误测试覆盖，新增SQL_AGENT_TEST_ENHANCEMENT.md和SQL_TEMPLATE_PARAMETER_MATRIX.md文档
 - v5.1 (2025-07-04): 新增v2.1.17提取功能增强测试用例，包括日期范围连接符扩展（支持"-"、"~"）、月份/年份转日期范围功能、股票名称智能清理功能增强
 - v5.0 (2025-07-04): 新增Phase 1.2中文数字识别测试用例，更新Phase 1.3统一查询处理流程说明，添加了所有修复问题的回归测试用例
