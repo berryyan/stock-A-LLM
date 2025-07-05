@@ -70,6 +70,13 @@ class ErrorHandler:
             "severity": ErrorSeverity.LOW,
             "suggestion": "请输入正确的股票代码，如：600519或600519.SH"
         },
+        "INVALID_STOCK": {
+            "message": "无法识别输入内容",
+            "user_message": "无法识别输入内容",
+            "category": ErrorCategory.INPUT_ERROR,
+            "severity": ErrorSeverity.LOW,
+            "suggestion": "请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+        },
         "STOCK_NOT_EXISTS": {
             "message": "股票代码不存在",
             "user_message": "未找到该股票",
@@ -186,10 +193,16 @@ class ErrorHandler:
         
         # 构建错误信息
         if error_mapping:
+            # 如果错误是字符串且包含详细信息，优先使用原始错误消息
+            if isinstance(error, str) and error and error != error_mapping.get("message", ""):
+                user_msg = error
+            else:
+                user_msg = error_mapping.get("user_message", "查询出现错误")
+                
             error_info = ErrorInfo(
                 error_code=error_code,
                 error_message=error_mapping.get("message", str(error)),
-                user_message=error_mapping.get("user_message", "查询出现错误"),
+                user_message=user_msg,
                 category=error_mapping.get("category", ErrorCategory.UNKNOWN_ERROR),
                 severity=error_mapping.get("severity", ErrorSeverity.MEDIUM),
                 suggestion=error_mapping.get("suggestion"),
@@ -197,10 +210,16 @@ class ErrorHandler:
             )
         else:
             # 未知错误
+            # 如果错误是字符串且有内容，使用原始错误消息
+            if isinstance(error, str) and error:
+                user_msg = error
+            else:
+                user_msg = "查询过程中出现未知错误"
+                
             error_info = ErrorInfo(
                 error_code=error_code or "UNKNOWN_ERROR",
                 error_message=str(error),
-                user_message="查询过程中出现未知错误",
+                user_message=user_msg,
                 category=ErrorCategory.UNKNOWN_ERROR,
                 severity=ErrorSeverity.HIGH,
                 details=details

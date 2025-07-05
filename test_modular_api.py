@@ -1,107 +1,91 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-测试模块化Agent通过API
+测试模块化API是否正常工作
 """
-
 import requests
 import json
-import time
+from datetime import datetime
 
+API_BASE_URL = "http://localhost:8001"
 
-def test_query(query: str, query_type: str = None):
-    """测试单个查询"""
-    print(f"\n{'='*60}")
-    print(f"查询: {query}")
-    if query_type:
-        print(f"类型: {query_type}")
-    print('='*60)
-    
-    url = "http://localhost:8000/query"
-    payload = {
-        "question": query,
-        "query_type": query_type
-    }
-    
+def test_health():
+    """测试健康检查端点"""
+    print("\n=== 测试健康检查 ===")
     try:
-        start_time = time.time()
-        response = requests.post(url, json=payload)
-        elapsed_time = time.time() - start_time
+        response = requests.get(f"{API_BASE_URL}/health")
+        if response.status_code == 200:
+            data = response.json()
+            print("✓ 健康检查成功")
+            print(f"  - 状态: {data.get('status')}")
+            print(f"  - MySQL连接: {data.get('mysql_connected')}")
+            print(f"  - Milvus连接: {data.get('milvus_connected')}")
+            print(f"  - Agent就绪: {data.get('agent_ready')}")
+            print(f"  - 版本: {data.get('version')}")
+            return True
+        else:
+            print(f"✗ 健康检查失败: HTTP {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"✗ 连接失败: {str(e)}")
+        print("  提示: 请确保模块化API正在运行（端口8001）")
+        return False
+
+def test_query(question):
+    """测试查询端点"""
+    print(f"\n=== 测试查询: {question} ===")
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/query",
+            json={"question": question},
+            timeout=120
+        )
         
         if response.status_code == 200:
-            result = response.json()
-            print(f"状态码: {response.status_code}")
-            print(f"成功: {result.get('success')}")
-            print(f"耗时: {elapsed_time:.2f}秒")
-            
-            if result.get('success'):
-                # 检查是否有answer字段（API返回的格式）
-                answer_text = result.get('answer', '')
-                if answer_text:
-                    # 只显示结果的前500个字符
-                    if len(answer_text) > 500:
-                        print(f"\n结果预览:\n{answer_text[:500]}...")
-                    else:
-                        print(f"\n结果:\n{answer_text}")
-                else:
-                    # 如果没有answer字段，可能是其他格式
-                    print("\n警告：响应中没有answer字段")
-                    print(f"响应键: {list(result.keys())}")
-                
-                # 显示元数据
-                if 'query_type' in result:
-                    print(f"\n查询类型: {result.get('query_type')}")
-                if 'quick_path' in result:
-                    print(f"快速路径: {result.get('quick_path')}")
+            data = response.json()
+            if data.get("success"):
+                print("✓ 查询成功")
+                print(f"  - 查询类型: {data.get('query_type')}")
+                print(f"  - 答案预览: {data.get('answer', '')[:100]}...")
+                return True
             else:
-                print(f"\n错误: {result.get('error')}")
-                if 'suggestion' in result:
-                    print(f"建议: {result.get('suggestion')}")
+                print(f"✗ 查询失败: {data.get('error')}")
+                return False
         else:
-            print(f"HTTP错误: {response.status_code}")
-            print(f"响应: {response.text}")
+            print(f"✗ HTTP错误: {response.status_code}")
+            return False
             
+    except requests.exceptions.Timeout:
+        print("✗ 查询超时（超过120秒）")
+        return False
     except Exception as e:
-        print(f"请求异常: {str(e)}")
-
+        print(f"✗ 请求失败: {str(e)}")
+        return False
 
 def main():
-    print("="*60)
-    print("测试模块化Agent API")
-    print("="*60)
+    """主测试函数"""
+    print("=== 模块化API测试 ===")
+    print(f"API地址: {API_BASE_URL}")
+    print(f"测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
-    # 测试用例 - 基于 test-guide-comprehensive.md v5.3
-    test_cases = [
-        # 1.1 股价查询模板测试
-        ("贵州茅台的最新股价", "sql"),
-        ("中国平安昨天的股价", "sql"),
-        ("600519.SH的股价", "sql"),
-        
-        # 1.2 成交量查询模板测试
-        ("平安银行昨天的成交量", "sql"),
-        ("万科A前天的成交量", "sql"),  # v2.1.17重点测试
-        
-        # 1.3 估值指标查询模板测试
-        ("中国平安的市盈率", "sql"),
-        
-        # 1.5 涨跌幅排名模板测试
-        ("今天涨幅最大的前10只股票", "sql"),
-        
-        # 1.6 市值排名模板测试
-        ("市值排名前3", "sql"),
-        ("总市值排名", "sql"),  # 无数字默认前10
-        
-        # 1.10 个股主力资金查询模板测试
-        ("贵州茅台的主力资金", "sql"),
-        
-        # 1.11 板块主力资金查询模板测试
-        ("银行板块的主力资金", "sql"),
+    # 测试健康检查
+    health_ok = test_health()
+    if not health_ok:
+        print("\n⚠️ API未就绪，请先启动模块化API服务器")
+        print("运行: python -m uvicorn api.main_modular:app --reload --host 0.0.0.0 --port 8001")
+        return
+    
+    # 测试各种查询
+    test_queries = [
+        "贵州茅台最新股价",  # SQL查询
     ]
     
-    for query, query_type in test_cases:
-        test_query(query, query_type)
-        time.sleep(1)  # 避免请求过快
-
+    for query in test_queries:
+        test_query(query)
+    
+    print("\n=== 测试完成 ===")
+    print("\n如果所有测试通过，说明模块化API工作正常！")
+    print("可以使用 start_modular_system.bat 启动完整的前后端系统")
 
 if __name__ == "__main__":
     main()

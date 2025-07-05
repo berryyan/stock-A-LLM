@@ -86,7 +86,18 @@ function App() {
         
         // 检查响应是否包含错误
         if (!response || response.success === false) {
-          throw new Error(response?.error || 'Invalid response from API');
+          // 直接处理错误，而不是抛出异常
+          const errorContent = `⚠️ ${response?.error || '查询失败，请稍后重试'}`;
+          
+          // 更新错误消息
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === assistantMessageId 
+                ? { ...msg, content: errorContent, isStreaming: false, isError: true }
+                : msg
+            )
+          );
+          return; // 提前返回，不继续处理
         }
         
         // 使用流式显示响应内容

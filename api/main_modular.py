@@ -115,13 +115,77 @@ except Exception as e:
     hybrid_agent = None
 
 
-# 复制原有的所有路由和模型定义
-from api.main import (
-    QueryRequest, QueryResponse, HealthResponse, ErrorResponse,
-    FinancialAnalysisRequest, FinancialAnalysisResponse,
-    MoneyFlowAnalysisRequest, MoneyFlowAnalysisResponse,
-    StatusResponse, WebSocketMessage
-)
+# Pydantic模型定义
+class QueryRequest(BaseModel):
+    """查询请求模型"""
+    question: str = Field(..., description="用户的查询问题", example="贵州茅台的最新股价是多少？")
+    context: Optional[Dict[str, Any]] = Field(None, description="可选的上下文信息")
+    session_id: Optional[str] = Field(None, description="会话ID，用于保持上下文")
+    
+class QueryResponse(BaseModel):
+    """查询响应模型"""
+    success: bool = Field(..., description="查询是否成功")
+    question: str = Field(..., description="原始查询问题")
+    answer: str = Field(..., description="查询答案")
+    query_type: str = Field(..., description="查询类型: sql/rag/financial_analysis/money_flow/hybrid")
+    timestamp: str = Field(default_factory=generate_timestamp, description="响应时间戳")
+    sources: Optional[Dict[str, Any]] = Field(None, description="数据来源详情")
+    error: Optional[str] = Field(None, description="错误信息（如果有）")
+    
+class HealthResponse(BaseModel):
+    """健康检查响应"""
+    status: str = Field(..., description="服务状态", example="healthy")
+    mysql_connected: bool = Field(..., description="MySQL连接状态")
+    milvus_connected: bool = Field(..., description="Milvus连接状态")
+    agent_ready: bool = Field(..., description="Agent初始化状态")
+    version: str = Field(default="2.2.0-modular", description="API版本")
+    timestamp: str = Field(default_factory=generate_timestamp, description="检查时间戳")
+    
+class ErrorResponse(BaseModel):
+    """错误响应模型"""
+    error: str = Field(..., description="错误消息")
+    detail: Optional[str] = Field(None, description="详细错误信息")
+    timestamp: str = Field(default_factory=generate_timestamp, description="错误时间戳")
+
+class FinancialAnalysisRequest(BaseModel):
+    """财务分析请求模型"""
+    query: str = Field(..., description="财务分析查询", example="分析贵州茅台的财务健康度")
+    
+class FinancialAnalysisResponse(BaseModel):
+    """财务分析响应模型"""
+    success: bool = Field(..., description="分析是否成功")
+    result: Optional[Dict[str, Any]] = Field(None, description="分析结果")
+    error: Optional[str] = Field(None, description="错误信息")
+    analysis_type: Optional[str] = Field(None, description="分析类型")
+    timestamp: str = Field(default_factory=generate_timestamp, description="响应时间戳")
+
+class MoneyFlowAnalysisRequest(BaseModel):
+    """资金流向分析请求模型"""
+    query: str = Field(..., description="资金流向查询", example="分析贵州茅台的资金流向")
+    
+class MoneyFlowAnalysisResponse(BaseModel):
+    """资金流向分析响应模型"""
+    success: bool = Field(..., description="分析是否成功")
+    data: Optional[List[Dict[str, Any]]] = Field(None, description="资金流向数据")
+    analysis: Optional[str] = Field(None, description="分析结论")
+    charts: Optional[Dict[str, Any]] = Field(None, description="图表数据")
+    error: Optional[str] = Field(None, description="错误信息")
+    timestamp: str = Field(default_factory=generate_timestamp, description="响应时间戳")
+
+class StatusResponse(BaseModel):
+    """系统状态响应"""
+    status: str = Field(..., description="系统状态")
+    active_sessions: int = Field(..., description="活跃会话数")
+    total_queries: int = Field(..., description="总查询数")
+    uptime_seconds: float = Field(..., description="运行时间（秒）")
+    timestamp: str = Field(default_factory=generate_timestamp, description="状态时间戳")
+
+class WebSocketMessage(BaseModel):
+    """WebSocket消息模型"""
+    type: str = Field(..., description="消息类型: query/response/error/heartbeat")
+    data: Dict[str, Any] = Field(..., description="消息数据")
+    session_id: Optional[str] = Field(None, description="会话ID")
+    timestamp: str = Field(default_factory=generate_timestamp, description="消息时间戳")
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
@@ -141,13 +205,11 @@ async def index(request: Request):
                      "application/json": {
                          "example": {
                              "status": "healthy",
-                             "version": "2.2.0",
-                             "timestamp": "2025-01-01T12:00:00",
-                             "services": {
-                                 "hybrid_agent": "operational",
-                                 "mysql": "connected",
-                                 "milvus": "connected"
-                             }
+                             "mysql_connected": True,
+                             "milvus_connected": True,
+                             "agent_ready": True,
+                             "version": "2.2.0-modular",
+                             "timestamp": "2025-01-01T12:00:00"
                          }
                      }
                  }
@@ -155,38 +217,50 @@ async def index(request: Request):
          })
 async def health_check():
     """系统健康检查接口"""
-    health_status = {
-        "status": "healthy",
-        "version": "2.2.0",
-        "timestamp": datetime.now().isoformat(),
-        "services": {}
-    }
+    mysql_connected = False
+    milvus_connected = False
+    agent_ready = False
     
     # 检查各个服务状态
     try:
         if hybrid_agent:
-            health_status["services"]["hybrid_agent"] = "operational"
+            agent_ready = True
             
-            # 检查MySQL连接
-            if hasattr(hybrid_agent.sql_agent, 'mysql_connector'):
-                health_status["services"]["mysql"] = "connected"
-            else:
-                health_status["services"]["mysql"] = "not configured"
-                
-            # 检查Milvus连接
-            if hasattr(hybrid_agent.rag_agent, 'milvus_connector'):
-                health_status["services"]["milvus"] = "connected"
-            else:
-                health_status["services"]["milvus"] = "not configured"
+            # 检查SQL Agent的MySQL连接
+            if hasattr(hybrid_agent.sql_agent, 'mysql_connector') and hybrid_agent.sql_agent.mysql_connector:
+                try:
+                    # 尝试获取连接来验证MySQL是否可用
+                    conn = hybrid_agent.sql_agent.mysql_connector.get_connection()
+                    if conn:
+                        conn.close()
+                        mysql_connected = True
+                except Exception as e:
+                    logger.warning(f"MySQL连接检查失败: {e}")
+                    mysql_connected = False
+            
+            # 检查RAG Agent的Milvus连接
+            if hasattr(hybrid_agent.rag_agent, 'milvus_connector') and hybrid_agent.rag_agent.milvus_connector:
+                try:
+                    # 检查Milvus连接状态
+                    milvus_connected = hybrid_agent.rag_agent.milvus_connector.connected
+                except Exception as e:
+                    logger.warning(f"Milvus连接检查失败: {e}")
+                    milvus_connected = False
         else:
-            health_status["status"] = "degraded"
-            health_status["services"]["hybrid_agent"] = "not initialized"
+            logger.error("HybridAgent未初始化")
             
     except Exception as e:
-        health_status["status"] = "unhealthy"
-        health_status["error"] = str(e)
+        logger.error(f"健康检查异常: {e}", exc_info=True)
         
-    return health_status
+    # 返回符合HealthResponse模型的对象
+    return HealthResponse(
+        status="healthy" if agent_ready else "unhealthy",
+        mysql_connected=mysql_connected,
+        milvus_connected=milvus_connected,
+        agent_ready=agent_ready,
+        version="2.2.0-modular",
+        timestamp=datetime.now().isoformat()
+    )
 
 
 @app.post("/query", 
@@ -222,14 +296,18 @@ async def query(request: QueryRequest):
         # 构造响应
         response = QueryResponse(
             success=result.get("success", False),
-            result=result.get("result", ""),
+            question=request.question,
+            answer=result.get("answer", ""),  # 修复：使用 'answer' 而不是 'result'
             query_type=result.get("query_type", "unknown"),
-            sql=result.get("sql"),
-            metadata={
+            sources={
+                "sql": result.get("sql"),
                 "processing_time": result.get("processing_time", 0),
                 "data_source": result.get("data_source", "unknown"),
-                "confidence": result.get("confidence", 0.0)
+                "confidence": result.get("confidence", 0.0),
+                # 保留原始的 sources 数据
+                **result.get("sources", {})
             },
+            error=result.get("error"),
             timestamp=datetime.now().isoformat()
         )
         
@@ -252,23 +330,20 @@ async def financial_analysis(request: FinancialAnalysisRequest):
         raise HTTPException(status_code=503, detail="服务未初始化")
         
     try:
-        # 使用FinancialAgent进行分析
-        result = hybrid_agent.financial_agent.analyze(
-            stock_code=request.stock_code,
-            analysis_type=request.analysis_type,
-            period=request.period,
-            compare_periods=request.compare_periods
-        )
+        # 通过HybridAgent路由到FinancialAgent
+        result = hybrid_agent.query(request.query)
+        
+        # 确保是财务分析类型的查询
+        if result.get("query_type") != "financial_analysis":
+            # 如果不是财务分析查询，强制使用FinancialAgent
+            logger.info(f"强制使用FinancialAgent处理查询: {request.query}")
+            result = hybrid_agent.financial_agent.query(request.query)
         
         return FinancialAnalysisResponse(
             success=result.get("success", False),
-            stock_code=request.stock_code,
-            analysis_type=request.analysis_type,
-            result=result,
-            metadata={
-                "analysis_date": datetime.now().isoformat(),
-                "data_period": request.period
-            },
+            result=result.get("result"),
+            error=result.get("error"),
+            analysis_type=result.get("analysis_type", "financial_analysis"),
             timestamp=datetime.now().isoformat()
         )
         
@@ -288,22 +363,33 @@ async def money_flow_analysis(request: MoneyFlowAnalysisRequest):
         raise HTTPException(status_code=503, detail="服务未初始化")
         
     try:
-        # 使用MoneyFlowAgent进行分析
-        result = hybrid_agent.money_flow_agent.analyze(
-            stock_code=request.stock_code,
-            days=request.days,
-            analysis_type=request.analysis_type
-        )
+        # 通过HybridAgent路由到MoneyFlowAgent
+        result = hybrid_agent.query(request.query)
+        
+        # 确保是资金流向分析类型的查询
+        if result.get("query_type") != "money_flow":
+            # 如果不是资金流向查询，强制使用MoneyFlowAgent
+            logger.info(f"强制使用MoneyFlowAgent处理查询: {request.query}")
+            result = hybrid_agent.money_flow_agent.query(request.query)
+        
+        # 从结果中提取数据
+        data = None
+        analysis = None
+        charts = None
+        
+        if isinstance(result.get("result"), dict):
+            data = result["result"].get("data")
+            analysis = result["result"].get("analysis")
+            charts = result["result"].get("charts")
+        elif isinstance(result.get("result"), str):
+            analysis = result["result"]
         
         return MoneyFlowAnalysisResponse(
             success=result.get("success", False),
-            stock_code=request.stock_code,
-            analysis_type=request.analysis_type,
-            result=result,
-            metadata={
-                "analysis_date": datetime.now().isoformat(),
-                "days_analyzed": request.days
-            },
+            data=data,
+            analysis=analysis,
+            charts=charts,
+            error=result.get("error"),
             timestamp=datetime.now().isoformat()
         )
         
@@ -348,11 +434,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.send_json({
                         "type": "result",
                         "success": result.get("success", False),
-                        "result": result.get("result", ""),
+                        "result": result.get("answer", ""),  # 修复：使用 'answer' 而不是 'result'
                         "query_type": result.get("query_type", "unknown"),
                         "metadata": {
                             "processing_time": result.get("processing_time", 0),
-                            "data_source": result.get("data_source", "unknown")
+                            "data_source": result.get("data_source", "unknown"),
+                            "sources": result.get("sources", {})
                         }
                     })
                     
@@ -376,31 +463,36 @@ async def websocket_endpoint(websocket: WebSocket):
          tags=["系统管理"])
 async def get_status():
     """获取系统状态"""
-    status = {
-        "system": "operational",
-        "version": "2.2.0",
-        "timestamp": datetime.now().isoformat(),
-        "components": {},
-        "statistics": {}
-    }
+    # 初始化时间记录（简单计算运行时间）
+    start_time = getattr(app, '_start_time', datetime.now())
+    if not hasattr(app, '_start_time'):
+        app._start_time = start_time
+    
+    uptime_seconds = (datetime.now() - app._start_time).total_seconds()
+    
+    # 获取统计信息
+    active_sessions = 0  # 简化实现，实际应该跟踪WebSocket连接数
+    total_queries = 0
     
     if hybrid_agent:
-        # 获取各组件状态
-        status["components"]["hybrid_agent"] = "active"
-        status["components"]["sql_agent"] = "active"
-        status["components"]["rag_agent"] = "active"
-        status["components"]["financial_agent"] = "active"
-        status["components"]["money_flow_agent"] = "active"
-        
-        # 获取统计信息
-        if hasattr(hybrid_agent, 'get_stats'):
+        # 尝试获取查询统计
+        if hasattr(hybrid_agent, 'query_count'):
+            total_queries = hybrid_agent.query_count
+        elif hasattr(hybrid_agent, 'get_stats'):
             stats = hybrid_agent.get_stats()
-            status["statistics"] = stats
-    else:
-        status["system"] = "degraded"
-        status["components"]["hybrid_agent"] = "not initialized"
+            total_queries = stats.get('total_queries', 0)
         
-    return status
+        system_status = "operational"
+    else:
+        system_status = "degraded"
+    
+    return StatusResponse(
+        status=system_status,
+        active_sessions=active_sessions,
+        total_queries=total_queries,
+        uptime_seconds=uptime_seconds,
+        timestamp=datetime.now().isoformat()
+    )
 
 
 if __name__ == "__main__":
