@@ -8,7 +8,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from agents.sql_agent_v2 import SQLAgentV2
+from agents.sql_agent_modular import SQLAgentV2
 from utils.logger import setup_logger
 import time
 

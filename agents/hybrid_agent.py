@@ -19,6 +19,17 @@ from agents.sql_agent import SQLAgent
 from agents.rag_agent import RAGAgent
 from agents.financial_agent import FinancialAnalysisAgent
 from agents.money_flow_agent import MoneyFlowAgent
+
+# 导入模块化版本
+try:
+    from config.modular_settings import USE_MODULAR_AGENTS
+    if USE_MODULAR_AGENTS:
+        from agents.sql_agent_modular import SQLAgentModular
+        from agents.rag_agent_modular import RAGAgentModular
+        from agents.financial_agent_modular import FinancialAgentModular
+        from agents.money_flow_agent_modular import MoneyFlowAgentModular
+except ImportError:
+    USE_MODULAR_AGENTS = False
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
@@ -94,11 +105,21 @@ class HybridAgent:
     def __init__(self):
         self.logger = setup_logger("hybrid_agent")
         
-        # 初始化子代理
-        self.sql_agent = SQLAgent()
-        self.rag_agent = RAGAgent()
-        self.financial_agent = FinancialAnalysisAgent()
-        self.money_flow_agent = MoneyFlowAgent()
+        # 根据配置选择使用哪种Agent
+        if USE_MODULAR_AGENTS:
+            self.logger.info("使用模块化Agent")
+            # 初始化模块化子代理
+            self.sql_agent = SQLAgentModular()  # 使用真正的模块化版本
+            self.rag_agent = RAGAgentModular()
+            self.financial_agent = FinancialAgentModular()
+            self.money_flow_agent = MoneyFlowAgentModular()
+        else:
+            self.logger.info("使用传统Agent")
+            # 初始化传统子代理
+            self.sql_agent = SQLAgent()
+            self.rag_agent = RAGAgent()
+            self.financial_agent = FinancialAnalysisAgent()
+            self.money_flow_agent = MoneyFlowAgent()
         
         # 初始化路由LLM
         self.router_llm = ChatOpenAI(
@@ -612,12 +633,22 @@ class HybridAgent:
             if 'success' not in sql_result:
                 sql_result['success'] = bool(sql_result.get('result'))
             
+            # 记录SQL Agent返回的数据结构
+            self.logger.debug(f"SQL Agent返回的键: {list(sql_result.keys())}")
+            
             # 检查是否成功
             if sql_result.get('success', False):
+                # 获取结果内容 - 注意SQL Agent返回的是'result'而不是'answer'
+                result_content = sql_result.get('result', '')
+                
+                # 如果结果为空，记录警告
+                if not result_content:
+                    self.logger.warning("SQL Agent返回成功但结果为空")
+                    
                 return {
                     'success': True,
                     'question': question,
-                    'answer': sql_result.get('result', ''),
+                    'answer': result_content,  # 将'result'映射到'answer'
                     'query_type': QueryType.SQL_ONLY.value,
                     'routing': routing,
                     'sources': {'sql': sql_result}

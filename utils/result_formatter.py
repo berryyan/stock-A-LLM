@@ -267,6 +267,77 @@ class ResultFormatter:
                 message="格式化结果时出错"
             )
     
+    def format_dict_data(self, data: Dict[str, Any], title: str = None) -> str:
+        """
+        格式化字典数据为文本
+        
+        Args:
+            data: 要格式化的字典数据
+            title: 可选的标题
+            
+        Returns:
+            str: 格式化后的文本
+        """
+        lines = []
+        if title:
+            lines.append(title)
+            lines.append("=" * len(title))
+            
+        for key, value in data.items():
+            lines.append(f"{key}: {value}")
+            
+        return "\n".join(lines)
+    
+    def format_table(self, headers: List[str], rows: List[List[Any]], 
+                     title: str = None, **metadata) -> str:
+        """
+        格式化表格数据为文本（Markdown格式）
+        
+        Args:
+            headers: 表头列表
+            rows: 数据行列表
+            title: 可选的标题
+            
+        Returns:
+            str: 格式化后的表格文本
+        """
+        table_data = TableData(headers=headers, rows=rows)
+        
+        lines = []
+        if title:
+            lines.append(f"## {title}")
+            lines.append("")
+            
+        lines.append(table_data.to_markdown())
+        
+        return "\n".join(lines)
+    
+    def format_records(self, records: List[Dict[str, Any]], 
+                      title: str = None) -> str:
+        """
+        格式化记录列表为表格
+        
+        Args:
+            records: 记录列表
+            title: 可选的标题
+            
+        Returns:
+            str: 格式化后的表格文本
+        """
+        if not records:
+            return "无数据"
+            
+        # 提取表头
+        headers = list(records[0].keys())
+        
+        # 提取数据行
+        rows = []
+        for record in records:
+            row = [record.get(header, "") for header in headers]
+            rows.append(row)
+            
+        return self.format_table(headers, rows, title)
+    
     def format_financial_result(self, analysis: Dict) -> FormattedResult:
         """
         格式化财务分析结果

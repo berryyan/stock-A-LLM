@@ -87,6 +87,10 @@ class ParameterExtractor:
                 if template.supports_exclude_st:
                     self._check_exclude_conditions(cleaned_query, params)
                     
+                # 板块相关查询需要提取板块信息
+                if template.name and "板块" in template.name:
+                    self._extract_sector_or_industry(cleaned_query, params)
+                    
                 # 提取其他特定参数
                 if hasattr(template, 'required_fields'):
                     self._extract_metrics(cleaned_query, params, template.required_fields)
@@ -166,34 +170,34 @@ class ParameterExtractor:
             # 直接使用extract_multiple_stocks，它会处理多个股票的情况
             stock_list = self.stock_validator.extract_multiple_stocks(query)
         
-            if stock_list:
-                # 验证并转换每个股票
-                from utils.stock_validation_helper import validate_and_convert_stock
-                
-                valid_count = 0
-                for stock in stock_list:
-                    success, ts_code, stock_name, error_msg = validate_and_convert_stock(stock)
-                    if success:
-                        params.stocks.append(ts_code)
-                        params.stock_names.append(stock_name)
-                        valid_count += 1
-                    else:
-                        # 记录第一个错误
-                        if not params.error:
-                            params.error = error_msg
-                
-                # 如果没有有效的股票，保留错误信息            
-                if valid_count > 0:
-                    self.logger.info(f"提取到股票: {params.stocks}")
+        if stock_list:
+            # 验证并转换每个股票
+            from utils.stock_validation_helper import validate_and_convert_stock
+            
+            valid_count = 0
+            for stock in stock_list:
+                success, ts_code, stock_name, error_msg = validate_and_convert_stock(stock)
+                if success:
+                    params.stocks.append(ts_code)
+                    params.stock_names.append(stock_name)
+                    valid_count += 1
                 else:
-                    self.logger.warning(f"未能提取到有效股票，错误: {params.error}")
+                    # 记录第一个错误
+                    if not params.error:
+                        params.error = error_msg
+            
+            # 如果没有有效的股票，保留错误信息            
+            if valid_count > 0:
+                self.logger.info(f"提取到股票: {params.stocks}")
             else:
-                # extract_multiple_stocks返回空列表，可能是单个股票验证失败
-                # 尝试使用validate_and_extract获取具体错误信息
-                success, ts_code_or_error, error_response = self.stock_validator.validate_and_extract(query)
-                if not success and error_response and 'error' in error_response:
-                    params.error = error_response['error']
-                    self.logger.warning(f"股票验证失败: {params.error}")
+                self.logger.warning(f"未能提取到有效股票，错误: {params.error}")
+        else:
+            # extract_multiple_stocks返回空列表，可能是单个股票验证失败
+            # 尝试使用validate_and_extract获取具体错误信息
+            success, ts_code_or_error, error_response = self.stock_validator.validate_and_extract(query)
+            if not success and error_response and 'error' in error_response:
+                params.error = error_response['error']
+                self.logger.warning(f"股票验证失败: {params.error}")
         
         # 如果成功提取了股票，记录日志
         if params.stocks:

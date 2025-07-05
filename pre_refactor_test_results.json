@@ -1,0 +1,24 @@
+{
+  "hybrid_agent": true,
+  "sql_queries": [
+    {
+      "query": "贵州茅台的最新股价",
+      "success": false,
+      "type": "sql",
+      "expected_type": "sql"
+    },
+    {
+      "query": "市值排名前3",
+      "success": false,
+      "type": "sql",
+      "expected_type": "sql"
+    },
+    {
+      "query": "贵州茅台最新的公告",
+      "success": false,
+      "type": "sql",
+      "expected_type": "rag"
+    }
+  ],
+  "errors": []
+}
