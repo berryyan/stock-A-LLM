@@ -36,8 +36,13 @@ def generate_timestamp() -> str:
 
 # 创建FastAPI应用
 app = FastAPI(
-    title="股票分析智能查询系统",
-    description="""基于LangChain + RAG + 深度财务分析 + 智能日期解析 + 资金流向分析的智能股票分析API (v2.1.1)
+    title="股票分析智能查询系统（旧版）",
+    description="""⚠️ **废弃警告**: 此API已被废弃，请迁移到端口8001的模块化API
+    
+    🔄 **迁移指南**: /docs/MIGRATION_GUIDE.md
+    📅 **废弃时间线**: 将在v2.4.0（2025年10月）完全移除
+    
+基于LangChain + RAG + 深度财务分析 + 智能日期解析 + 资金流向分析的智能股票分析API (v2.1.18)
     
 ## 核心功能
 - 🧠 **智能查询路由**: 自动识别问题类型并路由到合适的处理模块

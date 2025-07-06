@@ -200,19 +200,51 @@ python scripts/debugging/test_cninfo_pdf.py
 
 ## Architecture Overview
 
+### 重要说明：新老系统并行架构
+
+当前项目同时维护两套独立的系统：
+
+#### 老系统（端口 8000）
+- **API入口**: `api/main.py`
+- **Agent实现**: 原始版本
+  - `agents/hybrid_agent.py`
+  - `agents/sql_agent.py`
+  - `agents/rag_agent.py`
+  - `agents/financial_agent.py`
+  - `agents/money_flow_agent.py`
+- **特点**: 稳定运行，经过充分测试，但代码重复较多
+
+#### 新系统（端口 8001）- 推荐使用
+- **API入口**: `api/main_modular.py`
+- **Agent实现**: 模块化版本
+  - `agents/hybrid_agent_modular.py`
+  - `agents/sql_agent_modular.py`
+  - `agents/rag_agent_modular.py`
+  - `agents/financial_agent_modular.py`
+  - `agents/money_flow_agent_modular.py`
+- **统一模块**:
+  - `utils/parameter_extractor.py` - 统一参数提取
+  - `utils/query_validator.py` - 统一参数验证
+  - `utils/result_formatter.py` - 统一结果格式化
+  - `utils/error_handler.py` - 统一错误处理
+  - `utils/agent_response.py` - 统一响应格式
+- **特点**: 代码复用率85%，易于维护扩展，错误提示更友好
+
 ### Core Components
 
-**API Layer** (`api/main.py`):
+**API Layer**:
+- `api/main.py`: 老版本API（将在v2.4.0废弃）
+- `api/main_modular.py`: 模块化API（推荐使用）
 - FastAPI-based REST API with WebSocket support
 - Handles query routing and response formatting
 - Provides health checks and system status endpoints
 
-**Agent System** (`agents/`) - *All modernized with LangChain RunnableSequence*:
-- `HybridAgent`: Smart query router with modern chain composition using `|` operator
-- `SQLAgent`: Handles structured data queries with enhanced input validation
-- `RAGAgent`: Document retrieval with semantic search, query statistics, and modern chains
-- `FinancialAnalysisAgent`: **[v1.4.0]** 专业财务分析系统，支持四表联合查询和深度财务分析
-- `MoneyFlowAgent`: **[v1.4.2]** 资金流向分析系统，支持四级资金分布和主力行为分析
+**Agent System** - *All modernized with LangChain RunnableSequence*:
+- `HybridAgent/HybridAgentModular`: Smart query router with modern chain composition using `|` operator
+- `SQLAgent/SQLAgentModular`: Handles structured data queries with enhanced input validation
+- `RAGAgent/RAGAgentModular`: Document retrieval with semantic search, query statistics, and modern chains
+- `FinancialAnalysisAgent/FinancialAgentModular`: **[v1.4.0]** 专业财务分析系统，支持四表联合查询和深度财务分析
+- `MoneyFlowAgent/MoneyFlowAgentModular`: **[v1.4.2]** 资金流向分析系统，支持四级资金分布和主力行为分析
 
 **Database Layer** (`database/`):
 - `MySQLConnector`: Manages connections to MySQL for structured financial data
@@ -1073,6 +1105,42 @@ ts_code = convert_to_ts_code("诺德股份")        # Returns: "600110.SH"
 - 代码复用率提升85%，减少约6000行重复代码
 - 新功能开发效率提升50%
 - 前后端集成测试100%通过
+- **重要发现**：新老系统是完全独立的两套实现，可以安全并行运行
+
+### 当前任务：全面冒烟测试（优先级：最高）
+
+在推进v2.3.0之前，必须完成5个模块化Agent的全面冒烟测试：
+
+#### 测试清单
+1. **SQLAgentModular** - SQL查询测试
+   - [ ] 股价查询
+   - [ ] 财务数据查询
+   - [ ] 排名查询
+   - [ ] 错误处理测试
+
+2. **RAGAgentModular** - 文档检索测试
+   - [ ] 公告搜索
+   - [ ] 年报内容查询
+   - [ ] 关键词搜索
+   - [ ] Milvus连接测试
+
+3. **FinancialAgentModular** - 财务分析测试
+   - [ ] 财务健康度分析
+   - [ ] 杜邦分析
+   - [ ] 现金流质量分析
+   - [ ] 多期对比分析
+
+4. **MoneyFlowAgentModular** - 资金流向测试
+   - [ ] 主力资金分析
+   - [ ] 资金流向分布
+   - [ ] 板块资金流向
+   - [ ] 个股资金分析
+
+5. **HybridAgentModular** - 路由功能测试
+   - [ ] 查询类型识别
+   - [ ] 路由准确性
+   - [ ] 混合查询处理
+   - [ ] 错误传递测试
 
 ### v2.3.0 开发计划 - 新Agent开发与性能优化
 
