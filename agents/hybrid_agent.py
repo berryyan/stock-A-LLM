@@ -704,7 +704,7 @@ class HybridAgent:
             
             # 直接调用RAG Agent（依赖其内部超时机制）
             self.logger.info(f"开始RAG查询: {question}")
-            rag_result = self.rag_agent.query(question, filters=filters)
+            rag_result = self.rag_agent.query(question, filter=filters)
             self.logger.info(f"RAG查询完成: success={rag_result.get('success', False)}")
             
             if rag_result.get('success', False):
@@ -831,7 +831,7 @@ class HybridAgent:
         )
         
         filters = self._build_rag_filters(routing)
-        rag_result = self.rag_agent.query(enhanced_question, filters=filters)
+        rag_result = self.rag_agent.query(enhanced_question, filter=filters)
         
         # 3. 整合结果
         if rag_result.get('success', False):
@@ -867,7 +867,7 @@ class HybridAgent:
         """先RAG后SQL的查询"""
         # 1. 执行RAG查询
         filters = self._build_rag_filters(routing)
-        rag_result = self.rag_agent.query(question, filters=filters)
+        rag_result = self.rag_agent.query(question, filter=filters)
         
         if not rag_result.get('success', False):
             return rag_result
@@ -920,7 +920,7 @@ class HybridAgent:
             sql_future = executor.submit(self.sql_agent.query, question)
             
             filters = self._build_rag_filters(routing)
-            rag_future = executor.submit(self.rag_agent.query, question, filters)
+            rag_future = executor.submit(self.rag_agent.query, question, filter=filters)
             
             # 获取结果
             sql_result = sql_future.result()

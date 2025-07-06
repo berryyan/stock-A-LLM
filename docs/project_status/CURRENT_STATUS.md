@@ -1,8 +1,8 @@
 # 股票分析系统项目状态文档
 
-**版本**: v2.2.1  
-**更新日期**: 2025-07-06 06:20  
-**状态**: ✅ 模块化架构完成 | 5个Agent全部模块化 | 前后端集成测试通过 | 复合查询路由修复 | 生产就绪  
+**版本**: v2.2.2  
+**更新日期**: 2025-07-06 23:55  
+**状态**: ✅ 模块化架构完成 | 所有Agent测试通过 | RAG和Hybrid Agent兼容性修复 | 生产就绪  
 **项目名称**: Stock Analysis System (基于LangChain的智能股票分析系统)  
 **当前分支**: dev-react-frontend-v2  
 **下一版本**: v2.3.0 (新Agent开发与性能优化)
@@ -35,6 +35,27 @@ Stock Analysis System 是一个基于 LangChain 框架的智能股票分析系�
 - 🚀 **高性能**: GPU加速向量计算，智能缓存机制，并行查询处理
 
 ## 最新更新
+
+### 2025-07-06 23:55 更新 (v2.2.2 - Agent兼容性修复)
+
+#### 🔧 RAG Agent模块化兼容性修复
+
+**问题修复** ✅:
+- 修复`date_intelligence.preprocess_question`方法调用错误
+- 修复`format_rag_result`参数顺序问题（documents, answer）
+- RAG查询现在能正确返回格式化结果
+
+#### 🔧 Hybrid Agent参数兼容性修复
+
+**问题修复** ✅:
+- 修复RAG Agent调用参数问题：`filters=filters` → `filter=filters`
+- 统一所有RAG查询调用使用正确的kwargs参数名
+- 复合查询现在能正确并行执行SQL和RAG查询
+
+**测试验证** ✅:
+- test_quick_smoke.py测试通过率从80%提升到100%
+- 所有5个模块化Agent功能正常
+- 复合查询"贵州茅台的股价和主要业务"成功返回完整结果
 
 ### 2025-07-06 06:20 更新 (v2.2.1 - 复合查询路由修复)
 

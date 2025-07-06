@@ -134,6 +134,7 @@ class RAGAgentModular(RAGAgentBase):
                 return question
             
             # 使用日期智能处理
+            # date_intelligence是DateIntelligenceModule的实例
             processed_question, date_info = date_intelligence.preprocess_question(question)
             if processed_question != question:
                 self.logger.info(f"日期智能解析: {question} -> {processed_question}")
@@ -282,7 +283,8 @@ class RAGAgentModular(RAGAgentBase):
                 result_data["sources"] = sources
             
             # 使用结果格式化器
-            return self.result_formatter.format_rag_result(answer, result_data)
+            # format_rag_result期望的参数是(documents, answer)
+            return self.result_formatter.format_rag_result(documents, answer)
             
         except Exception as e:
             self.logger.error(f"结果格式化失败: {str(e)}")
