@@ -23,9 +23,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v2.2.2)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v2.2.3)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ v2.2.2 Agent兼容性全面修复！RAG Agent修复了date_intelligence方法调用和结果格式化问题。Hybrid Agent修复了RAG调用参数兼容性。test_quick_smoke.py测试通过率100%，所有5个模块化Agent功能正常。复合查询完美支持。
+**Current Status**: ✅ v2.2.3 三层测试体系建立！新增综合测试套件test_modular_comprehensive.py，包含44个测试用例。每个Agent至少5个正向测试+3个负向测试。创建TESTING_GUIDE.md详细说明测试策略。模块化架构稳定运行，生产就绪。
 
 ## Development Commands
 
@@ -117,6 +117,11 @@ source venv/bin/activate && python scripts/tests/test_components.py
 # Essential comprehensive tests (keep in root directory)
 source venv/bin/activate && python baseline_test.py
 source venv/bin/activate && python comprehensive_verification.py
+
+# Modular Agent tests (v2.2.2 new)
+source venv/bin/activate && python test_quick_smoke.py             # 快速测试(5分钟)
+source venv/bin/activate && python test_modular_smoke.py           # 基础测试(10分钟)
+source venv/bin/activate && python test_modular_comprehensive.py   # 全面测试(30分钟,44个用例)
 
 # Test financial analysis features (v1.4.0 new)
 source venv/bin/activate && python test_financial_agent.py
