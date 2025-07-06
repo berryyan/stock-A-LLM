@@ -130,21 +130,29 @@ class SQLAgentModular:
             
             # 获取所有表的基础信息
             for table_name, table_data in schema_kb.table_knowledge.items():
+                # 将fields字典转换为列表格式
+                columns = []
+                fields = table_data.get('fields', {})
+                if isinstance(fields, dict):
+                    for field_name, field_info in fields.items():
+                        columns.append({
+                            'name': field_name,
+                            'cn_name': field_info.get('chinese_name', ''),
+                            'type': field_info.get('type', ''),
+                            'comment': field_info.get('comment', '')
+                        })
+                else:
+                    # 如果fields已经是列表，直接使用
+                    columns = fields
+                    
                 schema_info[table_name] = {
-                    'columns': table_data['fields'],
+                    'columns': columns,
                     'description': table_data.get('cn_name', ''),
                     'type': table_data.get('type', 'table')
                 }
                 
-            # 获取列的中文映射信息
-            for table_name in schema_info:
-                for col in schema_info[table_name]['columns']:
-                    # 使用字段的cn_name属性
-                    col_cn_name = col.get('cn_name')
-                    if not col_cn_name and hasattr(schema_kb, 'get_cn_name'):
-                        col_cn_name = schema_kb.get_cn_name(f"{table_name}.{col['name']}")
-                    if col_cn_name:
-                        col['cn_name'] = col_cn_name
+            # 获取列的中文映射信息（如果需要的话）
+            # 注意：我们已经在上面的循环中设置了cn_name，这里可以跳过
                             
             return schema_info
             

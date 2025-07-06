@@ -113,7 +113,7 @@ class RAGAgentModular(RAGAgentBase):
             
             return {
                 'success': True,
-                'result': formatted_result.formatted_text,
+                'result': formatted_result.data if isinstance(formatted_result.data, str) else str(formatted_result.data),
                 'data': formatted_result.raw_data,
                 'metadata': {
                     'doc_count': len(search_results),
@@ -134,11 +134,11 @@ class RAGAgentModular(RAGAgentBase):
                 return question
             
             # 使用日期智能处理
-            processed = date_intelligence.process_query(question)
-            if processed != question:
-                self.logger.info(f"日期智能解析: {question} -> {processed}")
+            processed_question, date_info = date_intelligence.preprocess_question(question)
+            if processed_question != question:
+                self.logger.info(f"日期智能解析: {question} -> {processed_question}")
             
-            return processed
+            return processed_question
             
         except Exception as e:
             self.logger.warning(f"日期智能解析失败: {str(e)}")
@@ -288,8 +288,9 @@ class RAGAgentModular(RAGAgentBase):
             self.logger.error(f"结果格式化失败: {str(e)}")
             # 降级返回
             return FormattedResult(
+                success=True,
                 result_type=ResultType.TEXT,
-                formatted_text=answer,
+                data=answer,
                 raw_data={"answer": answer}
             )
     

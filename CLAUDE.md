@@ -23,9 +23,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v2.2.0)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v2.2.1)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ v2.2.0 模块化架构正式发布！5个Agent全部完成模块化改造（SQL、RAG、Financial、Money Flow、Hybrid）。统一的参数提取、验证、格式化和错误处理机制已实现，代码复用率提升85%。前后端集成测试通过，模块化API（端口8001）稳定运行。错误消息传递链修复，用户现在能看到具体的错误提示。生产就绪状态，所有核心功能测试通过，性能达标（快速路径覆盖率82.4%）。
+**Current Status**: ✅ v2.2.1 复合查询路由修复！解决了Hybrid Agent无法正确处理"股价和主要业务"等复合查询的问题。新增复合查询检测逻辑，支持并行执行SQL和RAG查询。Money Flow Agent日期逻辑确认：默认30个自然日（约21个交易日），设计合理。模块化架构稳定运行，5个Agent全部工作正常。
 
 ## Development Commands
 
@@ -372,6 +372,22 @@ The system supports six main query types:
 - WebSocket real-time communication supported
 
 ### Recent Updates
+
+#### v2.2.1 - 复合查询路由修复 (2025-07-06)
+
+**Hybrid Agent复合查询修复** ✅:
+- **问题描述**: 复合查询如"贵州茅台的股价和主要业务"被错误路由到SQL_ONLY
+- **根本原因**: 模板匹配优先级高于复合查询检测，导致只识别"股价查询"部分
+- **解决方案**: 
+  - 在`_route_query`方法中添加复合查询检测逻辑（优先级高于模板匹配）
+  - 新增`_is_composite_query`方法检测连接词（和、以及、还有等）
+  - 新增`_analyze_composite_query`方法分析查询组成部分
+  - 自动判断是否需要并行处理（SQL + RAG）
+
+**Money Flow Agent日期逻辑确认** ✅:
+- **当前设计**: 默认30个自然日（非交易日）
+- **实际效果**: 30天约等于21个交易日（扣除周末和节假日）
+- **评估结果**: 设计合理，符合用户直觉，保持现状
 
 #### v2.2.0 - 模块化架构正式发布 (2025-07-06)
 

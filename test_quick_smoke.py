@@ -59,7 +59,7 @@ def main():
         ("RAG Agent", RAGAgentModular, "贵州茅台的发展战略"),
         ("Financial Agent", FinancialAgentModular, "分析贵州茅台的财务健康度"),
         ("Money Flow Agent", MoneyFlowAgentModular, "贵州茅台的主力资金"),
-        ("Hybrid Agent", HybridAgentModular, "贵州茅台的股价和主要业务")
+        ("Hybrid Agent (复合查询测试)", HybridAgentModular, "贵州茅台的股价和主要业务")
     ]
     
     results = []

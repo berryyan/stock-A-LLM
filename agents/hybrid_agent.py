@@ -427,7 +427,32 @@ class HybridAgent:
                     'confidence': 1.0
                 }
             
-            # 1. 其次尝试模板匹配（次高优先级）
+            # 1. 检查是否为复合查询（包含"和"、"以及"等连接词）
+            if self._is_composite_query(question):
+                # 分析复合查询的组成部分
+                composite_parts = self._analyze_composite_query(question)
+                if composite_parts and len(composite_parts) > 1:
+                    # 检查是否需要不同类型的查询
+                    query_types = set()
+                    for part in composite_parts:
+                        if any(kw in part for kw in ['股价', '价格', '成交量', '涨跌', '市值', 'K线']):
+                            query_types.add('SQL')
+                        if any(kw in part for kw in ['业务', '战略', '公告', '分析', '前景', '计划']):
+                            query_types.add('RAG')
+                    
+                    if len(query_types) > 1:
+                        self.logger.info(f"检测到复合查询，需要并行处理: {query_types}")
+                        return {
+                            'query_type': 'PARALLEL',
+                            'reasoning': '复合查询需要并行处理',
+                            'entities': self._extract_entities(question),
+                            'time_range': self._extract_time_range(question),
+                            'metrics': self._extract_metrics(question),
+                            'composite_parts': composite_parts,
+                            'confidence': 0.9
+                        }
+            
+            # 2. 其次尝试模板匹配（次高优先级）
             template_result = match_query_template(question)
             if template_result:
                 template, params = template_result
@@ -1292,6 +1317,48 @@ class HybridAgent:
 
 
 # 测试代码
+    def _is_composite_query(self, question: str) -> bool:
+        """判断是否为复合查询"""
+        # 复合查询的连接词
+        composite_keywords = ['和', '以及', '还有', '同时', '并且', '另外', '以及其', '及其', '及']
+        
+        # 检查是否包含连接词
+        for keyword in composite_keywords:
+            if keyword in question:
+                # 进一步检查连接词前后是否有实质性内容
+                parts = question.split(keyword)
+                if len(parts) >= 2 and all(len(p.strip()) > 2 for p in parts):
+                    return True
+        
+        return False
+    
+    def _analyze_composite_query(self, question: str) -> List[str]:
+        """分析复合查询的组成部分"""
+        # 复合查询的连接词
+        composite_keywords = ['和', '以及', '还有', '同时', '并且', '另外', '以及其', '及其', '及']
+        
+        # 找到所有连接词的位置
+        parts = [question]
+        for keyword in composite_keywords:
+            new_parts = []
+            for part in parts:
+                if keyword in part:
+                    sub_parts = part.split(keyword)
+                    new_parts.extend(sub_parts)
+                else:
+                    new_parts.append(part)
+            parts = new_parts
+        
+        # 清理和过滤
+        cleaned_parts = []
+        for part in parts:
+            cleaned = part.strip()
+            if len(cleaned) > 2:  # 过滤掉太短的片段
+                cleaned_parts.append(cleaned)
+        
+        return cleaned_parts
+
+
 if __name__ == "__main__":
     print("Hybrid Agent 模块创建成功!")
     print("可以通过以下方式使用：")
