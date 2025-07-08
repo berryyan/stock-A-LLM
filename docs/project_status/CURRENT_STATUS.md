@@ -54,6 +54,12 @@ Stock Analysis System 是一个基于 LangChain 框架的智能股票分析系�
 - 在`parameter_extractor._extract_limit`中添加日期格式过滤
 - 排除YYYY-MM-DD、YYYYMMDD等日期格式中的数字
 - 确保日期处理后的查询正确使用默认限制（10）
+
+**流通市值排名支持** ✅:
+- 添加流通市值排名模板处理
+- 在`sql_agent_modular`中实现`_execute_circ_market_cap_ranking`方法
+- 支持"流通市值最大的前10只股票"等查询
+- 使用SQLTemplates.CIRC_MV_RANKING快速查询
 - 修正利润查询：区分简称（失败）和完整名称（成功）
 - 修正排名限制：从100改为999
 

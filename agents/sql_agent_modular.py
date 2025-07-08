@@ -377,6 +377,8 @@ class SQLAgentModular:
                 result = self._execute_amount_ranking(params, last_trading_date)
             elif template.name == '总市值排名' or template.name == '市值排名':
                 result = self._execute_market_cap_ranking(params, last_trading_date)
+            elif template.name == '流通市值排名':
+                result = self._execute_circ_market_cap_ranking(params, last_trading_date)
             elif template.name == 'K线查询':
                 result = self._execute_kline_query(params, processed_question)
             elif template.name == '成交量查询':
@@ -737,6 +739,52 @@ class SQLAgentModular:
             return {
                 'success': False,
                 'error': f"未找到{trade_date}的市值数据"
+            }
+    
+    def _execute_circ_market_cap_ranking(self, params: ExtractedParams, last_trading_date: str) -> Dict[str, Any]:
+        """执行流通市值排名查询"""
+        trade_date = params.date or last_trading_date
+        limit = params.limit
+        
+        # 流通市值排名
+        sql = SQLTemplates.CIRC_MV_RANKING
+        result = self.mysql_connector.execute_query(sql, {
+            'trade_date': trade_date,
+            'limit': limit
+        })
+        
+        if result and len(result) > 0:
+            # 准备表格数据
+            headers = ["排名", "股票代码", "股票名称", "流通市值(亿元)", "总市值(亿元)", "涨跌幅(%)"]
+            rows = []
+            
+            for i, row in enumerate(result, 1):
+                rows.append([
+                    i,
+                    row['ts_code'],
+                    row['name'],
+                    f"{row['circ_mv'] / 10000:.2f}",
+                    f"{row['total_mv'] / 10000:.2f}",
+                    f"{row['pct_chg']:.2f}"
+                ])
+            
+            # 使用结果格式化器
+            formatted_result = self.result_formatter.format_table(
+                headers, 
+                rows,
+                title=f"{trade_date} A股流通市值排名前{limit}"
+            )
+            
+            return {
+                'success': True,
+                'result': formatted_result,
+                'sql': None,
+                'quick_path': True
+            }
+        else:
+            return {
+                'success': False,
+                'error': f"未找到{trade_date}的流通市值数据"
             }
     
     def _execute_financial_query(self, params: ExtractedParams) -> Dict[str, Any]:
