@@ -43,7 +43,7 @@ class QueryValidator:
         self.logger = logger
         
         # 定义验证规则
-        self.MAX_LIMIT = 1000
+        self.MAX_LIMIT = 999  # 用户要求：排名数量限制为999
         self.MIN_LIMIT = 1
         self.MAX_DATE_RANGE_DAYS = 3650  # 10年
         self.MAX_STOCKS_PER_QUERY = 10
@@ -138,10 +138,15 @@ class QueryValidator:
             return result
         
         if template.requires_date_range and not params.date_range:
-            result.is_valid = False
-            result.error_code = "MISSING_REQUIRED_DATE_RANGE"
-            result.error_detail = {"message": "此查询需要指定日期范围"}
-            return result
+            # K线查询特殊处理：允许无日期范围（会使用默认90天）
+            if template.name in ['K线查询', '历史K线查询', '走势查询']:
+                # K线查询允许无日期范围，执行方法会设置默认值
+                self.logger.info(f"{template.name}未指定日期范围，将使用默认90天")
+            else:
+                result.is_valid = False
+                result.error_code = "MISSING_REQUIRED_DATE_RANGE"
+                result.error_detail = {"message": "此查询需要指定日期范围"}
+                return result
         
         return result
     
@@ -178,12 +183,25 @@ class QueryValidator:
     def _validate_date(self, date: str, result: ValidationResult) -> ValidationResult:
         """验证单个日期"""
         try:
-            # 验证日期格式
-            date_obj = datetime.strptime(date, '%Y-%m-%d')
+            # 验证日期格式（支持多种格式）
+            if len(date) == 8 and date.isdigit():
+                # YYYYMMDD格式
+                date_obj = datetime.strptime(date, '%Y%m%d')
+            elif '-' in date:
+                # YYYY-MM-DD格式
+                date_obj = datetime.strptime(date, '%Y-%m-%d')
+            else:
+                raise ValueError(f"不支持的日期格式: {date}")
             
             # 检查日期是否在合理范围内
             if date_obj > datetime.now():
-                result.add_warning(f"日期{date}是未来日期，可能没有数据")
+                result.is_valid = False
+                result.error_code = "FUTURE_DATE"
+                result.error_detail = {
+                    "date": date,
+                    "message": f"日期{date}是未来日期，股票数据不存在"
+                }
+                return result
             
             if date_obj < datetime(1990, 1, 1):
                 result.is_valid = False
@@ -208,19 +226,85 @@ class QueryValidator:
         """验证日期范围"""
         start_date, end_date = date_range
         
-        # 验证单个日期
-        result = self._validate_date(start_date, result)
-        if not result.is_valid:
+        # 验证日期格式但不验证是否未来（因为日期范围的结束日期可以是未来）
+        # 先验证开始日期
+        try:
+            if len(start_date) == 8 and start_date.isdigit():
+                start_obj = datetime.strptime(start_date, '%Y%m%d')
+            elif '-' in start_date:
+                start_obj = datetime.strptime(start_date, '%Y-%m-%d')
+            else:
+                raise ValueError(f"不支持的日期格式: {start_date}")
+                
+            # 开始日期不能是未来日期
+            if start_obj > datetime.now():
+                result.is_valid = False
+                result.error_code = "FUTURE_START_DATE"
+                result.error_detail = {
+                    "date": start_date,
+                    "message": f"开始日期{start_date}不能是未来日期"
+                }
+                return result
+                
+            # 开始日期不能早于1990年
+            if start_obj < datetime(1990, 1, 1):
+                result.is_valid = False
+                result.error_code = "DATE_TOO_EARLY"
+                result.error_detail = {
+                    "date": start_date,
+                    "message": "日期早于1990年，没有相关数据"
+                }
+                return result
+                
+        except ValueError as e:
+            result.is_valid = False
+            result.error_code = "INVALID_DATE_FORMAT"
+            result.error_detail = {
+                "date": start_date,
+                "message": f"开始日期格式错误: {str(e)}"
+            }
             return result
-            
-        result = self._validate_date(end_date, result)
-        if not result.is_valid:
+        
+        # 验证结束日期格式（但允许是未来日期）
+        try:
+            if len(end_date) == 8 and end_date.isdigit():
+                end_obj = datetime.strptime(end_date, '%Y%m%d')
+            elif '-' in end_date:
+                end_obj = datetime.strptime(end_date, '%Y-%m-%d')
+            else:
+                raise ValueError(f"不支持的日期格式: {end_date}")
+                
+            # 结束日期可以是未来日期（查询时会自动截止到今天）
+            # 但也不能太离谱（比如超过10年后）
+            if end_obj > datetime.now() + timedelta(days=3650):
+                result.is_valid = False
+                result.error_code = "DATE_TOO_FAR"
+                result.error_detail = {
+                    "date": end_date,
+                    "message": "结束日期太远，请使用合理的日期范围"
+                }
+                return result
+                
+        except ValueError as e:
+            result.is_valid = False
+            result.error_code = "INVALID_DATE_FORMAT"
+            result.error_detail = {
+                "date": end_date,
+                "message": f"结束日期格式错误: {str(e)}"
+            }
             return result
         
         try:
-            # 检查日期顺序
-            start_obj = datetime.strptime(start_date, '%Y-%m-%d')
-            end_obj = datetime.strptime(end_date, '%Y-%m-%d')
+            # 检查日期顺序（支持多种格式）
+            if len(start_date) == 8 and start_date.isdigit():
+                start_obj = datetime.strptime(start_date, '%Y%m%d')
+            else:
+                start_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                
+            if len(end_date) == 8 and end_date.isdigit():
+                end_obj = datetime.strptime(end_date, '%Y%m%d')
+            else:
+                end_obj = datetime.strptime(end_date, '%Y-%m-%d')
             
             if start_obj > end_obj:
                 result.is_valid = False
@@ -356,6 +440,122 @@ class QueryValidator:
             return f"{base_message}: {result.error_detail['message']}"
         
         return base_message
+    
+    def validate_enhanced(self, params: Any, template: Any) -> 'ValidationResult':
+        """增强的验证方法"""
+        self.logger.info(f"执行增强验证 - 查询: {params.raw_query}")
+        
+        # 先执行原有验证
+        result = self.validate_params(params, template)
+        if not result.is_valid:
+            self.logger.info(f"基础验证失败: {result.error_code}")
+            return result
+        
+        # 导入必要的类型
+        from utils.query_templates import TemplateType
+        
+        # 额外的验证规则
+        
+        # 1. 排名查询的数量必须大于0
+        if hasattr(template, 'type') and template.type == TemplateType.RANKING and params.limit <= 0:
+            self.logger.info(f"拒绝查询 - 排名数量无效: {params.limit}")
+            return ValidationResult(
+                is_valid=False,
+                error_code="INVALID_LIMIT",
+                error_detail={
+                    'message': f'排名查询的数量必须大于0，当前值：{params.limit}',
+                    'field': 'limit',
+                    'value': params.limit
+                }
+            )
+        
+        # 2. 个股不能有排名
+        if any(keyword in params.raw_query for keyword in ['涨幅排名', '成交量排名', '市值排名', '排名', '排行']):
+            # 检查是否指定了具体股票
+            if params.stocks and len(params.stocks) == 1:
+                # 排除"XX板块"的情况
+                if '板块' not in params.raw_query:
+                    return ValidationResult(
+                        is_valid=False,
+                        error_code="INVALID_QUERY",
+                        error_detail={
+                            'message': '个股不能进行排名查询，请查询该股票的具体数据',
+                            'suggestion': f'您可以查询"{params.stock_names[0] if params.stock_names else params.stocks[0]}的涨幅"或"涨幅排名前10"'
+                        }
+                    )
+        
+        # 3. 未来日期验证
+        if params.date:
+            try:
+                query_date = datetime.strptime(params.date, '%Y-%m-%d')
+                if query_date > datetime.now():
+                    return ValidationResult(
+                        is_valid=False,
+                        error_code="FUTURE_DATE",
+                        error_detail={
+                            'message': f'不能查询未来日期的数据：{params.date}',
+                            'field': 'date',
+                            'value': params.date
+                        }
+                    )
+            except:
+                pass  # 日期格式错误会在其他地方处理
+        
+        # 4. 板块查询必须包含"板块"后缀
+        # 但需要排除个股名称（如"平安银行"）
+        sector_keywords = ['银行', '房地产', '新能源', '白酒', '汽车', '医药', '科技']
+        for sector in sector_keywords:
+            if sector in params.raw_query and '板块' not in params.raw_query:
+                # 检查是否已经识别出具体股票（如果有股票，就不是板块查询）
+                if not params.stocks:  # 只有在没有识别出股票时才检查板块
+                    # 检查是否是在查询板块数据
+                    if any(kw in params.raw_query for kw in ['主力资金', '资金流向', '涨幅', '市值']):
+                        return ValidationResult(
+                            is_valid=False,
+                            error_code="MISSING_SECTOR_SUFFIX",
+                            error_detail={
+                                'message': f'板块查询必须使用完整名称，如"{sector}板块"',
+                                'suggestion': f'请使用"{sector}板块"进行查询'
+                            }
+                        )
+        
+        # 5. 非标准术语检查
+        non_standard_terms = {
+            '机构资金': '主力资金',
+            '大资金': '主力资金',
+            '游资': '中小单资金',
+            '散户资金': '小单资金'
+        }
+        
+        for term, standard_term in non_standard_terms.items():
+            if term in params.raw_query:
+                self.logger.info(f"拒绝查询 - 非标准术语: {term}")
+                return ValidationResult(
+                    is_valid=False,
+                    error_code="NON_STANDARD_TERM",
+                    error_detail={
+                        'message': f'请使用标准术语"{standard_term}"替代"{term}"',
+                        'term': term,
+                        'standard_term': standard_term
+                    }
+                )
+        
+        # 6. 数量范围验证（针对排名查询）
+        if hasattr(template, 'type') and template.type == TemplateType.RANKING:
+            if params.limit > 999:
+                self.logger.info(f"拒绝查询 - 排名数量过大: {params.limit}")
+                return ValidationResult(
+                    is_valid=False,
+                    error_code="LIMIT_TOO_LARGE",
+                    error_detail={
+                        'message': f'排名查询数量不能超过999，当前值：{params.limit}',
+                        'field': 'limit',
+                        'value': params.limit
+                    }
+                )
+        
+        self.logger.info("增强验证通过")
+        return ValidationResult(is_valid=True)
 
 
 # 测试代码

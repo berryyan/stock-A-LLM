@@ -441,6 +441,90 @@ class TradingDayCalculator:
         except Exception as e:
             logger.error(f"获取年份相对日期失败: {e}")
             return None
+    
+    def get_last_month_range(self) -> Tuple[str, str]:
+        """获取上个月的日期范围"""
+        today = datetime.now()
+        # 计算上个月的第一天
+        if today.month == 1:
+            first_day = datetime(today.year - 1, 12, 1)
+        else:
+            first_day = datetime(today.year, today.month - 1, 1)
+        # 计算上个月的最后一天
+        last_day = datetime(today.year, today.month, 1) - timedelta(days=1)
+        return first_day.strftime('%Y-%m-%d'), last_day.strftime('%Y-%m-%d')
+    
+    def get_current_month_range(self) -> Tuple[str, str]:
+        """获取本月的日期范围"""
+        today = datetime.now()
+        first_day = datetime(today.year, today.month, 1)
+        import calendar
+        last_day_num = calendar.monthrange(today.year, today.month)[1]
+        last_day = datetime(today.year, today.month, last_day_num)
+        return first_day.strftime('%Y-%m-%d'), last_day.strftime('%Y-%m-%d')
+    
+    def get_last_year_range(self) -> Tuple[str, str]:
+        """获取去年的日期范围"""
+        today = datetime.now()
+        first_day = datetime(today.year - 1, 1, 1)
+        last_day = datetime(today.year - 1, 12, 31)
+        return first_day.strftime('%Y-%m-%d'), last_day.strftime('%Y-%m-%d')
+    
+    def get_current_year_range(self) -> Tuple[str, str]:
+        """获取今年的日期范围"""
+        today = datetime.now()
+        first_day = datetime(today.year, 1, 1)
+        last_day = datetime(today.year, 12, 31)
+        return first_day.strftime('%Y-%m-%d'), last_day.strftime('%Y-%m-%d')
+    
+    def get_last_quarter_range(self) -> Tuple[str, str]:
+        """获取上个季度的日期范围"""
+        today = datetime.now()
+        current_quarter = (today.month - 1) // 3 + 1
+        
+        if current_quarter == 1:
+            # 上个季度是去年Q4
+            year = today.year - 1
+            quarter = 4
+        else:
+            year = today.year
+            quarter = current_quarter - 1
+        
+        quarter_months = {
+            1: (1, 3),
+            2: (4, 6),
+            3: (7, 9),
+            4: (10, 12)
+        }
+        
+        start_month, end_month = quarter_months[quarter]
+        first_day = datetime(year, start_month, 1)
+        import calendar
+        last_day_num = calendar.monthrange(year, end_month)[1]
+        last_day = datetime(year, end_month, last_day_num)
+        
+        return first_day.strftime('%Y-%m-%d'), last_day.strftime('%Y-%m-%d')
+    
+    def get_current_quarter_range(self) -> Tuple[str, str]:
+        """获取本季度的日期范围"""
+        today = datetime.now()
+        current_quarter = (today.month - 1) // 3 + 1
+        
+        quarter_months = {
+            1: (1, 3),
+            2: (4, 6),
+            3: (7, 9),
+            4: (10, 12)
+        }
+        
+        start_month, end_month = quarter_months[current_quarter]
+        first_day = datetime(today.year, start_month, 1)
+        import calendar
+        last_day_num = calendar.monthrange(today.year, end_month)[1]
+        last_day = datetime(today.year, end_month, last_day_num)
+        
+        return first_day.strftime('%Y-%m-%d'), last_day.strftime('%Y-%m-%d')
+
 
 class ChineseTimeParser:
     """中文时间表达解析器"""

@@ -1637,8 +1637,8 @@ class SQLAgent:
             '流通市值排名': SQLTemplates.CIRC_MV_RANKING,
             '成交额排名': SQLTemplates.AMOUNT_RANKING,
             '成交量排名': SQLTemplates.VOLUME_RANKING,
-            '主力净流入排行': SQLTemplates.MAIN_FORCE_RANKING,
-            '主力净流出排行': SQLTemplates.MAIN_FORCE_RANKING,  # 使用相同的SQL，通过排序处理
+            '主力净流入排行': SQLTemplates.MONEY_FLOW_RANKING_IN,  # 使用新的净流入模板
+            '主力净流出排行': SQLTemplates.MONEY_FLOW_RANKING_OUT,  # 使用新的净流出模板
             '个股主力资金': SQLTemplates.STOCK_MONEY_FLOW,
             '板块主力资金': SQLTemplates.SECTOR_MONEY_FLOW,
             'PE排名': SQLTemplates.PE_RANKING,
@@ -1646,7 +1646,7 @@ class SQLAgent:
             '净利润排名': SQLTemplates.PROFIT_RANKING,
             '营收排名': SQLTemplates.REVENUE_RANKING,
             'ROE排名': SQLTemplates.ROE_RANKING,
-            '利润查询': SQLTemplates.FINANCIAL_LATEST,
+            '利润查询': SQLTemplates.PROFIT_LATEST,  # 使用新的个股利润查询模板
             '公告查询': SQLTemplates.ANNOUNCEMENT_BY_DATE if params.get('ann_date') else SQLTemplates.ANNOUNCEMENT_LATEST,
         }
         

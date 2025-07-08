@@ -235,36 +235,88 @@ python scripts/debugging/test_cninfo_pdf.py
   - `utils/agent_response.py` - 统一响应格式
 - **特点**: 代码复用率85%，易于维护扩展，错误提示更友好
 
+### 模块化架构详解 (v2.2.0+)
+
+#### 公共模块体系 (`utils/`)
+
+**1. 参数处理模块**：
+- `parameter_extractor.py` - 统一参数提取器
+  - 提取股票、日期、数量、排序、板块等参数
+  - 支持中文日期、相对日期、日期范围处理
+  - 集成股票验证和日期智能解析
+- `chinese_number_converter.py` - 中文数字转换
+  - "前十"、"二十"等转换为阿拉伯数字
+  - 支持"一百"、"TOP N"等格式
+- `date_intelligence.py` - 智能日期解析
+  - 处理"最新"、"昨天"、"上个月"等相对日期
+  - 获取最新交易日、N天前交易日
+  - 日期范围计算（月、季度、年）
+
+**2. 验证模块**：
+- `query_validator.py` - 统一查询验证器
+  - 验证必需参数是否完整
+  - 增强验证（个股不能排名、非标准术语检查）
+  - 数量范围验证（排名最大999）
+- `unified_stock_validator.py` - 统一股票验证器
+  - 支持股票名称、代码、证券代码验证
+  - 检测并拒绝股票简称、昵称（返回友好提示）
+  - 大小写错误智能提示（.sh→.SH）
+- `security_filter.py` - 安全过滤器
+  - 清理LLM输出中的不安全内容
+  - 验证查询安全性，防止SQL注入
+
+**3. 查询模板系统**：
+- `query_templates.py` - 查询模板定义
+  - 定义各种查询模板（股价、K线、排名等）
+  - 模板匹配逻辑和参数要求
+- `sql_templates.py` - SQL模板库
+  - 预定义的高性能SQL查询模板
+  - 支持参数化查询，防止注入
+
+**4. 结果处理模块**：
+- `result_formatter.py` - 统一结果格式化器
+  - 表格格式化（Markdown格式）
+  - 数字格式化（金额、百分比等）
+  - 智能列类型推断
+- `agent_response.py` - 统一响应格式
+  - 标准化的成功/错误响应结构
+  - 向后兼容的格式转换
+- `error_handler.py` - 统一错误处理器
+  - 错误分类（参数错误、业务错误、系统错误）
+  - 用户友好的错误消息
+
+**5. 知识库系统**：
+- `schema_knowledge_base.py` - Schema知识库
+  - 数据库表结构缓存（<10ms查询）
+  - 中文字段名映射（499个映射）
+- `stock_code_mapper.py` - 股票代码映射
+  - 21,000+股票名称/代码映射
+  - 60分钟TTL缓存机制
+  - 线程安全的单例模式
+
 ### Core Components
 
 **API Layer**:
-- `api/main.py`: 老版本API（将在v2.4.0废弃）
-- `api/main_modular.py`: 模块化API（推荐使用）
-- FastAPI-based REST API with WebSocket support
-- Handles query routing and response formatting
-- Provides health checks and system status endpoints
+- `api/main.py`: 老版本API（稳定运行，将在v2.4.0废弃）
+- `api/main_modular.py`: 模块化API（推荐使用，性能更优）
+- FastAPI框架，支持REST API和WebSocket
+- 提供健康检查和系统状态端点
 
-**Agent System** - *All modernized with LangChain RunnableSequence*:
-- `HybridAgent/HybridAgentModular`: Smart query router with modern chain composition using `|` operator
-- `SQLAgent/SQLAgentModular`: Handles structured data queries with enhanced input validation
-- `RAGAgent/RAGAgentModular`: Document retrieval with semantic search, query statistics, and modern chains
-- `FinancialAnalysisAgent/FinancialAgentModular`: **[v1.4.0]** 专业财务分析系统，支持四表联合查询和深度财务分析
-- `MoneyFlowAgent/MoneyFlowAgentModular`: **[v1.4.2]** 资金流向分析系统，支持四级资金分布和主力行为分析
+**Agent System** - *全部使用LangChain现代化API*:
+- `HybridAgent/HybridAgentModular`: 智能查询路由，使用`|`操作符的现代链组合
+- `SQLAgent/SQLAgentModular`: 结构化数据查询，快速模板匹配
+- `RAGAgent/RAGAgentModular`: 文档检索，语义搜索，查询统计
+- `FinancialAgent/FinancialAgentModular`: 专业财务分析，四表联合查询
+- `MoneyFlowAgent/MoneyFlowAgentModular`: 资金流向分析，四级资金分布
 
 **Database Layer** (`database/`):
-- `MySQLConnector`: Manages connections to MySQL for structured financial data
-- `MilvusConnector`: Handles vector database operations for document embeddings
+- `MySQLConnector`: MySQL连接管理（28M+股票数据记录）
+- `MilvusConnector`: 向量数据库操作（95,662+文档embeddings）
 
 **Document Processing** (`rag/document_processor.py`):
-- PDF download with three-stage retry strategy for cninfo.com.cn
-- Text extraction and chunking with BGE-M3 embeddings
-- Intelligent content filtering and metadata extraction
-
-**Stock Code Mapping** (`utils/stock_code_mapper.py`) - *[v1.4.3 NEW]*:
-- Dynamic mapping from company names/symbols to ts_code format
-- Cache-based architecture with 60-minute TTL
-- Thread-safe singleton pattern for global access
-- Supports 21,000+ stock mappings from tu_stock_basic table
+- PDF下载（三阶段重试策略）
+- 文本提取和分块（BGE-M3 embeddings）
+- 智能内容过滤和元数据提取
 
 ### Data Flow
 
@@ -366,6 +418,7 @@ The system supports six main query types:
 - Modern LangChain error handling with try-catch around `invoke()` calls
 - Milvus collections are automatically loaded if needed
 - PDF downloads use three-stage retry with session management
+- **Important**: 已知错误的查询（如股票简称、小写后缀等）不会降级到LLM查询，直接返回错误提示
 
 ### Performance Considerations
 - SQL queries: 5-30 seconds depending on complexity

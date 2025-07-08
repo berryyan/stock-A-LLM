@@ -86,6 +86,31 @@ class SQLTemplates:
         LIMIT 1
     """
     
+    # 个股利润查询模板
+    PROFIT_LATEST = """
+        SELECT 
+            i.ts_code,
+            s.name,
+            i.end_date,
+            i.revenue,
+            i.n_income as net_profit,
+            i.n_income_attr_p as net_profit_attr_p,
+            i.basic_eps,
+            i.report_type,
+            CASE 
+                WHEN i.end_date LIKE '%0331' THEN '一季度'
+                WHEN i.end_date LIKE '%0630' THEN '中报'
+                WHEN i.end_date LIKE '%0930' THEN '三季度'
+                WHEN i.end_date LIKE '%1231' THEN '年报'
+                ELSE i.end_date
+            END as period_name
+        FROM tu_income i
+        JOIN tu_stock_basic s ON i.ts_code = s.ts_code
+        WHERE i.ts_code = :ts_code
+        ORDER BY i.end_date DESC
+        LIMIT 1
+    """
+    
     # 资金流向查询模板
     MONEY_FLOW_LATEST = """
         SELECT 
@@ -309,6 +334,46 @@ class SQLTemplates:
         WHERE m.trade_date = :trade_date
             AND m.name NOT LIKE '%ST%'
         ORDER BY m.net_amount DESC
+        LIMIT :limit
+    """
+    
+    # 主力净流入排名（降序）
+    MONEY_FLOW_RANKING_IN = """
+        SELECT 
+            m.ts_code,
+            m.name,
+            m.close,
+            m.pct_change as pct_chg,
+            m.net_amount,
+            m.net_amount_rate,
+            m.buy_elg_amount,
+            m.buy_lg_amount,
+            m.trade_date
+        FROM tu_moneyflow_dc m
+        WHERE m.trade_date = :trade_date
+            AND m.name NOT LIKE '%ST%'
+            AND m.net_amount > 0
+        ORDER BY m.net_amount DESC
+        LIMIT :limit
+    """
+    
+    # 主力净流出排名（升序）
+    MONEY_FLOW_RANKING_OUT = """
+        SELECT 
+            m.ts_code,
+            m.name,
+            m.close,
+            m.pct_change as pct_chg,
+            m.net_amount,
+            m.net_amount_rate,
+            m.buy_elg_amount,
+            m.buy_lg_amount,
+            m.trade_date
+        FROM tu_moneyflow_dc m
+        WHERE m.trade_date = :trade_date
+            AND m.name NOT LIKE '%ST%'
+            AND m.net_amount < 0
+        ORDER BY m.net_amount ASC
         LIMIT :limit
     """
     

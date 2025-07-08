@@ -271,9 +271,25 @@ class SQLAgentModular:
         processed_question, date_info = date_intelligence.preprocess_question(question)
         self.logger.info(f"日期智能处理后的查询: {processed_question}")
         
+        # 中文数字规范化（在日期处理后，模板匹配前）
+        from utils.chinese_number_converter import normalize_quantity_expression
+        processed_question = normalize_quantity_expression(processed_question)
+        self.logger.info(f"中文数字规范化后: {processed_question}")
+        
         # 匹配查询模板
         template_result = match_query_template(processed_question)
         if not template_result:
+            # 检查是否包含需要股票的关键词但没有股票信息
+            stock_required_keywords = ['K线', 'k线', '走势', '行情', '股价', '成交量', '市值', '涨跌', '涨幅排名']
+            if any(keyword in processed_question for keyword in stock_required_keywords):
+                # 尝试提取股票
+                temp_params = self.param_extractor.extract_all_params(processed_question)
+                if not temp_params.stocks:
+                    return error(
+                        "未识别到股票信息，请指定具体股票",
+                        "MISSING_STOCK",
+                        query=processed_question
+                    )
             return None
         
         template, params = template_result
@@ -298,7 +314,7 @@ class SQLAgentModular:
                 allow_default_date_templates = [
                     '股价查询', '估值指标查询', '个股主力资金', 
                     '板块主力资金', '涨跌幅排名', '成交额排名',
-                    '成交量排名', '市值排名', '主力净流入排行', '主力净流出排行'
+                    '成交量排名', '成交量查询', '市值排名', '主力净流入排行', '主力净流出排行'
                 ]
                 
                 if template.name in allow_default_date_templates:
@@ -306,7 +322,7 @@ class SQLAgentModular:
                     # 继续执行，后续会使用last_trading_date
                 else:
                     # 其他需要日期的查询，返回错误
-                    validation_result = self.query_validator.validate_params(extracted_params, template)
+                    validation_result = self.query_validator.validate_enhanced(extracted_params, template)
                     if not validation_result.is_valid:
                         error_msg = validation_result.error_detail.get('message', '参数验证失败')
                         return error(
@@ -315,8 +331,8 @@ class SQLAgentModular:
                             template=template.name
                         )
             else:
-                # 使用统一的查询验证器
-                validation_result = self.query_validator.validate_params(extracted_params, template)
+                # 使用统一的查询验证器 - 先尝试增强验证
+                validation_result = self.query_validator.validate_enhanced(extracted_params, template)
                 if not validation_result.is_valid:
                     error_msg = validation_result.error_detail.get('message', '参数验证失败')
                     return error(
@@ -365,6 +381,8 @@ class SQLAgentModular:
                 result = self._execute_kline_query(params, processed_question)
             elif template.name == '成交量查询':
                 result = self._execute_volume_query(params, last_trading_date)
+            elif template.name == '成交量排名':
+                result = self._execute_volume_ranking(params, last_trading_date)
             elif template.name == '主力净流入排行':
                 result = self._execute_money_flow_ranking(params, last_trading_date, is_outflow=False)
             elif template.name == '主力净流出排行':
@@ -646,11 +664,16 @@ class SQLAgentModular:
             rows = []
             
             for row in result[:4]:  # 只显示最近4期
+                # 处理可能存在的字段名问题
+                revenue = row.get('revenue', 0) or 0
+                net_profit = row.get('net_profit', row.get('n_income', 0)) or 0
+                basic_eps = row.get('basic_eps', 0) or 0
+                
                 rows.append([
                     self._format_period(row['end_date']),
-                    f"{row['revenue'] / 100000000:.2f}",
-                    f"{row['n_income'] / 100000000:.2f}",
-                    f"{row['basic_eps']:.3f}"
+                    f"{revenue / 100000000:.2f}",
+                    f"{net_profit / 100000000:.2f}",
+                    f"{basic_eps:.3f}"
                 ])
             
             stock_info = f"{stock_name}（{ts_code}）" if stock_name else ts_code
@@ -801,7 +824,10 @@ class SQLAgentModular:
             # 尝试快速查询路径
             quick_result = self._try_quick_query(question)
             if quick_result:
-                self.logger.info("使用快速查询路径成功")
+                if quick_result.success:
+                    self.logger.info("使用快速查询路径成功")
+                else:
+                    self.logger.info("快速查询路径返回错误，不降级到LLM")
                 return quick_result.to_legacy_format("sql")
             
             # 降级到传统LLM路径
@@ -996,7 +1022,7 @@ class SQLAgentModular:
                     i,
                     row['ts_code'],
                     row['name'],
-                    f"{row['net_mf_amount'] / 10000:.2f}",
+                    f"{row['net_amount'] / 10000:.2f}",
                     f"{row['pct_chg']:.2f}"
                 ])
             
@@ -1151,12 +1177,21 @@ class SQLAgentModular:
             rows = []
             
             for i, row in enumerate(result, 1):
+                # 处理None值的情况
+                pe_value = row.get('pe_ttm')
+                if pe_value is None:
+                    pe_str = "N/A"
+                else:
+                    pe_str = f"{pe_value:.2f}"
+                    
+                pct_chg = row.get('pct_chg', 0) or 0
+                
                 rows.append([
                     i,
                     row['ts_code'],
                     row['name'],
-                    f"{row['pe_ttm']:.2f}",
-                    f"{row['pct_chg']:.2f}"
+                    pe_str,
+                    f"{pct_chg:.2f}"
                 ])
             
             order_desc = "最高" if order == "DESC" else "最低"
@@ -1542,6 +1577,50 @@ class SQLAgentModular:
             return {
                 'success': False,
                 'error': f"未找到{stock_name or ts_code}的K线数据"
+            }
+    
+    def _execute_volume_ranking(self, params: ExtractedParams, last_trading_date: str) -> Dict[str, Any]:
+        """执行成交量排名查询 - 使用公共SQL模板"""
+        trade_date = params.date or last_trading_date
+        limit = params.limit
+        
+        # 使用公共的SQL模板
+        sql = SQLTemplates.VOLUME_RANKING
+        result = self.mysql_connector.execute_query(sql, {
+            'trade_date': trade_date,
+            'limit': limit
+        })
+        
+        if result and len(result) > 0:
+            headers = ["排名", "股票代码", "股票名称", "收盘价", "涨跌幅", "成交量(万手)", "成交额(万元)"]
+            rows = []
+            for i, row in enumerate(result, 1):
+                rows.append([
+                    str(i),
+                    row['ts_code'],
+                    row['name'],
+                    f"{row['close']:.2f}",
+                    f"{row['pct_chg']:.2f}%",
+                    f"{row['vol'] / 10000:.2f}",
+                    f"{row['amount'] / 10000:.2f}"
+                ])
+            
+            formatted_result = self.result_formatter.format_table(
+                headers, 
+                rows, 
+                title=f"成交量排名前{limit}（{trade_date}）"
+            )
+            
+            return {
+                'success': True,
+                'result': formatted_result,
+                'sql': sql,
+                'quick_path': True
+            }
+        else:
+            return {
+                'success': False,
+                'error': f"没有找到{trade_date}的成交量数据"
             }
 
 

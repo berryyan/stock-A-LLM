@@ -8,9 +8,10 @@
 import sys
 import os
 import re
+import calendar
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -132,6 +133,33 @@ class ParameterExtractor:
     
     def _extract_stocks(self, query: str, params: ExtractedParams) -> None:
         """提取股票信息"""
+        # 预处理查询，临时替换日期格式，避免干扰股票识别
+        date_placeholders = []
+        
+        # 替换斜杠格式日期（如2025/06/01）
+        slash_date_pattern = r'\d{4}/\d{1,2}/\d{1,2}'
+        slash_dates = re.findall(slash_date_pattern, query)
+        for i, date in enumerate(slash_dates):
+            placeholder = f"__DATE_PLACEHOLDER_{i}__"
+            query = query.replace(date, placeholder)
+            date_placeholders.append((placeholder, date))
+        
+        # 替换其他日期格式
+        other_date_patterns = [
+            r'\d{4}-\d{1,2}-\d{1,2}',
+            r'\d{4}年\d{1,2}月\d{1,2}日',
+            r'\d{8}'
+        ]
+        
+        for pattern in other_date_patterns:
+            dates = re.findall(pattern, query)
+            for date in dates:
+                # 检查是否是股票代码（6位数字）
+                if not (pattern == r'\d{8}' and len(date) == 6):
+                    placeholder = f"__DATE_PLACEHOLDER_{len(date_placeholders)}__"
+                    query = query.replace(date, placeholder)
+                    date_placeholders.append((placeholder, date))
+        
         # 先尝试提取ST股票（包括*ST）
         # 使用更准确的模式，匹配ST后面的中文字符，但不包含连接词
         # 使用负向预查来停止在连接词前
@@ -285,7 +313,9 @@ class ParameterExtractor:
             # YYYYMMDD格式
             (r'(\d{4})(\d{2})(\d{2})(?![.\d])', lambda m: f"{m.group(1)}-{m.group(2)}-{m.group(3)}"),
             # YYYY/MM/DD格式
-            (r'(\d{4})/(\d{1,2})/(\d{1,2})', lambda m: f"{m.group(1)}-{m.group(2).zfill(2)}-{m.group(3).zfill(2)}")
+            (r'(\d{4})/(\d{1,2})/(\d{1,2})', lambda m: f"{m.group(1)}-{m.group(2).zfill(2)}-{m.group(3).zfill(2)}"),
+            # YYYY年格式（作为最新日期）- 处理"2099年的成交量"这种情况
+            (r'(\d{4})年的', lambda m: f"{m.group(1)}-12-31")  # 使用年末作为日期
         ]
         
         for pattern, formatter in date_patterns:
@@ -344,6 +374,26 @@ class ParameterExtractor:
     
     def _extract_date_range(self, query: str, params: ExtractedParams) -> None:
         """提取日期范围"""
+        # 先处理相对时间范围（上个月、去年等）
+        relative_range_patterns = [
+            (r'上个月', lambda: date_intelligence.calculator.get_last_month_range()),
+            (r'本月', lambda: date_intelligence.calculator.get_current_month_range()),
+            (r'去年', lambda: date_intelligence.calculator.get_last_year_range()),
+            (r'今年', lambda: date_intelligence.calculator.get_current_year_range()),
+            (r'上一?个?季度', lambda: date_intelligence.calculator.get_last_quarter_range()),
+            (r'本季度', lambda: date_intelligence.calculator.get_current_quarter_range()),
+        ]
+        
+        for pattern, range_func in relative_range_patterns:
+            if re.search(pattern, query):
+                try:
+                    start_date, end_date = range_func()
+                    params.date_range = (start_date, end_date)
+                    self.logger.info(f"提取到相对日期范围: {start_date} 至 {end_date}")
+                    return
+                except Exception as e:
+                    self.logger.error(f"相对日期范围提取失败: {e}")
+        
         # 首先尝试提取明确的日期范围格式
         # 支持多种日期格式和连接符
         # 包括中文日期格式
@@ -432,6 +482,40 @@ class ParameterExtractor:
             "2年": 730
         }
         
+        # 处理相对时间表达（本月、上个月、去年等）
+        current_date = datetime.now()
+        
+        # 处理"本月"
+        if "本月" in query or "当月" in query or "这个月" in query:
+            year = current_date.year
+            month = current_date.month
+            last_day = calendar.monthrange(year, month)[1]
+            params.date_range = (f"{year}-{month:02d}-01", f"{year}-{month:02d}-{last_day:02d}")
+            self.logger.info(f"提取到日期范围（本月）: {params.date_range[0]} 至 {params.date_range[1]}")
+            return
+            
+        # 处理"上个月"
+        if "上个月" in query or "上月" in query:
+            # 计算上个月
+            if current_date.month == 1:
+                year = current_date.year - 1
+                month = 12
+            else:
+                year = current_date.year
+                month = current_date.month - 1
+            last_day = calendar.monthrange(year, month)[1]
+            params.date_range = (f"{year}-{month:02d}-01", f"{year}-{month:02d}-{last_day:02d}")
+            self.logger.info(f"提取到日期范围（上个月）: {params.date_range[0]} 至 {params.date_range[1]}")
+            return
+            
+        # 处理"去年"
+        if "去年" in query and "同期" not in query:
+            year = current_date.year - 1
+            params.date_range = (f"{year}-01-01", f"{year}-12-31")
+            self.logger.info(f"提取到日期范围（去年）: {params.date_range[0]} 至 {params.date_range[1]}")
+            return
+        
+        
         for time_word, days in time_mappings.items():
             if f"最近{time_word}" in query or f"过去{time_word}" in query or f"前{time_word}" in query:
                 if hasattr(date_intelligence.calculator, 'get_trading_days_range'):
@@ -441,7 +525,37 @@ class ParameterExtractor:
                         self.logger.info(f"提取到日期范围（{time_word}）: {result[0]} 至 {result[1]}")
                         return
         
-        # 处理月份范围
+
+        # 处理中文数字的相对时间（如"前十天"）
+        from utils.chinese_number_converter import chinese_to_arabic
+        
+        # 匹配"前X天"、"最近X天"等模式
+        chinese_patterns = [
+            (r'前([一二三四五六七八九十百千万]+)天', 'past'),
+            (r'最近([一二三四五六七八九十百千万]+)天', 'recent'),
+            (r'过去([一二三四五六七八九十百千万]+)天', 'recent'),
+            (r'前([一二三四五六七八九十百千万]+)个?交易日', 'past_trading'),
+            (r'最近([一二三四五六七八九十百千万]+)个?交易日', 'recent_trading'),
+        ]
+        
+        for pattern, time_type in chinese_patterns:
+            match = re.search(pattern, query)
+            if match:
+                chinese_num = match.group(1)
+                try:
+                    arabic_num = chinese_to_arabic(chinese_num)
+                    if arabic_num > 0:
+                        # 根据类型处理
+                        if time_type in ['recent', 'recent_trading', 'past', 'past_trading']:
+                            if hasattr(date_intelligence.calculator, 'get_trading_days_range'):
+                                result = date_intelligence.calculator.get_trading_days_range(arabic_num)
+                                if result:
+                                    params.date_range = result
+                                    self.logger.info(f"提取到日期范围（{chinese_num}={arabic_num}天）: {result[0]} 至 {result[1]}")
+                                    return
+                except Exception as e:
+                    self.logger.warning(f"中文数字转换失败: {chinese_num}, 错误: {e}")
+            # 处理月份范围
         # 格式1: "2025年1月到3月"
         month_range_pattern1 = r'(\d{4})年(\d{1,2})月到(\d{1,2})月'
         match1 = re.search(month_range_pattern1, query)
@@ -449,6 +563,15 @@ class ParameterExtractor:
             year = int(match1.group(1))
             start_month = int(match1.group(2))
             end_month = int(match1.group(3))
+            
+            # 验证月份有效性
+            if not (1 <= start_month <= 12):
+                params.error = f"无效的开始月份：{start_month}月，月份应在1-12之间"
+                return
+            if not (1 <= end_month <= 12):
+                params.error = f"无效的结束月份：{end_month}月，月份应在1-12之间"
+                return
+                
             import calendar
             start_date = f"{year}-{start_month:02d}-01"
             last_day = calendar.monthrange(year, end_month)[1]
@@ -465,6 +588,15 @@ class ParameterExtractor:
             start_month = int(match2.group(2))
             end_year = int(match2.group(3))
             end_month = int(match2.group(4))
+            
+            # 验证月份有效性
+            if not (1 <= start_month <= 12):
+                params.error = f"无效的开始月份：{start_month}月，月份应在1-12之间"
+                return
+            if not (1 <= end_month <= 12):
+                params.error = f"无效的结束月份：{end_month}月，月份应在1-12之间"
+                return
+                
             import calendar
             start_date = f"{start_year}-{start_month:02d}-01"
             last_day = calendar.monthrange(end_year, end_month)[1]
@@ -479,6 +611,12 @@ class ParameterExtractor:
         if month_match and '到' not in query and '至' not in query:
             year = int(month_match.group(1))
             month = int(month_match.group(2))
+            
+            # 验证月份有效性
+            if not (1 <= month <= 12):
+                params.error = f"无效的月份：{month}月，月份应在1-12之间"
+                return
+                
             # 计算该月的第一天和最后一天
             import calendar
             last_day = calendar.monthrange(year, month)[1]
@@ -486,6 +624,56 @@ class ParameterExtractor:
             end_date = f"{year}-{month:02d}-{last_day:02d}"
             params.date_range = (start_date, end_date)
             self.logger.info(f"提取到月份范围: {start_date} 至 {end_date}")
+            return
+            
+        # 处理没有年份的月份（如"6月的K线"）- 默认使用当前年份
+        simple_month_pattern = r'(\d{1,2})月'
+        simple_month_match = re.search(simple_month_pattern, query)
+        if simple_month_match and '到' not in query and '至' not in query and not month_match:
+            month = int(simple_month_match.group(1))
+            if 1 <= month <= 12:  # 确保月份有效
+                # 使用当前年份
+                year = datetime.now().year
+                import calendar
+                last_day = calendar.monthrange(year, month)[1]
+                start_date = f"{year}-{month:02d}-01"
+                end_date = f"{year}-{month:02d}-{last_day:02d}"
+                params.date_range = (start_date, end_date)
+                self.logger.info(f"提取到月份范围（默认{year}年）: {start_date} 至 {end_date}")
+                return
+            else:
+                # 无效月份
+                params.error = f"无效的月份：{month}月，月份应在1-12之间"
+                self.logger.warning(f"无效月份: {month}")
+                return
+                
+        # 处理季度（如"2025年第二季度"）
+        quarter_patterns = [
+            (r'(\d{4})年?第一季度', lambda y: (f"{y}-01-01", f"{y}-03-31")),
+            (r'(\d{4})年?第二季度', lambda y: (f"{y}-04-01", f"{y}-06-30")),
+            (r'(\d{4})年?第三季度', lambda y: (f"{y}-07-01", f"{y}-09-30")),
+            (r'(\d{4})年?第四季度', lambda y: (f"{y}-10-01", f"{y}-12-31")),
+            (r'(\d{4})年?Q1', lambda y: (f"{y}-01-01", f"{y}-03-31")),
+            (r'(\d{4})年?Q2', lambda y: (f"{y}-04-01", f"{y}-06-30")),
+            (r'(\d{4})年?Q3', lambda y: (f"{y}-07-01", f"{y}-09-30")),
+            (r'(\d{4})年?Q4', lambda y: (f"{y}-10-01", f"{y}-12-31")),
+        ]
+        
+        for pattern, date_func in quarter_patterns:
+            quarter_match = re.search(pattern, query)
+            if quarter_match:
+                year = quarter_match.group(1)
+                params.date_range = date_func(year)
+                self.logger.info(f"提取到季度范围: {params.date_range[0]} 至 {params.date_range[1]}")
+                return
+        
+        # 检查是否有无效季度（第五季度等）
+        invalid_quarter_pattern = r'(\d{4})年?第([五六七八九十]|[5-9]|1[0-9])季度'
+        invalid_quarter_match = re.search(invalid_quarter_pattern, query)
+        if invalid_quarter_match:
+            quarter_num = invalid_quarter_match.group(2)
+            params.error = f"无效的季度：第{quarter_num}季度，一年只有四个季度"
+            self.logger.warning(f"无效季度: 第{quarter_num}季度")
             return
             
         # 处理年份范围
@@ -527,6 +715,20 @@ class ParameterExtractor:
         # 移除所有年份相关的内容，避免干扰
         year_pattern = r'(19\d{2}|20\d{2})年'
         query_without_year = re.sub(year_pattern, '', query)
+        
+        # 排除日期格式（YYYY-MM-DD, YYYYMMDD等）
+        # 这是关键修复：移除所有日期相关的数字
+        date_patterns = [
+            r'\d{4}-\d{2}-\d{2}',  # YYYY-MM-DD
+            r'\d{4}/\d{2}/\d{2}',  # YYYY/MM/DD
+            r'\d{8}(?!\d)',        # YYYYMMDD (不是更长数字的一部分)
+            r'\d{4}年\d{1,2}月\d{1,2}日',  # YYYY年MM月DD日
+        ]
+        for pattern in date_patterns:
+            query_without_year = re.sub(pattern, '', query_without_year)
+        
+        # 再移除单独的4位年份数字（如2025）
+        query_without_year = re.sub(r'\b(19\d{2}|20\d{2})\b', '', query_without_year)
         
         # 排除股票代码（6位数字）
         # 如果已经提取到股票，不应该再把股票代码当作数量
@@ -574,12 +776,28 @@ class ParameterExtractor:
     def _extract_order_params(self, query: str, params: ExtractedParams) -> None:
         """提取排序参数"""
         # 排序方向
-        # 注意：某些指标的"最低"实际上应该是降序（如跌幅最大）
-        # 先检查特殊情况
-        if '跌幅' in query and any(keyword in query for keyword in ['最大', '最多', '榜']):
-            # 跌幅最大 = 涨幅最小 = ASC
-            # 跌幅榜 = 跌幅从大到小 = ASC
-            params.order_by = 'ASC'
+        # 注意：涨跌幅的排序逻辑特殊
+        # 先检查涨跌幅相关的特殊情况
+        if '涨幅' in query:
+            if any(keyword in query for keyword in ['最大', '最多', '排名', '排行', '榜', '前']):
+                # 涨幅最大/涨幅排名 = DESC（降序，从大到小）
+                params.order_by = 'DESC'
+            elif any(keyword in query for keyword in ['最小', '最少']):
+                # 涨幅最小 = ASC（升序，从小到大）
+                params.order_by = 'ASC'
+            else:
+                # 默认涨幅查询为降序
+                params.order_by = 'DESC'
+        elif '跌幅' in query:
+            if any(keyword in query for keyword in ['最大', '最多', '排名', '排行', '榜', '前']):
+                # 跌幅最大 = ASC（升序，因为跌幅是负数）
+                params.order_by = 'ASC'
+            elif any(keyword in query for keyword in ['最小', '最少']):
+                # 跌幅最小 = DESC（降序，跌幅最小即涨幅最大）
+                params.order_by = 'DESC'
+            else:
+                # 默认跌幅查询为升序
+                params.order_by = 'ASC'
         elif any(keyword in query for keyword in ['最高', '最大', '最多', '降序', '从高到低']):
             params.order_by = 'DESC'
         elif any(keyword in query for keyword in ['最低', '最小', '最少', '升序', '从低到高']):
