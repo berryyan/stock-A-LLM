@@ -20,7 +20,7 @@ from utils.unified_stock_validator import UnifiedStockValidator
 from utils.date_intelligence import date_intelligence
 from utils.chinese_number_converter import extract_limit_from_query, normalize_quantity_expression
 from utils.logger import setup_logger
-from utils.query_templates import QueryTemplate
+from utils.query_templates import QueryTemplate, TemplateType
 
 logger = setup_logger("parameter_extractor")
 
@@ -73,8 +73,10 @@ class ParameterExtractor:
             
             # 根据模板需求提取相应参数
             if template:
-                if template.requires_stock:
-                    self._extract_stocks(cleaned_query, params)
+                # 总是尝试提取股票，用于验证（特别是排名查询需要验证是否为个股排名）
+                # 即使模板不要求股票，我们也需要提取来进行验证
+                if template.requires_stock or template.type == TemplateType.RANKING:
+                    self._extract_stocks(cleaned_query, params, template)
                     
                 if template.requires_date:
                     self._extract_date(cleaned_query, params)
@@ -97,7 +99,7 @@ class ParameterExtractor:
                     self._extract_metrics(cleaned_query, params, template.required_fields)
             else:
                 # 没有模板时，尝试提取所有可能的参数
-                self._extract_stocks(cleaned_query, params)
+                self._extract_stocks(cleaned_query, params, None)
                 self._extract_date(cleaned_query, params)
                 self._extract_date_range(cleaned_query, params)
                 self._extract_limit(cleaned_query, params)
@@ -131,7 +133,7 @@ class ParameterExtractor:
         query = re.sub(r'\s+', ' ', query.strip())
         return query
     
-    def _extract_stocks(self, query: str, params: ExtractedParams) -> None:
+    def _extract_stocks(self, query: str, params: ExtractedParams, template: Optional[QueryTemplate] = None) -> None:
         """提取股票信息"""
         # 预处理查询，临时替换日期格式，避免干扰股票识别
         date_placeholders = []
@@ -184,6 +186,11 @@ class ParameterExtractor:
             
             # 使用剩余查询继续提取其他股票
             if remaining_query.strip():
+                # 对于排名查询，先移除明显的数量相关模式
+                if '排名' in remaining_query or '排行' in remaining_query:
+                    remaining_query = re.sub(r'前\d+只?(?:股票)?', '', remaining_query)
+                    remaining_query = re.sub(r'(?:最大|最小|最高|最低)(?:的)?(?:前)?\d+只?', '', remaining_query)
+                
                 stock_list = self.stock_validator.extract_multiple_stocks(remaining_query)
                 if stock_list:
                     from utils.stock_validation_helper import validate_and_convert_stock
@@ -195,8 +202,15 @@ class ParameterExtractor:
                                 params.stock_names.append(stock_name)
         else:
             # 没有ST股票，使用正常流程
+            # 对于排名查询，先移除明显的数量相关模式
+            query_for_stock = query
+            if '排名' in query or '排行' in query:
+                # 移除"前N只"、"前N"等模式，避免将数字误认为股票代码
+                query_for_stock = re.sub(r'前\d+只?(?:股票)?', '', query_for_stock)
+                query_for_stock = re.sub(r'(?:最大|最小|最高|最低)(?:的)?(?:前)?\d+只?', '', query_for_stock)
+            
             # 直接使用extract_multiple_stocks，它会处理多个股票的情况
-            stock_list = self.stock_validator.extract_multiple_stocks(query)
+            stock_list = self.stock_validator.extract_multiple_stocks(query_for_stock)
         
         if stock_list:
             # 验证并转换每个股票
@@ -218,14 +232,24 @@ class ParameterExtractor:
             if valid_count > 0:
                 self.logger.info(f"提取到股票: {params.stocks}")
             else:
-                self.logger.warning(f"未能提取到有效股票，错误: {params.error}")
+                # 对于不需要股票的模板（如排名查询），不设置错误
+                if template and hasattr(template, 'requires_stock') and not template.requires_stock:
+                    params.error = None  # 清除错误
+                    self.logger.info(f"模板 '{template.name}' 不需要股票，清除错误")
+                else:
+                    self.logger.warning(f"未能提取到有效股票，错误: {params.error}")
         else:
-            # extract_multiple_stocks返回空列表，可能是单个股票验证失败
-            # 尝试使用validate_and_extract获取具体错误信息
-            success, ts_code_or_error, error_response = self.stock_validator.validate_and_extract(query)
-            if not success and error_response and 'error' in error_response:
-                params.error = error_response['error']
-                self.logger.warning(f"股票验证失败: {params.error}")
+            # extract_multiple_stocks返回空列表
+            # 对于不需要股票的模板（如排名查询），不设置错误
+            if template and hasattr(template, 'requires_stock') and not template.requires_stock:
+                self.logger.info(f"模板 '{template.name}' 不需要股票，不设置错误")
+            else:
+                # 可能是单个股票验证失败
+                # 尝试使用validate_and_extract获取具体错误信息
+                success, ts_code_or_error, error_response = self.stock_validator.validate_and_extract(query)
+                if not success and error_response and 'error' in error_response:
+                    params.error = error_response['error']
+                    self.logger.warning(f"股票验证失败: {params.error}")
         
         # 如果成功提取了股票，记录日志
         if params.stocks:
@@ -234,7 +258,7 @@ class ParameterExtractor:
             # 如果查询中可能包含股票但没有提取到，尝试识别
             # 首先排除明显的非股票查询（排名查询等）
             non_stock_patterns = [
-                r'排名|排行|前\d+|最[大小高低]的?\d*只?股票',
+                r'排名|排行|前\d+|最[大小高低]的?\d*只?股票|TOP\d+',
                 r'涨幅榜|跌幅榜|龙虎榜',
                 r'板块|行业|概念'
             ]
@@ -749,7 +773,7 @@ class ParameterExtractor:
         # 使用chinese_number_converter提取数量
         limit = extract_limit_from_query(query_without_year)
         
-        if limit:
+        if limit is not None:
             params.limit = limit
         else:
             params.limit = default

@@ -319,6 +319,15 @@ class SQLAgentModular:
                 
                 if template.name in allow_default_date_templates:
                     self.logger.info(f"查询 '{template.name}' 未指定日期，使用最新交易日")
+                    # 即使使用默认日期，也要进行增强验证
+                    validation_result = self.query_validator.validate_enhanced(extracted_params, template)
+                    if not validation_result.is_valid:
+                        error_msg = validation_result.error_detail.get('message', '参数验证失败')
+                        return error(
+                            error_msg,
+                            validation_result.error_code or "VALIDATION_ERROR",
+                            template=template.name
+                        )
                     # 继续执行，后续会使用last_trading_date
                 else:
                     # 其他需要日期的查询，返回错误

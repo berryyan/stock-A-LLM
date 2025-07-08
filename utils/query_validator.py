@@ -132,10 +132,20 @@ class QueryValidator:
             return result
         
         if template.requires_date and not params.date and not params.date_range:
-            result.is_valid = False
-            result.error_code = "MISSING_REQUIRED_DATE"
-            result.error_detail = {"message": "此查询需要指定日期"}
-            return result
+            # 某些模板允许使用默认最新交易日
+            allow_default_date_templates = [
+                '股价查询', '估值指标查询', '个股主力资金', 
+                '板块主力资金', '涨跌幅排名', '成交额排名',
+                '成交量排名', '成交量查询', '市值排名', '流通市值排名',
+                '主力净流入排行', '主力净流出排行'
+            ]
+            
+            if template.name not in allow_default_date_templates:
+                result.is_valid = False
+                result.error_code = "MISSING_REQUIRED_DATE"
+                result.error_detail = {"message": "此查询需要指定日期"}
+                return result
+            # 允许使用默认日期的模板，跳过此验证
         
         if template.requires_date_range and not params.date_range:
             # K线查询特殊处理：允许无日期范围（会使用默认90天）

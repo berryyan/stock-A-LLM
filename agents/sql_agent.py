@@ -640,6 +640,14 @@ class SQLAgent:
                     return None
                     
                 sector_name = entities[0]
+                
+                # 尝试映射板块名称
+                from utils.sector_name_mapper import map_sector_name
+                mapped_name = map_sector_name(sector_name)
+                if mapped_name:
+                    self.logger.info(f"板块名称映射: {sector_name} -> {mapped_name}")
+                    sector_name = mapped_name
+                
                 trade_date = self._extract_date_from_query(processed_question) or last_trading_date
                 
                 sql = SQLTemplates.SECTOR_MONEY_FLOW
@@ -1499,6 +1507,13 @@ class SQLAgent:
                         break
                     
                     if sector_name:
+                        # 尝试映射板块名称
+                        from utils.sector_name_mapper import map_sector_name
+                        mapped_name = map_sector_name(sector_name)
+                        if mapped_name:
+                            self.logger.info(f"板块名称映射: {sector_name} -> {mapped_name}")
+                            sector_name = mapped_name
+                        
                         extracted_params['sector_name'] = sector_name
                         self.logger.debug(f"提取板块名称: {sector_name}")
                     else:
