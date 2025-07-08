@@ -23,9 +23,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Stock Analysis System (v2.2.3)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
+This is a **Stock Analysis System (v2.2.6)** built with Python that provides intelligent stock analysis through SQL queries, RAG (Retrieval-Augmented Generation), and hybrid query capabilities. The system integrates modern LangChain, FastAPI, MySQL, and Milvus to deliver comprehensive financial data analysis and document retrieval.
 
-**Current Status**: ✅ v2.2.3 三层测试体系建立！新增综合测试套件test_modular_comprehensive.py，包含44个测试用例。每个Agent至少5个正向测试+3个负向测试。创建TESTING_GUIDE.md详细说明测试策略。模块化架构稳定运行，生产就绪。
+**Current Status**: ✅ v2.2.6 参数验证强化完成！修复个股排名验证、数量限制验证（1-999）、股票识别边界问题。K线查询中文数字支持、TOP格式查询修复、板块名称映射功能实现。测试失败数从21个降至9个，修复率57%。系统稳定性大幅提升。
 
 ## Development Commands
 

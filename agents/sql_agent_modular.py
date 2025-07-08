@@ -1158,6 +1158,13 @@ class SQLAgentModular:
                 'error': "未识别到板块信息"
             }
         
+        # 添加板块名称映射
+        from utils.sector_name_mapper import map_sector_name
+        mapped_name = map_sector_name(sector_name)
+        if mapped_name:
+            self.logger.info(f"板块名称映射: {sector_name} -> {mapped_name}")
+            sector_name = mapped_name
+        
         trade_date = params.date or last_trading_date
         
         # 查询板块主力资金数据（tu_moneyflow_ind_dc表存储的是板块级别数据）
