@@ -388,7 +388,7 @@ class QueryTemplateLibrary:
             QueryTemplate(
                 name="PE排名", 
                 type=TemplateType.RANKING,
-                pattern=r"(?:PE|市盈率)(?:最高|最低|排名|前).*?(\d+)?|.*前(\d+).*(?:PE|市盈率)",
+                pattern=r"(?:PE|市盈率)(?:最高|最低|排名|排行|前).*?(\d+)?|.*前(\d+).*(?:PE|市盈率)",
                 route_type="SQL_ONLY",
                 required_fields=["ts_code", "name", "pe", "pe_ttm", "close"],
                 optional_fields=["pct_chg"],

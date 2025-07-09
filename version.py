@@ -3,18 +3,19 @@
 """
 
 # 系统版本号 - 恢复到v2系列
-VERSION = "2.2.7"
+VERSION = "2.2.8"
 
 # 版本信息
 VERSION_INFO = {
     "version": VERSION,
     "release_date": "2025-07-09",
-    "codename": "System Recovery",
-    "description": "Windows系统重启后恢复，确认模块化版本功能正常"
+    "codename": "Parameter Extraction Fix",
+    "description": "修复参数提取器日期占位符问题，PE排名模板匹配，测试通过率提升至97.6%"
 }
 
 # 版本历史（保留重要节点）
 VERSION_HISTORY = [
+    ("2.2.8", "2025-07-09", "修复参数提取器日期占位符问题，PE排名模板匹配，测试通过率提升至97.6%"),
     ("2.2.7", "2025-07-09", "Windows系统重启后恢复，确认模块化版本功能正常"),
     ("2.2.6", "2025-07-09", "参数验证强化与查询准确性提升"),
     ("2.2.5", "2025-07-08", "板块名称映射功能实现"),

@@ -78,9 +78,10 @@ class ParameterExtractor:
                     self._extract_sector_or_industry(cleaned_query, params)
                     # 板块查询不需要提取股票
                     
-                # 只有在需要股票或是排名查询时才提取股票
+                # 只有在需要股票时才提取股票
                 # 板块查询即使是MONEY_FLOW类型也不需要股票
-                elif template.requires_stock or template.type == TemplateType.RANKING:
+                # 排名查询只有在requires_stock=True时才需要股票（例如个股排名验证）
+                elif template.requires_stock:
                     self._extract_stocks(cleaned_query, params, template)
                     
                 if template.requires_date:
@@ -138,13 +139,14 @@ class ParameterExtractor:
         """提取股票信息"""
         # 预处理查询，临时替换日期格式，避免干扰股票识别
         date_placeholders = []
+        query_for_date_replace = query  # 保留原始查询用于日期替换
         
         # 替换斜杠格式日期（如2025/06/01）
         slash_date_pattern = r'\d{4}/\d{1,2}/\d{1,2}'
-        slash_dates = re.findall(slash_date_pattern, query)
+        slash_dates = re.findall(slash_date_pattern, query_for_date_replace)
         for i, date in enumerate(slash_dates):
             placeholder = f"__DATE_PLACEHOLDER_{i}__"
-            query = query.replace(date, placeholder)
+            query_for_date_replace = query_for_date_replace.replace(date, placeholder)
             date_placeholders.append((placeholder, date))
         
         # 替换其他日期格式
@@ -155,19 +157,19 @@ class ParameterExtractor:
         ]
         
         for pattern in other_date_patterns:
-            dates = re.findall(pattern, query)
+            dates = re.findall(pattern, query_for_date_replace)
             for date in dates:
                 # 检查是否是股票代码（6位数字）
                 if not (pattern == r'\d{8}' and len(date) == 6):
                     placeholder = f"__DATE_PLACEHOLDER_{len(date_placeholders)}__"
-                    query = query.replace(date, placeholder)
+                    query_for_date_replace = query_for_date_replace.replace(date, placeholder)
                     date_placeholders.append((placeholder, date))
         
         # 先尝试提取ST股票（包括*ST）
         # 使用更准确的模式，匹配ST后面的中文字符，但不包含连接词
         # 使用负向预查来停止在连接词前
         st_pattern = r'\*?ST[\u4e00-\u9fa5]+?(?=[和与及、，,]|$|\s|的|最|从)'
-        st_matches = re.findall(st_pattern, query)
+        st_matches = re.findall(st_pattern, query)  # 使用原始查询提取ST股票
         
         # 如果找到ST股票，先处理它们
         if st_matches:
@@ -192,7 +194,11 @@ class ParameterExtractor:
                     remaining_query = re.sub(r'前\d+只?(?:股票)?', '', remaining_query)
                     remaining_query = re.sub(r'(?:最大|最小|最高|最低)(?:的)?(?:前)?\d+只?', '', remaining_query)
                 
-                stock_list = self.stock_validator.extract_multiple_stocks(remaining_query)
+                # 使用原始查询提取股票，而不是包含占位符的查询
+                original_remaining = query
+                for st_stock in st_matches:
+                    original_remaining = original_remaining.replace(st_stock, '')
+                stock_list = self.stock_validator.extract_multiple_stocks(original_remaining)
                 if stock_list:
                     from utils.stock_validation_helper import validate_and_convert_stock
                     for stock in stock_list:
@@ -211,7 +217,8 @@ class ParameterExtractor:
                 query_for_stock = re.sub(r'(?:最大|最小|最高|最低)(?:的)?(?:前)?\d+只?', '', query_for_stock)
             
             # 直接使用extract_multiple_stocks，它会处理多个股票的情况
-            stock_list = self.stock_validator.extract_multiple_stocks(query_for_stock)
+            # 使用原始查询而不是包含占位符的查询
+            stock_list = self.stock_validator.extract_multiple_stocks(query)
         
         if stock_list:
             # 验证并转换每个股票
