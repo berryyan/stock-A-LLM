@@ -73,9 +73,14 @@ class ParameterExtractor:
             
             # 根据模板需求提取相应参数
             if template:
-                # 总是尝试提取股票，用于验证（特别是排名查询需要验证是否为个股排名）
-                # 即使模板不要求股票，我们也需要提取来进行验证
-                if template.requires_stock or template.type == TemplateType.RANKING:
+                # 板块查询的特殊处理 - 先提取板块信息
+                if template.name and "板块" in template.name:
+                    self._extract_sector_or_industry(cleaned_query, params)
+                    # 板块查询不需要提取股票
+                    
+                # 只有在需要股票或是排名查询时才提取股票
+                # 板块查询即使是MONEY_FLOW类型也不需要股票
+                elif template.requires_stock or template.type == TemplateType.RANKING:
                     self._extract_stocks(cleaned_query, params, template)
                     
                 if template.requires_date:
@@ -89,10 +94,6 @@ class ParameterExtractor:
                     
                 if template.supports_exclude_st:
                     self._check_exclude_conditions(cleaned_query, params)
-                    
-                # 板块相关查询需要提取板块信息
-                if template.name and "板块" in template.name:
-                    self._extract_sector_or_industry(cleaned_query, params)
                     
                 # 提取其他特定参数
                 if hasattr(template, 'required_fields'):

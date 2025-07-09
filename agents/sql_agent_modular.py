@@ -910,6 +910,16 @@ class SQLAgentModular:
             # 使用参数提取器
             extracted_params = self.param_extractor.extract_all_params(processed_question)
             
+            # 执行增强验证（检查非标准术语等）
+            validation_result = self.query_validator.validate_enhanced(extracted_params, None)
+            if not validation_result.is_valid:
+                error_msg = validation_result.error_detail.get('message', '参数验证失败')
+                return {
+                    'success': False,
+                    'error': error_msg,
+                    'query_type': 'sql'
+                }
+            
             # 构建增强的查询
             enhanced_question = self._build_enhanced_question(processed_question, extracted_params)
             

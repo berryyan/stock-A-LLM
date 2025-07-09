@@ -954,10 +954,20 @@ class DateIntelligenceModule:
         for expr in sorted(expressions, key=lambda x: x.start_pos, reverse=True):
             if expr.confidence > 0.5:  # 只替换高置信度的表达
                 replacement = self.generate_replacement_text(expr)
-                # 智能添加空格：如果替换位置前后都不是空格，则在替换文本前添加空格
-                if (expr.start_pos > 0 and text[expr.start_pos - 1] != ' ' and 
-                    expr.end_pos < len(text) and text[expr.end_pos] != ' '):
+                # 智能添加空格：只在必要时添加
+                # 检查前后字符，如果是中文或数字，不需要添加空格
+                prev_char = text[expr.start_pos - 1] if expr.start_pos > 0 else ''
+                next_char = text[expr.end_pos] if expr.end_pos < len(text) else ''
+                
+                # 如果前面是中文字符或空格，不添加空格
+                # 如果后面是"的"、"了"等助词，也不添加空格
+                need_space_before = (prev_char != ' ' and 
+                                   not '\u4e00' <= prev_char <= '\u9fff' and  # 不是中文
+                                   prev_char not in '，。！？、；：""''（）【】')
+                
+                if need_space_before and next_char not in '的了着过在是有和与及':
                     replacement = ' ' + replacement
+                    
                 text = text[:expr.start_pos] + replacement + text[expr.end_pos:]
         
         return text
