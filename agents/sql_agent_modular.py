@@ -1160,13 +1160,28 @@ class SQLAgentModular:
     
     def _execute_sector_money_flow(self, params: ExtractedParams, last_trading_date: str) -> Dict[str, Any]:
         """执行板块主力资金查询"""
-        # 提取板块名称
+        # 提取板块名称和板块代码
         sector_name = params.sector or params.industry
-        if not sector_name:
+        sector_code = params.sector_code
+        
+        if not sector_name and not sector_code:
             return {
                 'success': False,
                 'error': "未识别到板块信息"
             }
+        
+        # 如果有板块代码，优先使用板块代码查询
+        if sector_code:
+            # 如果板块代码是BKxxxx.DC格式，通过代码反查名称
+            from utils.sector_code_mapper import get_sector_name
+            resolved_name = get_sector_name(sector_code)
+            if resolved_name:
+                sector_name = resolved_name
+                self.logger.info(f"通过板块代码 {sector_code} 获取板块名称: {sector_name}")
+            else:
+                # 如果没有找到对应的名称，使用代码作为名称
+                sector_name = sector_code
+                self.logger.warning(f"未找到板块代码 {sector_code} 对应的名称，使用代码查询")
         
         # 添加板块名称映射
         from utils.sector_name_mapper import map_sector_name
@@ -1179,8 +1194,15 @@ class SQLAgentModular:
         
         # 查询板块主力资金数据（tu_moneyflow_ind_dc表存储的是板块级别数据）
         sql = SQLTemplates.SECTOR_MONEY_FLOW
+        
+        # 检查是否已经包含板块后缀
+        if not sector_name.endswith('板块'):
+            query_sector_name = sector_name + '板块'
+        else:
+            query_sector_name = sector_name
+            
         result = self.mysql_connector.execute_query(sql, {
-            'sector_name': sector_name + '板块',  # 数据库中可能存储为"银行板块"
+            'sector_name': query_sector_name,
             'trade_date': trade_date
         })
         

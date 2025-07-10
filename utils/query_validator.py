@@ -451,6 +451,42 @@ class QueryValidator:
         
         return base_message
     
+    def validate_money_flow_params(self, params: ExtractedParams) -> ValidationResult:
+        """Money Flow Agent专用的参数验证"""
+        result = ValidationResult(is_valid=True)
+        
+        # 1. 必须有股票或板块
+        if not params.stocks and not params.sector:
+            result.is_valid = False
+            result.error_code = "MISSING_TARGET"
+            result.error_detail = {
+                "message": "资金流向分析需要指定股票或板块名称"
+            }
+            return result
+        
+        # 2. 板块查询必须包含完整的"板块"后缀
+        if params.sector and not params.sector.endswith("板块"):
+            # 自动添加板块后缀
+            params.sector = params.sector + "板块"
+            result.add_warning(f"已自动添加板块后缀: {params.sector}")
+        
+        # 3. 非标准资金术语检查
+        non_standard_terms = {
+            '机构资金': '超大单资金',
+            '大资金': '主力资金',
+            '游资': '主力资金',
+            '散户资金': '小单资金',
+            '散户': '小单资金',
+            '庄家': '主力资金',
+            '热钱': '主力资金'
+        }
+        
+        for term, standard in non_standard_terms.items():
+            if term in params.raw_query:
+                result.add_warning(f"建议使用标准术语'{standard}'替代'{term}'")
+        
+        return result
+    
     def validate_enhanced(self, params: Any, template: Any) -> 'ValidationResult':
         """增强的验证方法"""
         self.logger.info(f"执行增强验证 - 查询: {params.raw_query}")

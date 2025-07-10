@@ -15,10 +15,12 @@ from langchain_openai import ChatOpenAI
 
 from database.mysql_connector import MySQLConnector
 from utils.money_flow_analyzer import MoneyFlowAnalyzer, format_money_flow_report
+from utils.sector_money_flow_analyzer import SectorMoneyFlowAnalyzer
 from utils.logger import setup_logger
 from config.settings import settings
 from utils.schema_knowledge_base import schema_kb
 from utils.unified_stock_validator import validate_stock_input
+from utils.unified_sector_validator import extract_sector
 
 
 class MoneyFlowAgent:
@@ -59,6 +61,7 @@ class MoneyFlowAgent:
         """初始化资金流向分析Agent"""
         self.mysql_conn = mysql_connector or MySQLConnector()
         self.money_flow_analyzer = MoneyFlowAnalyzer(self.mysql_conn)
+        self.sector_money_flow_analyzer = SectorMoneyFlowAnalyzer()
         self.logger = setup_logger("money_flow_agent")
         
         # 初始化LLM（使用ChatOpenAI，与其他Agent保持一致）
@@ -92,7 +95,21 @@ class MoneyFlowAgent:
             r'资金.*流向.*分析',
             r'机构.*行为|主力.*行为',
             r'买入.*卖出|流入.*流出',
-            r'散户.*机构|个人.*机构'
+            r'散户.*机构|个人.*机构',
+            r'资金.*分析|资金.*对比|资金.*研究',
+            r'.*vs.*资金|.*VS.*资金',
+            r'.*对比.*资金|.*比较.*资金',
+            # 添加非标准术语的模式
+            r'热钱|游资|庄家|聪明钱|活跃资金',
+            r'散户资金|小散|韭菜',
+            r'大户|中户|小户',
+            # 添加行为动向模式
+            r'动向|趋势|走势|意味|预测|未来',
+            r'.*资金.*趋势|.*资金.*动向|.*资金.*走势',
+            r'.*行为.*分析|.*意图.*分析',
+            # 添加行为模式关键词
+            r'洗盘|吸筹|建仓|减仓|出货|控盘',
+            r'.*迹象|.*行为|.*程度'
         ]
         
         # 创建分析提示模板
@@ -292,7 +309,55 @@ class MoneyFlowAgent:
                     'money_flow_data': None
                 }
             
-            # 早期股票实体验证（使用标准化后的查询）
+            # 先检查是否是板块查询
+            sector_info = extract_sector(standardized_question)
+            
+            if sector_info:
+                # 这是板块查询
+                sector_name, sector_code = sector_info
+                self.logger.info(f"识别为板块查询: {sector_name} ({sector_code})")
+                
+                # 提取分析周期
+                days = self.extract_analysis_period(question)
+                
+                # 执行板块资金流向分析
+                try:
+                    # 移除"板块"后缀传给分析器
+                    clean_sector_name = sector_name.replace('板块', '')
+                    sector_result = self.sector_money_flow_analyzer.analyze_sector_money_flow(
+                        clean_sector_name, days
+                    )
+                    
+                    # 格式化板块分析报告
+                    final_answer = self._format_sector_money_flow_report(sector_result)
+                    
+                    # 如果有术语转换，添加提示
+                    if hints:
+                        hint_text = "\n💡 术语提示：" + "；".join(hints)
+                        final_answer = hint_text + "\n\n" + final_answer
+                    
+                    return {
+                        'success': True,
+                        'result': final_answer,
+                        'answer': final_answer,
+                        'money_flow_data': sector_result,
+                        'query_type': 'sector_money_flow',
+                        'sector_name': sector_name,
+                        'sector_code': sector_code,
+                        'analysis_period': days,
+                        'term_hints': hints,
+                        'error': None
+                    }
+                except Exception as e:
+                    self.logger.error(f"板块资金流向分析失败: {e}")
+                    return {
+                        'success': False,
+                        'error': f"板块资金流向分析失败: {str(e)}",
+                        'answer': None,
+                        'money_flow_data': None
+                    }
+            
+            # 不是板块查询，进行股票验证
             success, ts_code, error_response = validate_stock_input(standardized_question)
             
             if not success:
@@ -362,6 +427,104 @@ class MoneyFlowAgent:
                 'answer': None,
                 'money_flow_data': None
             }
+    
+    def _format_sector_money_flow_report(self, sector_result: Any) -> str:
+        """格式化板块资金流向报告"""
+        try:
+            # 处理不同类型的结果
+            if hasattr(sector_result, '__dict__'):
+                # 数据类对象，转换为字典
+                data = vars(sector_result)
+            elif isinstance(sector_result, dict) and 'result' in sector_result:
+                data = sector_result['result']
+            else:
+                data = sector_result
+            
+            # 构建报告
+            report = f"### {data.get('sector_name', '未知板块')}（{data.get('sector_code', '')}）板块资金流向分析报告\n\n"
+            
+            # 板块概况
+            report += f"#### 1. 板块资金流向概况 ⭐⭐⭐\n"
+            report += f"- **分析周期**: {data.get('analysis_period', '30天')}\n"
+            report += f"- **板块排名**: 第{data.get('rank', 'N/A')}名\n"
+            report += f"- **总净流入**: {data.get('total_net_flow', 0):,.0f}万元\n"
+            report += f"- **日均净流入**: {data.get('avg_daily_net_flow', 0):,.0f}万元\n"
+            report += f"- **流向趋势**: {data.get('flow_trend', '未知')}\n"
+            report += f"- **资金强度**: {data.get('flow_strength', 0):.1%}\n"
+            report += f"- **一致性**: {data.get('flow_consistency', 0):.1%}\n\n"
+            
+            # 板块内个股表现
+            report += f"#### 2. 板块内个股表现 ⭐⭐\n"
+            report += f"- **板块涨跌幅**: {data.get('sector_change_pct', 0):+.2f}%\n"
+            report += f"- **个股平均涨幅**: {data.get('avg_stock_change', 0):+.2f}%\n"
+            report += f"- **板块股票总数**: {data.get('total_stocks', 0)}只\n"
+            report += f"- **净流入个股**: {data.get('inflow_stocks', 0)}只\n"
+            report += f"- **净流出个股**: {data.get('outflow_stocks', 0)}只\n\n"
+            
+            # 资金分布
+            report += f"#### 3. 资金分布详情 ⭐⭐\n"
+            report += f"- **超大单**: {data.get('super_large_net_flow', 0):+,.0f}万元\n"
+            report += f"- **大单**: {data.get('large_net_flow', 0):+,.0f}万元\n"
+            report += f"- **中单**: {data.get('medium_net_flow', 0):+,.0f}万元\n"
+            report += f"- **小单**: {data.get('small_net_flow', 0):+,.0f}万元\n\n"
+            
+            # 龙头股票
+            if data.get('leader_stocks'):
+                report += f"#### 4. 板块龙头股表现 ⭐⭐⭐\n"
+                for i, stock in enumerate(data['leader_stocks'][:5], 1):
+                    report += f"{i}. **{stock.get('name', '')}** ({stock.get('ts_code', '')})\n"
+                    report += f"   - 主力净流入: {stock.get('main_net_flow', 0):+,.0f}万元\n"
+                    report += f"   - 涨跌幅: {stock.get('change_pct', 0):+.2f}%\n"
+                    report += f"   - 资金流向强度: {stock.get('flow_strength', 0):.1%}\n"
+                report += "\n"
+            
+            # 分析建议
+            report += f"#### 5. 综合分析建议 ⭐⭐⭐\n"
+            report += self._generate_sector_suggestion(data)
+            
+            return report
+            
+        except Exception as e:
+            self.logger.error(f"格式化板块资金流向报告失败: {e}")
+            return f"板块资金流向分析报告生成失败: {str(e)}"
+    
+    def _generate_sector_suggestion(self, data: Dict[str, Any]) -> str:
+        """生成板块投资建议"""
+        suggestions = []
+        
+        # 基于净流入判断
+        total_flow = data.get('total_net_flow', 0)
+        if total_flow > 100000:  # 10亿以上
+            suggestions.append("- **资金态度**: 板块获得大额资金净流入，市场关注度高")
+        elif total_flow > 0:
+            suggestions.append("- **资金态度**: 板块资金温和流入，市场情绪偏正面")
+        elif total_flow > -100000:
+            suggestions.append("- **资金态度**: 板块资金小幅流出，市场观望情绪浓")
+        else:
+            suggestions.append("- **资金态度**: 板块资金大幅流出，需谨慎观察")
+        
+        # 基于趋势判断
+        trend = data.get('flow_trend', '')
+        if '持续流入' in trend:
+            suggestions.append("- **趋势判断**: 资金持续流入，板块处于强势状态")
+        elif '持续流出' in trend:
+            suggestions.append("- **趋势判断**: 资金持续流出，板块承压明显")
+        else:
+            suggestions.append("- **趋势判断**: 资金流向震荡，板块方向不明")
+        
+        # 基于一致性判断
+        consistency = data.get('flow_consistency', 0)
+        if consistency > 0.7:
+            suggestions.append("- **一致性评价**: 板块内个股资金流向高度一致，板块效应强")
+        elif consistency > 0.5:
+            suggestions.append("- **一致性评价**: 板块内个股表现分化，需精选个股")
+        else:
+            suggestions.append("- **一致性评价**: 板块内个股严重分化，不宜板块性操作")
+        
+        # 风险提示
+        suggestions.append("\n**风险提示**: 板块资金流向仅供参考，投资需结合基本面和技术面综合判断")
+        
+        return "\n".join(suggestions)
     
     def get_stats(self) -> Dict[str, Any]:
         """获取Agent统计信息"""

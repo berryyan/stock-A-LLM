@@ -73,8 +73,15 @@ class ParameterExtractor:
             
             # 根据模板需求提取相应参数
             if template:
+                # Money Flow查询需要同时尝试提取股票和板块
+                if template.type == TemplateType.MONEY_FLOW:
+                    # 先尝试提取板块信息
+                    self._extract_sector_or_industry(cleaned_query, params)
+                    # 如果没有板块，尝试提取股票
+                    if not params.sector:
+                        self._extract_stocks(cleaned_query, params, template)
                 # 板块查询的特殊处理 - 先提取板块信息
-                if template.name and "板块" in template.name:
+                elif template.name and "板块" in template.name:
                     self._extract_sector_or_industry(cleaned_query, params)
                     # 板块查询不需要提取股票
                     
@@ -101,7 +108,8 @@ class ParameterExtractor:
                     self._extract_metrics(cleaned_query, params, template.required_fields)
             else:
                 # 没有模板时，尝试提取所有可能的参数
-                self._extract_stocks(cleaned_query, params, None)
+                # 注意：股票提取应该使用原始查询，而不是cleaned_query
+                self._extract_stocks(query, params, None)  # 使用原始query
                 self._extract_date(cleaned_query, params)
                 self._extract_date_range(cleaned_query, params)
                 self._extract_limit(cleaned_query, params)
@@ -907,34 +915,35 @@ class ParameterExtractor:
         
     def _extract_sector_or_industry(self, query: str, params: ExtractedParams) -> None:
         """提取板块或行业信息"""
-        # 板块关键词
-        sector_pattern = r'([\u4e00-\u9fa5]+)(板块|行业|概念)'
-        match = re.search(sector_pattern, query)
+        # 使用新的统一板块验证器
+        from utils.unified_sector_validator import extract_sector, extract_multiple_sectors
         
-        if match:
-            sector_name = match.group(1)
-            if match.group(2) == '板块':
+        # 首先尝试提取多个板块（用于对比查询）
+        sectors = extract_multiple_sectors(query)
+        
+        if len(sectors) > 1:
+            # 多板块查询，暂时只取第一个
+            self.logger.info(f"检测到多板块查询，共{len(sectors)}个板块")
+            sector_name, sector_code = sectors[0]
+            params.sector = sector_name
+            params.sector_code = sector_code
+            self.logger.info(f"使用第一个板块: {sector_name} ({sector_code})")
+        elif len(sectors) == 1:
+            # 单板块查询
+            sector_name, sector_code = sectors[0]
+            params.sector = sector_name
+            params.sector_code = sector_code
+            self.logger.info(f"提取到板块: {sector_name} ({sector_code})")
+        else:
+            # 没有提取到板块，使用原方法尝试提取
+            result = extract_sector(query)
+            if result:
+                sector_name, sector_code = result
                 params.sector = sector_name
-                self.logger.info(f"提取到板块: {sector_name}")
-                
-                # 尝试获取板块代码
-                try:
-                    from utils.sector_code_mapper import get_sector_code
-                    sector_code = get_sector_code(sector_name)
-                    if sector_code:
-                        # 在params中添加板块代码字段
-                        if not hasattr(params, 'sector_code'):
-                            params.sector_code = sector_code
-                        else:
-                            params.sector_code = sector_code
-                        self.logger.info(f"板块代码映射: {sector_name} -> {sector_code}")
-                    else:
-                        self.logger.warning(f"未找到板块代码映射: {sector_name}")
-                except Exception as e:
-                    self.logger.warning(f"板块代码映射失败: {e}")
+                params.sector_code = sector_code
+                self.logger.info(f"提取到板块: {sector_name} ({sector_code})")
             else:
-                params.industry = sector_name
-                self.logger.info(f"提取到行业: {sector_name}")
+                self.logger.debug("未提取到板块信息")
     
     def _extract_period(self, query: str, params: ExtractedParams) -> None:
         """提取报告期"""
