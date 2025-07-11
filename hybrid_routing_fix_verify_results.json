@@ -1,0 +1,35 @@
+{
+  "total": 4,
+  "passed": 3,
+  "failed": 1,
+  "details": [
+    {
+      "query": "贵州茅台的股价和主要业务",
+      "routing_type": "PARALLEL",
+      "expected_type": "PARALLEL",
+      "passed": true,
+      "error": null
+    },
+    {
+      "query": "万科A的财务状况和最新公告",
+      "routing_type": "PARALLEL",
+      "expected_type": "PARALLEL",
+      "passed": false,
+      "error": null
+    },
+    {
+      "query": "比亚迪的股价及其资金流向",
+      "routing_type": "PARALLEL",
+      "expected_type": "PARALLEL",
+      "passed": true,
+      "error": null
+    },
+    {
+      "query": "宁德时代的财务健康度以及发展战略",
+      "routing_type": "PARALLEL",
+      "expected_type": "PARALLEL",
+      "passed": true,
+      "error": null
+    }
+  ]
+}
