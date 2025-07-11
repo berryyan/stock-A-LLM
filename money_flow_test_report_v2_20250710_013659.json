@@ -1,0 +1,452 @@
+{
+  "summary": {
+    "total": 35,
+    "passed": 31,
+    "failed": 4,
+    "pass_rate": 88.57142857142857
+  },
+  "categories": {
+    "1. 深度分析查询": {
+      "total": 9,
+      "passed": 8
+    },
+    "2. SQL路由识别": {
+      "total": 9,
+      "passed": 9
+    },
+    "3. 术语标准化": {
+      "total": 5,
+      "passed": 4
+    },
+    "4. 边界测试": {
+      "total": 5,
+      "passed": 4
+    },
+    "5. 错误处理": {
+      "total": 7,
+      "passed": 6
+    }
+  },
+  "details": [
+    {
+      "category": "1. 深度分析查询",
+      "test_name": "分析关键词开头",
+      "query": "分析贵州茅台的资金流向",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.238925,
+      "error": null,
+      "result_preview": "### 贵州茅台（600519.SH）资金流向深度分析\n\n### 600519.SH 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: -355767万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 59.1%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +6791万元\n- **买入占比**: 72.7%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 机构积极建仓\n- **主导程度**: 57.8%\n\n#### 3. 四级资金分布\n- **超大单**: +6791万 "
+    },
+    {
+      "category": "1. 深度分析查询",
+      "test_name": "评估关键词",
+      "query": "评估平安银行的主力资金",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.020471,
+      "error": null,
+      "result_preview": "### 平安银行（000001.SZ）资金流向深度分析\n\n### 000001.SZ 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: +51315万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 54.5%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +39266万元\n- **买入占比**: 50.0%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 行为模式不明\n- **主导程度**: 88.1%\n\n#### 3. 四级资金分布\n- **超大单**: +39266万"
+    },
+    {
+      "category": "1. 深度分析查询",
+      "test_name": "研究关键词",
+      "query": "研究宁德时代的资金趋势",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.023482,
+      "error": null,
+      "result_preview": "### 宁德时代（300750.SZ）资金流向深度分析\n\n### 300750.SZ 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: +170949万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 50.0%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +236783万元\n- **买入占比**: 59.1%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 行为模式不明\n- **主导程度**: 78.7%\n\n#### 3. 四级资金分布\n- **超大单**: +2367"
+    },
+    {
+      "category": "1. 深度分析查询",
+      "test_name": "行为模式-建仓",
+      "query": "贵州茅台主力是否在建仓",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.034304,
+      "error": null,
+      "result_preview": "[\"'主力'已转换为标准术语'主力资金'\"]\n\n### 贵州茅台（600519.SH）资金流向深度分析\n\n### 600519.SH 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: -355767万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 59.1%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +6791万元\n- **买入占比**: 72.7%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 机构积极建仓\n- **主导程度**: 57.8%\n\n#### 3. 四"
+    },
+    {
+      "category": "1. 深度分析查询",
+      "test_name": "行为模式-洗盘",
+      "query": "平安银行有洗盘迹象吗",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.01796,
+      "error": null,
+      "result_preview": "### 平安银行（000001.SZ）资金流向深度分析\n\n### 000001.SZ 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: +51315万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 54.5%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +39266万元\n- **买入占比**: 50.0%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 行为模式不明\n- **主导程度**: 88.1%\n\n#### 3. 四级资金分布\n- **超大单**: +39266万"
+    },
+    {
+      "category": "1. 深度分析查询",
+      "test_name": "行为模式-出货",
+      "query": "万科A主力在出货吗",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.013249,
+      "error": null,
+      "result_preview": "[\"'主力'已转换为标准术语'主力资金'\"]\n\n### 万科A（000002.SZ）资金流向深度分析\n\n### 000002.SZ 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: -60605万元\n- **流向趋势**: 持续净流出\n- **资金强度**: 强势流动\n- **一致性**: 77.3%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: -13032万元\n- **买入占比**: 31.8%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 机构减仓离场\n- **主导程度**: 63.9%\n\n#### 3. 四"
+    },
+    {
+      "category": "1. 深度分析查询",
+      "test_name": "深度分析需求",
+      "query": "如何看待茅台的资金流出",
+      "expected_success": true,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": false,
+      "elapsed_time": 0.001664,
+      "error": "请使用完整公司名称，如：贵州茅台",
+      "result_preview": null
+    },
+    {
+      "category": "1. 深度分析查询",
+      "test_name": "趋势分析",
+      "query": "贵州茅台资金流向趋势如何",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.033788,
+      "error": null,
+      "result_preview": "### 贵州茅台（600519.SH）资金流向深度分析\n\n### 600519.SH 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: -355767万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 59.1%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +6791万元\n- **买入占比**: 72.7%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 机构积极建仓\n- **主导程度**: 57.8%\n\n#### 3. 四级资金分布\n- **超大单**: +6791万 "
+    },
+    {
+      "category": "1. 深度分析查询",
+      "test_name": "预测分析",
+      "query": "预测平安银行未来资金走势",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.020952,
+      "error": null,
+      "result_preview": "### 平安银行（000001.SZ）资金流向深度分析\n\n### 000001.SZ 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: +51315万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 54.5%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +39266万元\n- **买入占比**: 50.0%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 行为模式不明\n- **主导程度**: 88.1%\n\n#### 3. 四级资金分布\n- **超大单**: +39266万"
+    },
+    {
+      "category": "2. SQL路由识别",
+      "test_name": "排名查询",
+      "query": "主力净流入排名前10",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": true,
+      "passed": true,
+      "elapsed_time": 0.002677,
+      "error": "该查询应该由SQL Agent处理，请检查路由配置",
+      "result_preview": null
+    },
+    {
+      "category": "2. SQL路由识别",
+      "test_name": "TOP查询",
+      "query": "超大单净流出TOP20",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": true,
+      "passed": true,
+      "elapsed_time": 0.001051,
+      "error": "该查询应该由SQL Agent处理，请检查路由配置",
+      "result_preview": null
+    },
+    {
+      "category": "2. SQL路由识别",
+      "test_name": "排行查询",
+      "query": "主力资金排行",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": true,
+      "passed": true,
+      "elapsed_time": 0.000895,
+      "error": "该查询应该由SQL Agent处理，请检查路由配置",
+      "result_preview": null
+    },
+    {
+      "category": "2. SQL路由识别",
+      "test_name": "个股简单查询",
+      "query": "贵州茅台的主力资金",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": true,
+      "passed": true,
+      "elapsed_time": 0.001302,
+      "error": "该查询应该由SQL Agent处理，请检查路由配置",
+      "result_preview": null
+    },
+    {
+      "category": "2. SQL路由识别",
+      "test_name": "指定日期查询",
+      "query": "平安银行今天的超大单",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": true,
+      "passed": true,
+      "elapsed_time": 0.020014,
+      "error": "该查询应该由SQL Agent处理，请检查路由配置",
+      "result_preview": null
+    },
+    {
+      "category": "2. SQL路由识别",
+      "test_name": "大单查询",
+      "query": "万科A的大单资金",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": true,
+      "passed": true,
+      "elapsed_time": 0.001411,
+      "error": "该查询应该由SQL Agent处理，请检查路由配置",
+      "result_preview": null
+    },
+    {
+      "category": "2. SQL路由识别",
+      "test_name": "板块简单查询",
+      "query": "银行板块的主力资金",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": true,
+      "passed": true,
+      "elapsed_time": 0.132505,
+      "error": "该查询应该由SQL Agent处理，请检查路由配置",
+      "result_preview": null
+    },
+    {
+      "category": "2. SQL路由识别",
+      "test_name": "板块查询-无的",
+      "query": "新能源板块主力资金",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": true,
+      "passed": true,
+      "elapsed_time": 0.001459,
+      "error": "该查询应该由SQL Agent处理，请检查路由配置",
+      "result_preview": null
+    },
+    {
+      "category": "2. SQL路由识别",
+      "test_name": "板块资金查询",
+      "query": "白酒板块资金",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": true,
+      "passed": true,
+      "elapsed_time": 0.00131,
+      "error": "该查询应该由SQL Agent处理，请检查路由配置",
+      "result_preview": null
+    },
+    {
+      "category": "3. 术语标准化",
+      "test_name": "机构→超大单",
+      "query": "分析贵州茅台的机构资金",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.014941,
+      "error": null,
+      "result_preview": "[\"'机构资金'已转换为标准术语'超大单'\"]\n\n### 贵州茅台（600519.SH）资金流向深度分析\n\n### 600519.SH 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: -355767万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 59.1%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +6791万元\n- **买入占比**: 72.7%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 机构积极建仓\n- **主导程度**: 57.8%\n\n#### 3. "
+    },
+    {
+      "category": "3. 术语标准化",
+      "test_name": "游资→主力",
+      "query": "评估平安银行的游资行为",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.013485,
+      "error": null,
+      "result_preview": "[\"'游资'已转换为标准术语'主力资金'\"]\n\n### 平安银行（000001.SZ）资金流向深度分析\n\n### 000001.SZ 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: +51315万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 54.5%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +39266万元\n- **买入占比**: 50.0%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 行为模式不明\n- **主导程度**: 88.1%\n\n#### 3. 四"
+    },
+    {
+      "category": "3. 术语标准化",
+      "test_name": "散户→小单",
+      "query": "研究万科A的散户资金",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.013952,
+      "error": null,
+      "result_preview": "[\"'散户资金'已转换为标准术语'小单'\"]\n\n### 万科A（000002.SZ）资金流向深度分析\n\n### 000002.SZ 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: -60605万元\n- **流向趋势**: 持续净流出\n- **资金强度**: 强势流动\n- **一致性**: 77.3%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: -13032万元\n- **买入占比**: 31.8%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 机构减仓离场\n- **主导程度**: 63.9%\n\n#### 3. 四"
+    },
+    {
+      "category": "3. 术语标准化",
+      "test_name": "大资金→主力",
+      "query": "分析茅台的大资金流向",
+      "expected_success": true,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": false,
+      "elapsed_time": 0.001942,
+      "error": "请使用完整公司名称，如：贵州茅台",
+      "result_preview": null
+    },
+    {
+      "category": "3. 术语标准化",
+      "test_name": "热钱→主力",
+      "query": "宁德时代的热钱动向分析",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.019139,
+      "error": null,
+      "result_preview": "[\"'热钱'已转换为标准术语'主力资金'\"]\n\n### 宁德时代（300750.SZ）资金流向深度分析\n\n### 300750.SZ 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: +170949万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 50.0%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +236783万元\n- **买入占比**: 59.1%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 行为模式不明\n- **主导程度**: 78.7%\n\n#### 3."
+    },
+    {
+      "category": "4. 边界测试",
+      "test_name": "板块深度分析-暂不支持",
+      "query": "分析银行板块的资金流向",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.002197,
+      "error": "板块深度分析功能正在开发中，请使用个股分析",
+      "result_preview": null
+    },
+    {
+      "category": "4. 边界测试",
+      "test_name": "板块趋势分析-暂不支持",
+      "query": "评估新能源板块的资金趋势",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.001717,
+      "error": "板块深度分析功能正在开发中，请使用个股分析",
+      "result_preview": null
+    },
+    {
+      "category": "4. 边界测试",
+      "test_name": "双股对比",
+      "query": "分析贵州茅台和五粮液的资金对比",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.026752,
+      "error": null,
+      "result_preview": "### 贵州茅台（600519.SH）资金流向深度分析\n\n### 600519.SH 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: -355767万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 59.1%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +6791万元\n- **买入占比**: 72.7%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 机构积极建仓\n- **主导程度**: 57.8%\n\n#### 3. 四级资金分布\n- **超大单**: +6791万 "
+    },
+    {
+      "category": "4. 边界测试",
+      "test_name": "指定天数",
+      "query": "分析贵州茅台最近5天的资金流向",
+      "expected_success": true,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.038779,
+      "error": null,
+      "result_preview": "### 贵州茅台（600519.SH）资金流向深度分析\n\n### 600519.SH 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: -355767万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 59.1%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +6791万元\n- **买入占比**: 72.7%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 机构积极建仓\n- **主导程度**: 57.8%\n\n#### 3. 四级资金分布\n- **超大单**: +6791万 "
+    },
+    {
+      "category": "4. 边界测试",
+      "test_name": "月度分析",
+      "query": "评估平安银行本月的主力行为",
+      "expected_success": true,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": false,
+      "elapsed_time": 0.001961,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）",
+      "result_preview": null
+    },
+    {
+      "category": "5. 错误处理",
+      "test_name": "空查询",
+      "query": "",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.000154,
+      "error": "查询过程中出现未知错误",
+      "result_preview": null
+    },
+    {
+      "category": "5. 错误处理",
+      "test_name": "空白查询",
+      "query": "   ",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.000132,
+      "error": "查询过程中出现未知错误",
+      "result_preview": null
+    },
+    {
+      "category": "5. 错误处理",
+      "test_name": "非资金查询",
+      "query": "分析天气如何",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.000957,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）",
+      "result_preview": null
+    },
+    {
+      "category": "5. 错误处理",
+      "test_name": "无股票查询",
+      "query": "研究经济形势",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.000842,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）",
+      "result_preview": null
+    },
+    {
+      "category": "5. 错误处理",
+      "test_name": "股票简称",
+      "query": "分析茅台的资金流向",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.001331,
+      "error": "请使用完整公司名称，如：贵州茅台",
+      "result_preview": null
+    },
+    {
+      "category": "5. 错误处理",
+      "test_name": "非标准名称",
+      "query": "评估中国平安的主力资金",
+      "expected_success": false,
+      "actual_success": true,
+      "should_route_to_sql": false,
+      "passed": false,
+      "elapsed_time": 0.016243,
+      "error": null,
+      "result_preview": "### 中国平安（601318.SH）资金流向深度分析\n\n### 601318.SH 资金流向分析报告\n\n#### 1. 主力资金流向 ⭐⭐⭐\n- **净流向**: +126851万元\n- **流向趋势**: 相对平衡\n- **资金强度**: 强势流动\n- **一致性**: 59.1%\n\n#### 2. 超大单资金行为 ⭐⭐\n- **超大单净流向**: +33798万元\n- **买入占比**: 63.6%\n- **交易活跃度**: 22天有显著超大单交易\n- **行为判断**: 行为模式不明\n- **主导程度**: 69.1%\n\n#### 3. 四级资金分布\n- **超大单**: +33798"
+    },
+    {
+      "category": "5. 错误处理",
+      "test_name": "无效代码",
+      "query": "分析123456的资金流向",
+      "expected_success": false,
+      "actual_success": false,
+      "should_route_to_sql": false,
+      "passed": true,
+      "elapsed_time": 0.006469,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）",
+      "result_preview": null
+    }
+  ]
+}

@@ -32,9 +32,14 @@ class SectorCodeMapper:
         self.mysql = MySQLConnector()
         self.cache_ttl = timedelta(minutes=cache_ttl_minutes)
         
-        # 缓存数据
-        self._cache: Dict[str, str] = {}  # name -> ts_code
-        self._reverse_cache: Dict[str, str] = {}  # ts_code -> name
+        # 缓存数据 - 增强版，包含content_type
+        self._cache: Dict[str, Dict[str, str]] = {}  # name -> {ts_code, content_type}
+        self._reverse_cache: Dict[str, Dict[str, str]] = {}  # ts_code -> {name, content_type}
+        self._type_cache: Dict[str, List[Dict[str, str]]] = {  # content_type -> [{name, ts_code}]
+            '行业': [],
+            '概念': [],
+            '地域': []
+        }
         self._cache_time: Optional[datetime] = None
         self._cache_lock = threading.Lock()
         
@@ -46,12 +51,11 @@ class SectorCodeMapper:
         try:
             self.logger.info("开始刷新板块代码缓存")
             
-            # 查询所有板块信息
+            # 查询所有板块信息（包括行业、概念、地域）
             query = """
-            SELECT DISTINCT ts_code, name 
+            SELECT DISTINCT ts_code, name, content_type
             FROM tu_moneyflow_ind_dc 
-            WHERE content_type = '行业' 
-            AND ts_code IS NOT NULL 
+            WHERE ts_code IS NOT NULL 
             AND name IS NOT NULL
             """
             
@@ -60,24 +64,44 @@ class SectorCodeMapper:
             # 构建缓存
             new_cache = {}
             new_reverse_cache = {}
+            new_type_cache = {'行业': [], '概念': [], '地域': []}
             
             for row in result:
                 ts_code = row['ts_code']
                 name = row['name']
+                content_type = row['content_type']
                 
-                # 正向映射：名称 -> 代码
-                new_cache[name] = ts_code
+                # 正向映射：名称 -> {代码, 类型}
+                new_cache[name] = {
+                    'ts_code': ts_code,
+                    'content_type': content_type
+                }
                 
-                # 反向映射：代码 -> 名称
-                new_reverse_cache[ts_code] = name
+                # 反向映射：代码 -> {名称, 类型}
+                new_reverse_cache[ts_code] = {
+                    'name': name,
+                    'content_type': content_type
+                }
+                
+                # 类型缓存
+                if content_type in new_type_cache:
+                    new_type_cache[content_type].append({
+                        'name': name,
+                        'ts_code': ts_code
+                    })
             
             # 原子更新缓存
             with self._cache_lock:
                 self._cache = new_cache
                 self._reverse_cache = new_reverse_cache
+                self._type_cache = new_type_cache
                 self._cache_time = datetime.now()
             
-            self.logger.info(f"板块代码缓存刷新完成，共缓存{len(new_cache)}个板块映射")
+            # 统计信息
+            total_count = len(new_cache)
+            type_counts = {t: len(items) for t, items in new_type_cache.items()}
+            self.logger.info(f"板块代码缓存刷新完成，共缓存{total_count}个板块映射")
+            self.logger.info(f"板块类型分布: {type_counts}")
             
         except Exception as e:
             self.logger.error(f"刷新板块缓存失败: {e}")
@@ -105,7 +129,8 @@ class SectorCodeMapper:
         
         # 精确匹配
         with self._cache_lock:
-            return self._cache.get(sector_name)
+            sector_info = self._cache.get(sector_name)
+            return sector_info['ts_code'] if sector_info else None
     
     def get_sector_name(self, sector_code: str) -> Optional[str]:
         """
@@ -122,14 +147,15 @@ class SectorCodeMapper:
             self._refresh_cache()
         
         with self._cache_lock:
-            return self._reverse_cache.get(sector_code)
+            sector_info = self._reverse_cache.get(sector_code)
+            return sector_info['name'] if sector_info else None
     
     def get_all_sectors(self) -> List[Dict[str, str]]:
         """
         获取所有板块信息
         
         Returns:
-            板块列表，每项包含 code 和 name
+            板块列表，每项包含 code、name 和 content_type
         """
         # 检查缓存有效性
         if not self._check_cache_validity():
@@ -137,9 +163,65 @@ class SectorCodeMapper:
         
         with self._cache_lock:
             return [
-                {"code": code, "name": name} 
-                for name, code in self._cache.items()
+                {
+                    "code": info['ts_code'], 
+                    "name": name,
+                    "content_type": info['content_type']
+                } 
+                for name, info in self._cache.items()
             ]
+    
+    def get_sector_info(self, sector_name_or_code: str) -> Optional[Dict[str, str]]:
+        """
+        获取板块的完整信息
+        
+        Args:
+            sector_name_or_code: 板块名称或代码
+            
+        Returns:
+            包含name、ts_code、content_type的字典，或None
+        """
+        # 检查缓存有效性
+        if not self._check_cache_validity():
+            self._refresh_cache()
+        
+        with self._cache_lock:
+            # 先尝试作为名称查询
+            if sector_name_or_code in self._cache:
+                info = self._cache[sector_name_or_code]
+                return {
+                    'name': sector_name_or_code,
+                    'ts_code': info['ts_code'],
+                    'content_type': info['content_type']
+                }
+            
+            # 再尝试作为代码查询
+            if sector_name_or_code in self._reverse_cache:
+                info = self._reverse_cache[sector_name_or_code]
+                return {
+                    'name': info['name'],
+                    'ts_code': sector_name_or_code,
+                    'content_type': info['content_type']
+                }
+            
+            return None
+    
+    def get_sectors_by_type(self, content_type: str) -> List[Dict[str, str]]:
+        """
+        根据类型获取板块列表
+        
+        Args:
+            content_type: 板块类型（行业/概念/地域）
+            
+        Returns:
+            该类型的板块列表
+        """
+        # 检查缓存有效性
+        if not self._check_cache_validity():
+            self._refresh_cache()
+        
+        with self._cache_lock:
+            return self._type_cache.get(content_type, []).copy()
     
     def search_sectors(self, keyword: str) -> List[Dict[str, str]]:
         """
@@ -149,17 +231,23 @@ class SectorCodeMapper:
             keyword: 搜索关键词
             
         Returns:
-            匹配的板块列表
+            匹配的板块列表，包含code、name和content_type
         """
         # 检查缓存有效性
         if not self._check_cache_validity():
             self._refresh_cache()
         
+        keyword_lower = keyword.lower()
         results = []
+        
         with self._cache_lock:
-            for name, code in self._cache.items():
-                if keyword in name:
-                    results.append({"code": code, "name": name})
+            for name, info in self._cache.items():
+                if keyword_lower in name.lower():
+                    results.append({
+                        "code": info['ts_code'], 
+                        "name": name,
+                        "content_type": info['content_type']
+                    })
         
         return results
 

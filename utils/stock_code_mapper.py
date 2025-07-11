@@ -87,13 +87,8 @@ class StockCodeMapper:
                 # name映射到ts_code（精确匹配）
                 if name:
                     new_cache[name] = ts_code
-                    # 处理常见简称
-                    # 去除"股份有限公司"等后缀
-                    short_name = name.replace('股份有限公司', '').replace('有限公司', '').replace('集团', '').replace('股份', '')
-                    if short_name != name:
-                        new_cache[short_name] = ts_code
-                    
-                    # 注意：不再支持简称映射，用户必须使用完整股票名称
+                    # 根据设计原则：不再支持任何简称映射
+                    # 用户必须使用完整股票名称
                     # 这是为了避免歧义和错误匹配
                     # 例如："茅台"可能指"贵州茅台"也可能指其他含"茅台"的公司
             
@@ -282,7 +277,7 @@ if __name__ == "__main__":
         "600519",
         "600519.SH", 
         "贵州茅台",
-        "茅台",
+        # "茅台",  # 根据设计原则，不再支持简称
         "000858",
         "五粮液",
         "诺德股份",

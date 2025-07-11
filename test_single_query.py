@@ -1,52 +1,28 @@
-#!/usr/bin/env python3
+#\!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-测试单个查询
-"""
+"""测试单个查询"""
 
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from agents.sql_agent_modular import SQLAgentModular
-import json
+from agents.money_flow_agent import MoneyFlowAgent
 
-
-def main():
-    print("初始化SQL Agent模块化版本...")
-    agent = SQLAgentModular()
+def test_single_query():
+    """测试单个查询"""
+    query = "评估光伏设备板块的资金趋势"
     
-    # 测试市值排名查询
-    query = "市值排名前3"
-    print(f"\n测试查询: {query}")
+    print(f"测试查询: {query}")
     print("="*60)
     
+    agent = MoneyFlowAgent()
     result = agent.query(query)
     
-    print(f"成功: {result.get('success')}")
-    print(f"查询类型: {result.get('query_type', 'unknown')}")
-    
+    print(f"成功: {result.get('success', False)}")
     if result.get('success'):
-        print(f"\n结果:")
-        print(result.get('result'))
+        print(f"结果预览: {result.get('result', '')[:500]}...")
     else:
-        print(f"\n错误: {result.get('error')}")
-        
-    # 测试板块主力资金
-    query2 = "银行板块的主力资金"
-    print(f"\n\n测试查询: {query2}")
-    print("="*60)
-    
-    result2 = agent.query(query2)
-    
-    print(f"成功: {result2.get('success')}")
-    
-    if result2.get('success'):
-        print(f"\n结果:")
-        print(result2.get('result'))
-    else:
-        print(f"\n错误: {result2.get('error')}")
-
+        print(f"错误: {result.get('error', '未知错误')}")
 
 if __name__ == "__main__":
-    main()
+    test_single_query()

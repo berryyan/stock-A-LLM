@@ -1,0 +1,363 @@
+{
+  "test_time": "2025-07-10 02:42:02",
+  "total_tests": 32,
+  "passed_tests": 24,
+  "failed_tests": 8,
+  "pass_rate": "75.0%",
+  "category_stats": {
+    "财务健康度分析": {
+      "total": 4,
+      "passed": 3
+    },
+    "杜邦分析": {
+      "total": 4,
+      "passed": 3
+    },
+    "现金流质量分析": {
+      "total": 4,
+      "passed": 3
+    },
+    "多期财务对比": {
+      "total": 4,
+      "passed": 3
+    },
+    "盈利能力分析": {
+      "total": 4,
+      "passed": 3
+    },
+    "偿债能力分析": {
+      "total": 4,
+      "passed": 3
+    },
+    "运营能力分析": {
+      "total": 4,
+      "passed": 3
+    },
+    "成长能力分析": {
+      "total": 4,
+      "passed": 3
+    }
+  },
+  "test_results": [
+    {
+      "test_id": 1,
+      "category": "财务健康度分析",
+      "test_name": "基础查询",
+      "query": "分析贵州茅台的财务健康度",
+      "passed": false,
+      "elapsed_time": 43.7092170715332,
+      "expected_success": true,
+      "actual_success": true
+    },
+    {
+      "test_id": 2,
+      "category": "财务健康度分析",
+      "test_name": "空查询",
+      "query": "",
+      "passed": true,
+      "elapsed_time": 2.6226043701171875e-06,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 3,
+      "category": "财务健康度分析",
+      "test_name": "股票简称",
+      "query": "茅台的财务健康度",
+      "passed": true,
+      "elapsed_time": 0.002473592758178711,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 4,
+      "category": "财务健康度分析",
+      "test_name": "错误代码",
+      "query": "12345的财务健康度",
+      "passed": true,
+      "elapsed_time": 0.00677490234375,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 5,
+      "category": "杜邦分析",
+      "test_name": "基础查询",
+      "query": "贵州茅台的杜邦分析",
+      "passed": false,
+      "elapsed_time": 0.0017125606536865234,
+      "expected_success": true,
+      "actual_success": false
+    },
+    {
+      "test_id": 6,
+      "category": "杜邦分析",
+      "test_name": "缺少股票",
+      "query": "杜邦分析",
+      "passed": true,
+      "elapsed_time": 0.0011241436004638672,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 7,
+      "category": "杜邦分析",
+      "test_name": "无效股票",
+      "query": "不存在公司的杜邦分析",
+      "passed": true,
+      "elapsed_time": 0.0014834403991699219,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 8,
+      "category": "杜邦分析",
+      "test_name": "小写后缀",
+      "query": "600519.sz的杜邦分析",
+      "passed": true,
+      "elapsed_time": 0.0015997886657714844,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 9,
+      "category": "现金流质量分析",
+      "test_name": "基础查询",
+      "query": "分析万科A的现金流质量",
+      "passed": false,
+      "elapsed_time": 0.0016176700592041016,
+      "expected_success": true,
+      "actual_success": false
+    },
+    {
+      "test_id": 10,
+      "category": "现金流质量分析",
+      "test_name": "缺少股票",
+      "query": "现金流质量",
+      "passed": true,
+      "elapsed_time": 0.001054525375366211,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 11,
+      "category": "现金流质量分析",
+      "test_name": "股票简称",
+      "query": "万科的现金流",
+      "passed": true,
+      "elapsed_time": 0.002209186553955078,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 12,
+      "category": "现金流质量分析",
+      "test_name": "空白查询",
+      "query": "   ",
+      "passed": true,
+      "elapsed_time": 9.5367431640625e-07,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 13,
+      "category": "多期财务对比",
+      "test_name": "同期对比",
+      "query": "贵州茅台2025年一季度与去年同期对比",
+      "passed": false,
+      "elapsed_time": 0.0016987323760986328,
+      "expected_success": true,
+      "actual_success": false
+    },
+    {
+      "test_id": 14,
+      "category": "多期财务对比",
+      "test_name": "缺少股票",
+      "query": "财务对比",
+      "passed": true,
+      "elapsed_time": 0.0010249614715576172,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 15,
+      "category": "多期财务对比",
+      "test_name": "无效代码",
+      "query": "123456最近的对比",
+      "passed": true,
+      "elapsed_time": 0.006089687347412109,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 16,
+      "category": "多期财务对比",
+      "test_name": "股票简称",
+      "query": "茅台对比",
+      "passed": true,
+      "elapsed_time": 0.0018968582153320312,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 17,
+      "category": "盈利能力分析",
+      "test_name": "基础查询",
+      "query": "分析比亚迪的盈利能力",
+      "passed": false,
+      "elapsed_time": 0.0014302730560302734,
+      "expected_success": true,
+      "actual_success": false
+    },
+    {
+      "test_id": 18,
+      "category": "盈利能力分析",
+      "test_name": "缺少股票",
+      "query": "盈利能力",
+      "passed": true,
+      "elapsed_time": 0.0010018348693847656,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 19,
+      "category": "盈利能力分析",
+      "test_name": "歧义股票",
+      "query": "平安的盈利",
+      "passed": true,
+      "elapsed_time": 0.00197601318359375,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 20,
+      "category": "盈利能力分析",
+      "test_name": "小写后缀",
+      "query": "600000.sh盈利",
+      "passed": true,
+      "elapsed_time": 0.0032401084899902344,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 21,
+      "category": "偿债能力分析",
+      "test_name": "基础查询",
+      "query": "分析万科A的偿债能力",
+      "passed": false,
+      "elapsed_time": 0.0014123916625976562,
+      "expected_success": true,
+      "actual_success": false
+    },
+    {
+      "test_id": 22,
+      "category": "偿债能力分析",
+      "test_name": "缺少股票",
+      "query": "偿债能力分析",
+      "passed": true,
+      "elapsed_time": 0.001054525375366211,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 23,
+      "category": "偿债能力分析",
+      "test_name": "股票简称",
+      "query": "建行的偿债",
+      "passed": true,
+      "elapsed_time": 0.001741647720336914,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 24,
+      "category": "偿债能力分析",
+      "test_name": "无效代码",
+      "query": "000000的偿债",
+      "passed": true,
+      "elapsed_time": 0.010840892791748047,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 25,
+      "category": "运营能力分析",
+      "test_name": "基础查询",
+      "query": "分析海尔智家的运营效率",
+      "passed": false,
+      "elapsed_time": 47.227031230926514,
+      "expected_success": true,
+      "actual_success": true
+    },
+    {
+      "test_id": 26,
+      "category": "运营能力分析",
+      "test_name": "缺少股票",
+      "query": "运营效率",
+      "passed": true,
+      "elapsed_time": 0.0012226104736328125,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 27,
+      "category": "运营能力分析",
+      "test_name": "股票简称",
+      "query": "格力的运营",
+      "passed": true,
+      "elapsed_time": 0.0015916824340820312,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 28,
+      "category": "运营能力分析",
+      "test_name": "7位代码",
+      "query": "1234567运营",
+      "passed": true,
+      "elapsed_time": 0.0015857219696044922,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 29,
+      "category": "成长能力分析",
+      "test_name": "基础查询",
+      "query": "分析宁德时代的成长性",
+      "passed": false,
+      "elapsed_time": 0.0022072792053222656,
+      "expected_success": true,
+      "actual_success": false
+    },
+    {
+      "test_id": 30,
+      "category": "成长能力分析",
+      "test_name": "缺少股票",
+      "query": "成长性分析",
+      "passed": true,
+      "elapsed_time": 0.0013451576232910156,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 31,
+      "category": "成长能力分析",
+      "test_name": "非A股",
+      "query": "特斯拉的成长",
+      "passed": true,
+      "elapsed_time": 0.0027167797088623047,
+      "expected_success": false,
+      "actual_success": false
+    },
+    {
+      "test_id": 32,
+      "category": "成长能力分析",
+      "test_name": "错误后缀",
+      "query": "600519.SZ成长",
+      "passed": true,
+      "elapsed_time": 0.0016384124755859375,
+      "expected_success": false,
+      "actual_success": false
+    }
+  ]
+}
