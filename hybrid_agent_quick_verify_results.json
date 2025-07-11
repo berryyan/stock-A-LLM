@@ -1,0 +1,124 @@
+{
+  "total": 13,
+  "passed": 10,
+  "failed": 3,
+  "details": [
+    {
+      "test_name": "股价查询",
+      "query": "贵州茅台的股价是多少",
+      "expected": "SQL",
+      "actual": "SQL",
+      "passed": true,
+      "elapsed": 0.2052631378173828,
+      "error": null
+    },
+    {
+      "test_name": "排名查询",
+      "query": "今天涨幅前10的股票",
+      "expected": "SQL",
+      "actual": "SQL",
+      "passed": true,
+      "elapsed": 0.01609492301940918,
+      "error": null
+    },
+    {
+      "test_name": "成交量查询",
+      "query": "万科A的成交量",
+      "expected": "SQL",
+      "actual": "SQL",
+      "passed": true,
+      "elapsed": 0.01990342140197754,
+      "error": null
+    },
+    {
+      "test_name": "业务查询",
+      "query": "贵州茅台的主要业务是什么",
+      "expected": "RAG",
+      "actual": "RAG",
+      "passed": true,
+      "elapsed": 23.420871257781982,
+      "error": null
+    },
+    {
+      "test_name": "公告查询",
+      "query": "万科最新的公告内容",
+      "expected": "RAG",
+      "actual": "Error",
+      "passed": false,
+      "elapsed": 0.0,
+      "error": "未识别到股票信息"
+    },
+    {
+      "test_name": "财务分析",
+      "query": "分析贵州茅台的财务健康度",
+      "expected": "Financial",
+      "actual": "Financial",
+      "passed": true,
+      "elapsed": 42.18403339385986,
+      "error": null
+    },
+    {
+      "test_name": "杜邦分析",
+      "query": "万科A的杜邦分析",
+      "expected": "Financial",
+      "actual": "Financial",
+      "passed": true,
+      "elapsed": 46.496559619903564,
+      "error": null
+    },
+    {
+      "test_name": "资金流向",
+      "query": "贵州茅台的主力资金流向",
+      "expected": "MoneyFlow",
+      "actual": "MoneyFlow",
+      "passed": true,
+      "elapsed": 0.08442378044128418,
+      "error": null
+    },
+    {
+      "test_name": "资金排名",
+      "query": "主力资金净流入前10",
+      "expected": "MoneyFlow",
+      "actual": "MoneyFlow",
+      "passed": true,
+      "elapsed": 0.026995182037353516,
+      "error": null
+    },
+    {
+      "test_name": "SQL+RAG",
+      "query": "贵州茅台的股价和主要业务",
+      "expected": "Composite",
+      "actual": "RAG",
+      "passed": false,
+      "elapsed": 49.19949245452881,
+      "error": null
+    },
+    {
+      "test_name": "Financial+RAG",
+      "query": "万科A的财务状况和最新公告",
+      "expected": "Composite",
+      "actual": "Financial",
+      "passed": false,
+      "elapsed": 50.83859181404114,
+      "error": null
+    },
+    {
+      "test_name": "空查询",
+      "query": "",
+      "expected": "Error",
+      "actual": "Error",
+      "passed": true,
+      "elapsed": 0.0,
+      "error": "查询内容不能为空"
+    },
+    {
+      "test_name": "股票简称",
+      "query": "茅台",
+      "expected": "Error",
+      "actual": "Error",
+      "passed": true,
+      "elapsed": 9.858349561691284,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    }
+  ]
+}

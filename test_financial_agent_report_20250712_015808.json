@@ -1,0 +1,683 @@
+{
+  "test_time": "2025-07-12 01:58:08",
+  "total_tests": 64,
+  "passed_tests": 64,
+  "failed_tests": 0,
+  "pass_rate": "100.0%",
+  "category_stats": {
+    "1.财务健康度分析": {
+      "total": 8,
+      "passed": 8
+    },
+    "2.杜邦分析": {
+      "total": 8,
+      "passed": 8
+    },
+    "3.现金流质量分析": {
+      "total": 8,
+      "passed": 8
+    },
+    "4.多期财务对比": {
+      "total": 8,
+      "passed": 8
+    },
+    "5.盈利能力分析": {
+      "total": 8,
+      "passed": 8
+    },
+    "6.偿债能力分析": {
+      "total": 8,
+      "passed": 8
+    },
+    "7.运营能力分析": {
+      "total": 8,
+      "passed": 8
+    },
+    "8.成长能力分析": {
+      "total": 8,
+      "passed": 8
+    }
+  },
+  "test_results": [
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "完整名称",
+      "query": "分析贵州茅台的财务健康度",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 53.41682720184326,
+      "error": null
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "股票代码",
+      "query": "分析600519.SH的财务健康度",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 48.21416687965393,
+      "error": null
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "银行股",
+      "query": "分析平安银行的财务健康度",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 47.90069246292114,
+      "error": null
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "财务状况",
+      "query": "分析万科A的财务状况",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 51.822365045547485,
+      "error": null
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "股票简称",
+      "query": "茅台的财务健康度",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.004350900650024414,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "空查询",
+      "query": "",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "查询内容不能为空"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "错误代码",
+      "query": "12345的财务健康度",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "股票代码应为6位数字，您输入了5位"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "小写后缀",
+      "query": "600519.sh的财务健康度",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "证券代码后缀大小写错误，应为.SH"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "完整名称",
+      "query": "贵州茅台的杜邦分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 54.358481884002686,
+      "error": null
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "ROE分解",
+      "query": "平安银行ROE分解分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 44.610366344451904,
+      "error": null
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "股票代码",
+      "query": "600519.SH的杜邦分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 50.66119599342346,
+      "error": null
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "分析ROE",
+      "query": "分析万科A的ROE",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.50073027610779,
+      "error": null
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "股票简称",
+      "query": "茅台的杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "缺少股票",
+      "query": "杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.002003908157348633,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "小写后缀",
+      "query": "600519.sz的杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "证券代码后缀大小写错误，应为.SZ"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "无效股票",
+      "query": "不存在公司的杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0020036697387695312,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "完整名称",
+      "query": "分析万科A的现金流质量",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 48.029953479766846,
+      "error": null
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "股票代码",
+      "query": "分析000002.SZ的现金流质量",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 54.09506130218506,
+      "error": null
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "评估",
+      "query": "评估平安银行的现金流",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 71.65655517578125,
+      "error": null
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "含量比率",
+      "query": "贵州茅台的现金含量比率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 42.605613231658936,
+      "error": null
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "股票简称",
+      "query": "万科的现金流",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0020036697387695312,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "缺少股票",
+      "query": "现金流质量",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "空白查询",
+      "query": "   ",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "查询内容不能为空"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "错误后缀",
+      "query": "000002.SH的现金流",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "股票代码000002.SH不存在，请检查是否输入正确"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "指定期数",
+      "query": "贵州茅台最近3期财务对比",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.532493114471436,
+      "error": null
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "财务变化",
+      "query": "600519.SH最近几期的财务变化",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 47.677597761154175,
+      "error": null
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "财务趋势",
+      "query": "分析平安银行的财务趋势",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 46.62982726097107,
+      "error": null
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "季度对比",
+      "query": "万科A的季度财务对比分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 46.99793028831482,
+      "error": null
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "股票简称",
+      "query": "茅台对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "缺少股票",
+      "query": "财务对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.010258913040161133,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "无效代码",
+      "query": "123456最近的对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.005406379699707031,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "小写后缀",
+      "query": "600519.sz财务对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "证券代码后缀大小写错误，应为.SZ"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "完整名称",
+      "query": "分析比亚迪的盈利能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 51.069145917892456,
+      "error": null
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "股票代码",
+      "query": "分析002594.SZ的盈利能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 48.75709652900696,
+      "error": null
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "毛利率",
+      "query": "万科A的毛利率分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 60.746811628341675,
+      "error": null
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "ROE分析",
+      "query": "贵州茅台的净资产收益率分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.73069643974304,
+      "error": null
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "歧义简称",
+      "query": "平安的盈利",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.002003908157348633,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "缺少股票",
+      "query": "盈利能力",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "小写后缀",
+      "query": "600000.sh盈利",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "证券代码后缀大小写错误，应为.SH"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "非A股",
+      "query": "特斯拉的盈利能力",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "完整名称",
+      "query": "分析万科A的偿债能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 44.503076791763306,
+      "error": null
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "股票代码",
+      "query": "分析601939.SH的偿债能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 50.87297296524048,
+      "error": null
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "流动比率",
+      "query": "贵州茅台的流动比率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 44.79746460914612,
+      "error": null
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "负债率",
+      "query": "平安银行的资产负债率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 40.28442025184631,
+      "error": null
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "股票简称",
+      "query": "建行的偿债",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "缺少股票",
+      "query": "偿债能力分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "无效代码",
+      "query": "000000的偿债",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.009880542755126953,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "错误长度",
+      "query": "60051的偿债能力",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "股票代码应为6位数字，您输入了5位"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "完整名称",
+      "query": "分析海尔智家的运营效率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.5277841091156,
+      "error": null
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "股票代码",
+      "query": "分析600690.SH的运营能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 46.51668906211853,
+      "error": null
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "存货周转",
+      "query": "万科A的存货周转率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 51.35837936401367,
+      "error": null
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "能力评价",
+      "query": "贵州茅台的运营能力评价",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.57710337638855,
+      "error": null
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "股票简称",
+      "query": "格力的运营",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "缺少股票",
+      "query": "运营效率",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "7位代码",
+      "query": "1234567运营",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "股票代码应为6位数字，您输入了7位"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "错误后缀",
+      "query": "600690.BJ的运营",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.009963750839233398,
+      "error": "股票代码600690.BJ不存在，请检查是否输入正确"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "完整名称",
+      "query": "分析宁德时代的成长性",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 51.923367977142334,
+      "error": null
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "股票代码",
+      "query": "分析300750.SZ的成长能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 51.2281277179718,
+      "error": null
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "营收增长",
+      "query": "贵州茅台的营收增长率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 49.317461252212524,
+      "error": null
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "利润增长",
+      "query": "比亚迪的利润增长情况",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 47.3292920589447,
+      "error": null
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "股票简称",
+      "query": "宁德的成长性",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0020034313201904297,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "缺少股票",
+      "query": "成长性分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "非A股",
+      "query": "特斯拉的成长",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "错误后缀",
+      "query": "600519.SZ成长",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "股票代码600519.SZ不存在，请检查是否输入正确"
+    }
+  ]
+}

@@ -178,7 +178,7 @@ def test_routing_financial():
 @runner.test_case("MoneyFlow路由 - 资金流向", "智能路由", "positive")
 def test_routing_money_flow():
     agent = HybridAgentModular()
-    return agent.query("分析茅台的资金流向")
+    return agent.query("分析贵州茅台的资金流向")
 
 @runner.test_case("SQL路由 - K线查询", "智能路由", "positive")
 def test_routing_sql_kline():
@@ -188,7 +188,7 @@ def test_routing_sql_kline():
 @runner.test_case("RAG路由 - 年报分析", "智能路由", "positive")
 def test_routing_rag_report():
     agent = HybridAgentModular()
-    return agent.query("分析茅台最新年报")
+    return agent.query("分析贵州茅台最新年报")
 
 @runner.test_case("Financial路由 - 杜邦分析", "智能路由", "positive")
 def test_routing_financial_dupont():
