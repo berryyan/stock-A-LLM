@@ -38,7 +38,7 @@ def generate_timestamp() -> str:
 # 创建FastAPI应用
 app = FastAPI(
     title="股票分析智能查询系统（模块化版本）",
-    description="""基于模块化架构的智能股票分析API (v2.2.0)
+    description="""基于模块化架构的智能股票分析API (v2.3.0)
     
 ## 核心功能
 - 🧠 **智能查询路由**: 自动识别问题类型并路由到合适的处理模块
