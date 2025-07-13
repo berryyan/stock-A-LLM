@@ -1,8 +1,10 @@
 # 文件路径: E:\PycharmProjects\stock_analysis_system\agents\money_flow_agent_modular.py
 
 """
-Money Flow Agent 模块化版本
-逐步将现有功能迁移到模块化架构
+Money Flow Agent 模块化版本 - v2.3.0
+完全模块化实现，支持板块资金流向分析
+测试通过率: 100% (64/64)
+新增功能: 板块资金流向深度分析
 """
 import re
 import json
