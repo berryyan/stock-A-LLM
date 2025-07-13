@@ -1,0 +1,119 @@
+2025-07-13 00:24:38 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-13 00:24:38 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-13 00:24:38 - date_intelligence - INFO - 已清理所有日期智能解析缓存
+2025-07-13 00:24:38 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-13 00:24:38 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-13 00:24:38 - schema_knowledge_base - INFO - 开始构建Schema知识库...
+2025-07-13 00:24:39 - schema_knowledge_base - INFO - Schema知识库构建完成，耗时: 0.17秒
+E:\anaconda3\envs\stock-frontend\Lib\site-packages\pymilvus\client\__init__.py:6: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import DistributionNotFound, get_distribution
+2025-07-13 00:24:42 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-13 00:24:42 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-13 00:24:42 - sector_code_mapper - INFO - 开始刷新板块代码缓存
+2025-07-13 00:24:42 - sector_code_mapper - INFO - 板块代码缓存刷新完成，共缓存586个板块映射
+2025-07-13 00:24:42 - sector_code_mapper - INFO - 板块类型分布: {'行业': 86, '概念': 469, '地域': 31}
+2025-07-13 00:24:42 - routing_monitor - INFO - 加载历史统计数据: 505条查询记录
+2025-07-13 00:24:42 - routing_monitor - INFO - 路由监控器初始化完成
+2025-07-13 00:24:42 - schema_enhanced_router - INFO - Schema增强路由器初始化完成
+Hybrid Agent Comprehensive Test Suite
+================================================================================
+Start Time: 2025-07-13 00:24:42
+Test Config: 8 function modules, at least 5 positive and 3 negative tests each
+Expected test cases: 64+
+
+
+【1. 智能路由功能测试】
+
+================================================================================
+测试用例: SQL路由 - 股价查询
+功能: 智能路由 | 类型: 正向测试
+时间: 2025-07-13 00:24:42
+--------------------------------------------------------------------------------
+2025-07-13 00:24:42 - hybrid_agent - INFO - 使用模块化Agent
+2025-07-13 00:24:42 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-13 00:24:42 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-13 00:24:42 - sql_agent_modular - INFO - 初始化SQL Agent V2，准备加载Schema信息...
+2025-07-13 00:24:42 - sql_agent_modular - INFO - 使用Schema知识库获取表结构信息...
+2025-07-13 00:24:42 - sql_agent_modular - INFO - Schema信息加载完成，共15个表
+2025-07-13 00:24:42 - sql_agent_modular - INFO - SQL Agent V2初始化完成
+2025-07-13 00:24:42 - milvus_connector - INFO - Milvus连接成功: 10.0.0.77:19530
+2025-07-13 00:24:42 - milvus_connector - INFO - 集合 'stock_announcements' 已存在
+2025-07-13 00:24:42 - milvus_connector - INFO - 现有字段:
+2025-07-13 00:24:42 - milvus_connector - INFO -   - id: INT64
+2025-07-13 00:24:42 - milvus_connector - INFO -   - doc_id: VARCHAR
+2025-07-13 00:24:42 - milvus_connector - INFO -   - chunk_id: INT64
+2025-07-13 00:24:42 - milvus_connector - INFO -   - ts_code: VARCHAR
+2025-07-13 00:24:42 - milvus_connector - INFO -   - ann_date: VARCHAR
+2025-07-13 00:24:42 - milvus_connector - INFO -   - title: VARCHAR
+2025-07-13 00:24:42 - milvus_connector - INFO -   - text: VARCHAR
+2025-07-13 00:24:42 - milvus_connector - INFO -   - embeddings: FLOAT_VECTOR
+2025-07-13 00:24:42 - milvus_connector - INFO -   - metadata: JSON
+2025-07-13 00:24:42 - milvus_connector - INFO - 集合加载状态: Loaded
+2025-07-13 00:24:42 - milvus_connector - INFO - 集合已在内存中
+2025-07-13 00:24:47 - rag_agent - INFO - RAG Agent初始化完成
+2025-07-13 00:24:47 - rag_agent_modular - INFO - RAG Agent模块化版本初始化完成
+2025-07-13 00:24:47 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-13 00:24:47 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-13 00:24:47 - financial_agent - INFO - 从Schema知识库获取财务表结构: ['tu_income', 'tu_balancesheet', 'tu_cashflow', 'tu_fina_indicator']
+2025-07-13 00:24:47 - financial_agent - INFO - Schema知识库已加载: 15个表, 549个字段
+2025-07-13 00:24:47 - financial_agent - INFO - Financial Analysis Agent初始化完成
+2025-07-13 00:24:47 - financial_agent_modular - INFO - Financial Agent模块化版本初始化完成
+2025-07-13 00:24:47 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-13 00:24:47 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-13 00:24:48 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-13 00:24:48 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-13 00:24:48 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-13 00:24:48 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-13 00:24:48 - sector_code_mapper - INFO - 开始刷新板块代码缓存
+2025-07-13 00:24:48 - sector_code_mapper - INFO - 板块代码缓存刷新完成，共缓存586个板块映射
+2025-07-13 00:24:48 - sector_code_mapper - INFO - 板块类型分布: {'行业': 86, '概念': 469, '地域': 31}
+2025-07-13 00:24:48 - money_flow_agent - INFO - 从Schema知识库获取资金流向字段: 11个
+2025-07-13 00:24:48 - money_flow_agent - INFO - Schema知识库统计: 共549个字段, 中文映射517个
+2025-07-13 00:24:48 - money_flow_agent_modular - INFO - Money Flow Agent模块化版本初始化完成
+2025-07-13 00:24:48 - hybrid_agent - INFO - Hybrid Agent初始化完成
+2025-07-13 00:24:48 - hybrid_agent - INFO - 使用模块化Hybrid Agent（包含路由修复）
+2025-07-13 00:24:48 - hybrid_agent - INFO - 模块化Hybrid Agent处理查询: 贵州茅台最新股价
+2025-07-13 00:24:48 - hybrid_agent - INFO - 接收查询: 贵州茅台最新股价
+2025-07-13 00:24:48 - hybrid_agent - INFO - 使用模板路由: 股价查询 -> SQL_ONLY
+2025-07-13 00:24:48 - hybrid_agent - INFO - 路由决策: SQL_ONLY
+2025-07-13 00:24:48 - routing_monitor - INFO - 记录路由决策: q_1752337488398 -> SQL_ONLY
+2025-07-13 00:24:48 - hybrid_agent - INFO - 解析后的查询类型: QueryType.SQL_ONLY, 原始决策: SQL_ONLY
+2025-07-13 00:24:48 - sql_agent_modular - INFO - 收到查询请求: 贵州茅台最新股价
+2025-07-13 00:24:48 - date_intelligence - INFO - 数据驱动查询最新交易日，查询范围：最近10天内
+2025-07-13 00:24:48 - date_intelligence - INFO - 更新今日交易日缓存: 2025-07-11
+2025-07-13 00:24:48 - date_intelligence - INFO - 获取最近交易日成功: 2025-07-11
+2025-07-13 00:24:48 - date_intelligence - INFO - 日期智能解析: '贵州茅台最新股价' -> '贵州茅台2025-07-11股价'
+2025-07-13 00:24:48 - date_intelligence - INFO - 解析详情: 将'最新'解析为当前时间点: 2025-07-11
+2025-07-13 00:24:48 - sql_agent_modular - INFO - 日期智能处理后的查询: 贵州茅台2025-07-11股价
+2025-07-13 00:24:48 - sql_agent_modular - INFO - 中文数字规范化后: 贵州茅台2025-07-11股价
+2025-07-13 00:24:48 - sql_agent_modular - INFO - 匹配到快速查询模板: 股价查询
+2025-07-13 00:24:48 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-13 00:24:48 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-13 00:24:48 - stock_code_mapper - INFO - 开始刷新股票代码缓存
+2025-07-13 00:24:48 - stock_code_mapper - INFO - 股票代码缓存刷新完成，共缓存21695个映射
+2025-07-13 00:24:48 - unified_stock_validator - INFO - 从查询词 '贵州茅台' 转换为: 600519.SH
+2025-07-13 00:24:48 - unified_stock_validator - INFO - 从查询中提取到股票: 600519.SH
+2025-07-13 00:24:48 - unified_stock_validator - INFO - 成功提取股票代码: 600519.SH, 查询意图: comprehensive
+2025-07-13 00:24:48 - stock_validation_helper - INFO - 股票验证成功: 600519.SH -> 600519.SH (贵州茅台)
+2025-07-13 00:24:48 - parameter_extractor - INFO - 提取到股票: ['600519.SH']
+2025-07-13 00:24:48 - parameter_extractor - INFO - 提取到股票: ['600519.SH']
+2025-07-13 00:24:48 - parameter_extractor - INFO - 提取到日期: 2025-07-11
+2025-07-13 00:24:48 - query_validator - INFO - 执行增强验证 - 查询: 贵州茅台2025-07-11股价
+2025-07-13 00:24:48 - query_validator - INFO - 增强验证通过
+2025-07-13 00:24:48 - sql_agent_modular - INFO - 使用快速查询路径成功
+2025-07-13 00:24:48 - routing_monitor - INFO - 记录查询结果: q_1752337488398 -> 成功 (0.20s)
+Traceback (most recent call last):
+  File "E:\PycharmProjects\stock_analysis_system\test_hybrid_agent_comprehensive.py", line 98, in wrapper
+    print(f"状态: {status}")
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 4: illegal multibyte sequence
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "E:\PycharmProjects\stock_analysis_system\test_hybrid_agent_comprehensive.py", line 669, in <module>
+    main()
+  File "E:\PycharmProjects\stock_analysis_system\test_hybrid_agent_comprehensive.py", line 571, in main
+    test_routing_sql_price()
+  File "E:\PycharmProjects\stock_analysis_system\test_hybrid_agent_comprehensive.py", line 122, in wrapper
+    print(f"状态: \u274c 异常")
+UnicodeEncodeError: 'gbk' codec can't encode character '\u274c' in position 4: illegal multibyte sequence

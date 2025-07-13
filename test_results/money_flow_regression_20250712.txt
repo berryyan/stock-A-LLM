@@ -1,0 +1,116 @@
+2025-07-12 22:00:07 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:07 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:07 - date_intelligence - INFO - 已清理所有日期智能解析缓存
+2025-07-12 22:00:07 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:07 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:07 - sector_code_mapper - INFO - 开始刷新板块代码缓存
+2025-07-12 22:00:07 - sector_code_mapper - INFO - 板块代码缓存刷新完成，共缓存586个板块映射
+2025-07-12 22:00:07 - sector_code_mapper - INFO - 板块类型分布: {'行业': 86, '概念': 469, '地域': 31}
+2025-07-12 22:00:07 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:07 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:07 - schema_knowledge_base - INFO - 开始构建Schema知识库...
+2025-07-12 22:00:07 - schema_knowledge_base - INFO - Schema知识库构建完成，耗时: 0.17秒
+2025-07-12 22:00:07 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:07,907 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:07 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:07,907 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:07 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:07,979 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:07 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:07,979 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:08 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:08,056 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:08 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:08,056 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:08 - sector_code_mapper - INFO - 开始刷新板块代码缓存
+2025-07-12 22:00:08,056 - sector_code_mapper - INFO - 开始刷新板块代码缓存
+2025-07-12 22:00:08 - sector_code_mapper - INFO - 板块代码缓存刷新完成，共缓存586个板块映射
+2025-07-12 22:00:08,120 - sector_code_mapper - INFO - 板块代码缓存刷新完成，共缓存586个板块映射
+2025-07-12 22:00:08 - sector_code_mapper - INFO - 板块类型分布: {'行业': 86, '概念': 469, '地域': 31}
+2025-07-12 22:00:08,120 - sector_code_mapper - INFO - 板块类型分布: {'行业': 86, '概念': 469, '地域': 31}
+2025-07-12 22:00:08 - money_flow_agent - INFO - 从Schema知识库获取资金流向字段: 11个
+2025-07-12 22:00:08,319 - money_flow_agent - INFO - 从Schema知识库获取资金流向字段: 11个
+2025-07-12 22:00:08 - money_flow_agent - INFO - Schema知识库统计: 共549个字段, 中文映射517个
+2025-07-12 22:00:08,319 - money_flow_agent - INFO - Schema知识库统计: 共549个字段, 中文映射517个
+2025-07-12 22:00:08 - money_flow_agent_modular - INFO - Money Flow Agent模块化版本初始化完成
+2025-07-12 22:00:08,319 - money_flow_agent_modular - INFO - Money Flow Agent模块化版本初始化完成
+开始Money Flow Agent综合测试 - 最终版
+================================================================================
+测试标准：每个功能5个正确用例 + 3个错误用例
+================================================================================
+
+============================================================
+测试: 分析关键词
+类别: 1. 个股深度分析
+查询: 分析贵州茅台的资金流向
+期望: 成功
+期望包含: ['主力资金流向', '超大单']
+2025-07-12 22:00:08 - money_flow_agent_modular - INFO - 收到资金流向查询: 分析贵州茅台的资金流向
+2025-07-12 22:00:08,319 - money_flow_agent_modular - INFO - 收到资金流向查询: 分析贵州茅台的资金流向
+2025-07-12 22:00:08 - money_flow_agent_modular - INFO - 资金流向查询检查: query='分析贵州茅台的资金流向', is_money_flow=True
+2025-07-12 22:00:08,320 - money_flow_agent_modular - INFO - 资金流向查询检查: query='分析贵州茅台的资金流向', is_money_flow=True
+2025-07-12 22:00:08 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:08,387 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:08 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:08,387 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:08 - sector_code_mapper - INFO - 开始刷新板块代码缓存
+2025-07-12 22:00:08,387 - sector_code_mapper - INFO - 开始刷新板块代码缓存
+2025-07-12 22:00:08 - sector_code_mapper - INFO - 板块代码缓存刷新完成，共缓存586个板块映射
+2025-07-12 22:00:08,447 - sector_code_mapper - INFO - 板块代码缓存刷新完成，共缓存586个板块映射
+2025-07-12 22:00:08 - sector_code_mapper - INFO - 板块类型分布: {'行业': 86, '概念': 469, '地域': 31}
+2025-07-12 22:00:08,447 - sector_code_mapper - INFO - 板块类型分布: {'行业': 86, '概念': 469, '地域': 31}
+2025-07-12 22:00:08 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:08,559 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:00:08 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:08,559 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:00:08 - stock_code_mapper - INFO - 开始刷新股票代码缓存
+2025-07-12 22:00:08,559 - stock_code_mapper - INFO - 开始刷新股票代码缓存
+2025-07-12 22:00:08 - stock_code_mapper - INFO - 股票代码缓存刷新完成，共缓存21695个映射
+2025-07-12 22:00:08,596 - stock_code_mapper - INFO - 股票代码缓存刷新完成，共缓存21695个映射
+2025-07-12 22:00:08 - unified_stock_validator - INFO - 从查询词 '贵州茅台' 转换为: 600519.SH
+2025-07-12 22:00:08,597 - unified_stock_validator - INFO - 从查询词 '贵州茅台' 转换为: 600519.SH
+2025-07-12 22:00:08 - unified_stock_validator - INFO - 从查询中提取到股票: 600519.SH
+2025-07-12 22:00:08,597 - unified_stock_validator - INFO - 从查询中提取到股票: 600519.SH
+2025-07-12 22:00:08 - unified_stock_validator - INFO - 成功提取股票代码: 600519.SH, 查询意图: comprehensive
+2025-07-12 22:00:08,597 - unified_stock_validator - INFO - 成功提取股票代码: 600519.SH, 查询意图: comprehensive
+2025-07-12 22:00:08 - stock_validation_helper - INFO - 股票验证成功: 600519.SH -> 600519.SH (贵州茅台)
+2025-07-12 22:00:08,599 - stock_validation_helper - INFO - 股票验证成功: 600519.SH -> 600519.SH (贵州茅台)
+2025-07-12 22:00:08 - parameter_extractor - INFO - 提取到股票: ['600519.SH']
+2025-07-12 22:00:08,599 - parameter_extractor - INFO - 提取到股票: ['600519.SH']
+2025-07-12 22:00:08 - parameter_extractor - INFO - 提取到股票: ['600519.SH']
+2025-07-12 22:00:08,599 - parameter_extractor - INFO - 提取到股票: ['600519.SH']
+2025-07-12 22:00:08 - money_flow_agent_modular - INFO - 提取到的参数: stocks=['600519.SH'], error=None
+2025-07-12 22:00:08,600 - money_flow_agent_modular - INFO - 提取到的参数: stocks=['600519.SH'], error=None
+2025-07-12 22:00:08 - money_flow_agent_modular - WARNING - 参数验证警告: 以下指标可能不可用: open, high, low, close, vol
+2025-07-12 22:00:08,600 - money_flow_agent_modular - WARNING - 参数验证警告: 以下指标可能不可用: open, high, low, close, vol
+2025-07-12 22:00:08 - money_flow_agent_modular - INFO - 识别到查询类型: MONEY_FLOW
+2025-07-12 22:00:08,601 - money_flow_agent_modular - INFO - 识别到查询类型: MONEY_FLOW
+2025-07-12 22:00:08 - money_flow_agent_modular - INFO - 开始资金流向分析: 600519.SH, 30天
+2025-07-12 22:00:08,602 - money_flow_agent_modular - INFO - 开始资金流向分析: 600519.SH, 30天
+2025-07-12 22:00:08 - money_flow_analyzer - INFO - 开始分析 600519.SH 的资金流向（30天）
+2025-07-12 22:00:08,602 - money_flow_analyzer - INFO - 开始分析 600519.SH 的资金流向（30天）
+2025-07-12 22:00:08 - money_flow_analyzer - INFO - 获取到 22 条资金流向数据
+2025-07-12 22:00:08,621 - money_flow_analyzer - INFO - 获取到 22 条资金流向数据
+2025-07-12 22:00:08 - money_flow_analyzer - INFO - 资金流向分析完成: 600519.SH
+2025-07-12 22:00:08,621 - money_flow_analyzer - INFO - 资金流向分析完成: 600519.SH
+2025-07-12 22:00:08,621 - __main__ - ERROR - 测试异常: 'gbk' codec can't encode character '\u2713' in position 4: illegal multibyte sequence
+2025-07-12 22:00:08,621 - __main__ - ERROR - 测试过程发生错误: 'gbk' codec can't encode character '\u2717' in position 4: illegal multibyte sequence
+Traceback (most recent call last):
+  File "E:\PycharmProjects\stock_analysis_system\test_money_flow_agent_comprehensive_final.py", line 123, in test_query
+    print(f"结果: {'\u2713 通过' if passed else '\u2717 失败'}")
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2713' in position 4: illegal multibyte sequence
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "E:\PycharmProjects\stock_analysis_system\test_money_flow_agent_comprehensive_final.py", line 467, in main
+    tester.run_all_tests()
+  File "E:\PycharmProjects\stock_analysis_system\test_money_flow_agent_comprehensive_final.py", line 165, in run_all_tests
+    self._test_stock_deep_analysis()
+  File "E:\PycharmProjects\stock_analysis_system\test_money_flow_agent_comprehensive_final.py", line 212, in _test_stock_deep_analysis
+    self.test_query(query, expected, name, category, expected_contains=contains)
+  File "E:\PycharmProjects\stock_analysis_system\test_money_flow_agent_comprehensive_final.py", line 152, in test_query
+    print(f"结果: \u2717 异常")
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2717' in position 4: illegal multibyte sequence
+2025-07-12 22:00:08 - mysql_connector - INFO - MySQL连接池已关闭
+2025-07-12 22:00:08,622 - mysql_connector - INFO - MySQL连接池已关闭

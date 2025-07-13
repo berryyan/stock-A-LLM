@@ -1,0 +1,77 @@
+E:\anaconda3\envs\stock-frontend\Lib\site-packages\pymilvus\client\__init__.py:6: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import DistributionNotFound, get_distribution
+2025-07-12 22:55:32 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:55:32 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:55:32 - date_intelligence - INFO - 已清理所有日期智能解析缓存
+RAG Agent 综合测试套件
+================================================================================
+开始时间: 2025-07-12 22:55:32
+测试配置: 8个功能模块，每个至少5个正向测试和3个负向测试
+预期测试用例数: 64+
+
+
+【1. 基础公告查询功能测试】
+
+================================================================================
+测试用例: 年报查询 - 最新
+功能: 基础公告查询 | 类型: 正向测试
+时间: 2025-07-12 22:55:32
+--------------------------------------------------------------------------------
+2025-07-12 22:55:32 - milvus_connector - INFO - Milvus连接成功: 10.0.0.77:19530
+2025-07-12 22:55:32 - milvus_connector - INFO - 集合 'stock_announcements' 已存在
+2025-07-12 22:55:32 - milvus_connector - INFO - 现有字段:
+2025-07-12 22:55:32 - milvus_connector - INFO -   - id: INT64
+2025-07-12 22:55:32 - milvus_connector - INFO -   - doc_id: VARCHAR
+2025-07-12 22:55:32 - milvus_connector - INFO -   - chunk_id: INT64
+2025-07-12 22:55:32 - milvus_connector - INFO -   - ts_code: VARCHAR
+2025-07-12 22:55:32 - milvus_connector - INFO -   - ann_date: VARCHAR
+2025-07-12 22:55:32 - milvus_connector - INFO -   - title: VARCHAR
+2025-07-12 22:55:32 - milvus_connector - INFO -   - text: VARCHAR
+2025-07-12 22:55:32 - milvus_connector - INFO -   - embeddings: FLOAT_VECTOR
+2025-07-12 22:55:32 - milvus_connector - INFO -   - metadata: JSON
+2025-07-12 22:55:32 - milvus_connector - INFO - 集合加载状态: Loaded
+2025-07-12 22:55:32 - milvus_connector - INFO - 集合已在内存中
+2025-07-12 22:55:37 - rag_agent - INFO - RAG Agent初始化完成
+2025-07-12 22:55:37 - rag_agent_modular - INFO - RAG Agent模块化版本初始化完成
+2025-07-12 22:55:37 - rag_agent_modular - INFO - 收到RAG查询: 贵州茅台的主要业务是什么
+2025-07-12 22:55:37 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:55:37 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:55:37 - stock_code_mapper - INFO - 开始刷新股票代码缓存
+2025-07-12 22:55:37 - stock_code_mapper - INFO - 股票代码缓存刷新完成，共缓存21695个映射
+2025-07-12 22:55:37 - unified_stock_validator - INFO - 从查询词 '贵州茅台' 转换为: 600519.SH
+2025-07-12 22:55:37 - unified_stock_validator - INFO - 从查询中提取到股票: 600519.SH
+2025-07-12 22:55:37 - unified_stock_validator - INFO - 成功提取股票代码: 600519.SH, 查询意图: comprehensive
+2025-07-12 22:55:37 - stock_code_mapper - WARNING - 无法转换实体到ts_code: 要业务是什么
+2025-07-12 22:55:37 - stock_validation_helper - INFO - 股票验证成功: 600519.SH -> 600519.SH (贵州茅台)
+2025-07-12 22:55:37 - parameter_extractor - INFO - 提取到股票: ['600519.SH']
+2025-07-12 22:55:37 - parameter_extractor - INFO - 提取到股票: ['600519.SH']
+2025-07-12 22:55:37 - parameter_extractor - INFO - 数量限制: 10
+2025-07-12 22:55:37 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:55:37 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:55:37 - sector_code_mapper - INFO - 开始刷新板块代码缓存
+2025-07-12 22:55:37 - sector_code_mapper - INFO - 板块代码缓存刷新完成，共缓存586个板块映射
+2025-07-12 22:55:37 - sector_code_mapper - INFO - 板块类型分布: {'行业': 86, '概念': 469, '地域': 31}
+2025-07-12 22:55:37 - mysql_connector - INFO - MySQL连接成功: 10.0.0.77:3306/Tushare
+2025-07-12 22:55:37 - mysql_connector - INFO - MySQL连接器初始化完成
+2025-07-12 22:55:37 - sector_code_mapper - INFO - 开始刷新板块代码缓存
+2025-07-12 22:55:37 - sector_code_mapper - INFO - 板块代码缓存刷新完成，共缓存586个板块映射
+2025-07-12 22:55:37 - sector_code_mapper - INFO - 板块类型分布: {'行业': 86, '概念': 469, '地域': 31}
+2025-07-12 22:55:37 - rag_agent_modular - WARNING - 日期智能解析失败: module 'utils.date_intelligence' has no attribute 'preprocess_question'
+2025-07-12 22:55:37 - rag_agent_modular - INFO - 使用过滤条件搜索: {'stock_filter': ['600519.SH', '600519', '贵州茅台']}
+2025-07-12 22:55:37 - milvus_connector - INFO - 集合加载状态: Loaded
+2025-07-12 22:55:37 - milvus_connector - INFO - 集合已在内存中
+Traceback (most recent call last):
+  File "E:\PycharmProjects\stock_analysis_system\test_rag_agent_comprehensive.py", line 98, in wrapper
+    print(f"状态: {status}")
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 4: illegal multibyte sequence
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "E:\PycharmProjects\stock_analysis_system\test_rag_agent_comprehensive.py", line 672, in <module>
+    main()
+  File "E:\PycharmProjects\stock_analysis_system\test_rag_agent_comprehensive.py", line 570, in main
+    test_annual_report_latest()
+  File "E:\PycharmProjects\stock_analysis_system\test_rag_agent_comprehensive.py", line 122, in wrapper
+    print(f"状态: \u274c 异常")
+UnicodeEncodeError: 'gbk' codec can't encode character '\u274c' in position 4: illegal multibyte sequence

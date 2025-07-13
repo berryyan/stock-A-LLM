@@ -161,7 +161,8 @@ class HybridAgent:
                 ]
             },
             'financial_patterns': {
-                'keywords': ['财务健康', '财务状况', '经营状况', '财务评级', '健康度', '盈利能力', 'ROE', 'ROA', '杜邦分析', '现金流质量', '偿债能力', '多期对比', '增长率', '财务分析'],
+                'keywords': ['财务健康', '财务状况', '经营状况', '财务评级', '健康度', '盈利能力', 'ROE', 'ROA', '杜邦分析', '现金流质量', '偿债能力', '多期对比', '增长率', '财务分析', 
+                            '投资价值', '投资机会', '投资潜力', '值得投资', '值得买', '财务风险', '风险状况', '经营风险', '风险评估'],
                 'patterns': [
                     r'.*财务.*分析',
                     r'.*杜邦.*分析',
@@ -171,7 +172,16 @@ class HybridAgent:
                     r'.*盈利.*能力',
                     r'.*偿债.*能力',
                     r'.*多期.*对比',
-                    r'ROE.*分解'
+                    r'ROE.*分解',
+                    r'.*投资价值.*',
+                    r'.*投资机会.*',
+                    r'.*投资潜力.*',
+                    r'.*值得.*投资.*',
+                    r'.*值得.*买.*',
+                    r'.*财务风险.*',
+                    r'.*风险状况.*',
+                    r'.*经营风险.*',
+                    r'评估.*风险'
                 ]
             },
             'money_flow_patterns': {
@@ -223,10 +233,16 @@ class HybridAgent:
                 ]
             },
             'hybrid_patterns': {
-                'keywords': ['综合分析', '全面评估', '详细了解', '深入研究'],
+                'keywords': ['综合分析', '全面评估', '详细了解', '深入研究', '综合实力', '各方面表现', '全面对比', '多角度', '多维度'],
                 'patterns': [
                     r'.*业绩.*原因',
-                    r'.*比较.*分析'
+                    r'.*比较.*分析',
+                    r'.*对比.*综合实力',
+                    r'.*比较.*各方面',
+                    r'.*vs.*全面',
+                    r'.*多角度.*对比',
+                    r'.*多维度.*比较',
+                    r'从.*角度.*对比'
                 ]
             }
         }
@@ -240,20 +256,27 @@ class HybridAgent:
 查询模式说明：
 - SQL_ONLY: 查询结构化数据（股价、财务指标、简单排名等）
 - RAG_ONLY: 查询文档内容（公告详情、管理层分析等）
-- FINANCIAL: 专业财务分析（财务健康度、杜邦分析、现金流质量等）
+- FINANCIAL: 专业财务分析（财务健康度、杜邦分析、现金流质量、投资价值、投资机会、投资潜力、风险评估、财务风险等）
 - MONEY_FLOW: 资金流向分析（主力资金、超大单、资金分布等）
 - RANK: 专业排名分析（涨跌幅排行、市值排名、板块排名等）
 - ANNS: 公告查询（公告列表、年报季报、业绩快报等）
 - QA: 董秘互动（投资者提问、公司回复等）
 - SQL_FIRST: 先获取数据，再查找相关解释
 - RAG_FIRST: 先查找文档，可能需要补充数据
-- PARALLEL: 同时需要数据和文档
-- COMPLEX: 需要多步骤分析的复杂问题
+- PARALLEL: 需要同时查询多个数据源（对比分析、综合评估、多股票比较等）
+- COMPLEX: 复杂的多步骤查询（仅在无法直接分类时使用）
 
 已知模式：
 {patterns}
 
 用户问题：{question}
+
+重要路由规则：
+1. 包含"投资价值"、"投资机会"、"投资潜力"、"值得投资"、"值得买"等词 → FINANCIAL
+2. 包含"财务风险"、"风险状况"、"经营风险"、"风险评估"等词 → FINANCIAL
+3. 包含"对比"、"比较"、"vs"且涉及多个股票 → PARALLEL
+4. 包含"综合"、"全面"、"各方面"等词且涉及对比 → PARALLEL
+5. 只有当无法明确分类且需要多步骤处理时，才选择 COMPLEX
 
 请分析问题并返回JSON格式的决策：
 {{
@@ -312,6 +335,15 @@ class HybridAgent:
             return {
                 'success': False,
                 'error': '查询内容不能为空',
+                'type': 'hybrid_query'
+            }
+        
+        # 检查无效输入（纯特殊字符）
+        stripped = question.strip()
+        if self._is_invalid_input(stripped):
+            return {
+                'success': False,
+                'error': '查询内容无效，请输入有意义的问题',
                 'type': 'hybrid_query'
             }
         
@@ -399,6 +431,30 @@ class HybridAgent:
                 'error': error_msg,
                 'type': 'hybrid_query'
             }
+    
+    def _is_invalid_input(self, question: str) -> bool:
+        """检查输入是否无效（纯特殊字符或无意义内容）"""
+        # 移除所有空白字符
+        cleaned = ''.join(question.split())
+        
+        # 检查是否只包含特殊字符
+        if not cleaned:
+            return True
+            
+        # 检查是否只包含标点符号和特殊字符
+        import string
+        special_chars = string.punctuation + '！？。，、；：""''（）【】《》「」『』〈〉〔〕｛｝［］'
+        if all(c in special_chars for c in cleaned):
+            return True
+            
+        # 检查是否包含至少一个中文字符或字母数字
+        has_valid_char = any(
+            '\u4e00' <= c <= '\u9fff' or  # 中文字符
+            c.isalnum()  # 字母或数字
+            for c in cleaned
+        )
+        
+        return not has_valid_char
     
     def _check_trigger_words(self, question: str) -> Optional[str]:
         """检测触发词并返回对应的查询类型"""
@@ -963,13 +1019,42 @@ class HybridAgent:
     
     def _handle_complex(self, question: str, routing: Dict) -> Dict[str, Any]:
         """处理复杂的多步骤查询"""
+        # 获取或初始化递归深度
+        context = routing.get('context', {})
+        recursion_depth = context.get('recursion_depth', 0)
+        
+        # 检查递归深度限制
+        if recursion_depth >= 3:
+            self.logger.warning(f"达到最大递归深度限制: {recursion_depth}")
+            return {
+                'success': False,
+                'question': question,
+                'error': '查询过于复杂，无法处理',
+                'query_type': QueryType.COMPLEX.value
+            }
+        
         # 复杂查询需要分解为多个子任务
         subtasks = self._decompose_complex_query(question, routing)
         
+        # 如果没有有效的子任务或只有一个与原查询相同的子任务，返回错误
+        if not subtasks or (len(subtasks) == 1 and subtasks[0]['question'] == question):
+            self.logger.warning("无法有效分解复杂查询")
+            return {
+                'success': False,
+                'question': question,
+                'error': '无法理解查询内容，请重新描述您的问题',
+                'query_type': QueryType.COMPLEX.value
+            }
+        
         results = []
         for subtask in subtasks:
+            # 增加递归深度
+            subtask_context = subtask.get('context', {})
+            subtask_context['recursion_depth'] = recursion_depth + 1
+            subtask['context'] = subtask_context
+            
             # 递归调用query处理子任务
-            sub_result = self.query(subtask['question'], subtask.get('context'))
+            sub_result = self.query(subtask['question'], subtask['context'])
             results.append(sub_result)
         
         # 整合所有子任务结果
@@ -1200,7 +1285,11 @@ class HybridAgent:
     
     def _decompose_complex_query(self, question: str, routing: Dict) -> List[Dict]:
         """分解复杂查询为子任务"""
-        # 简单实现：基于问题类型分解
+        # 检查是否已经是子任务（避免递归分解）
+        if question.startswith(('获取相关财务数据：', '查找相关分析报告：', '查询')):
+            # 已经是子任务，直接返回失败，避免无限递归
+            return []
+        
         subtasks = []
         
         # 如果问题包含"比较"，分解为多个单独查询
@@ -1212,14 +1301,39 @@ class HybridAgent:
                     'context': {'entity': entity}
                 })
         
-        # 如果问题包含"分析"，添加数据和文档查询
-        if '分析' in question:
-            subtasks.extend([
-                {'question': f"获取相关财务数据：{question}"},
-                {'question': f"查找相关分析报告：{question}"}
-            ])
+        # 如果问题包含"分析"，判断具体分析类型
+        elif '分析' in question:
+            # 检查是否是特定类型的分析，这些应该直接失败，让路由重新判断
+            special_analysis_keywords = ['投资价值', '投资潜力', '投资机会', '财务风险', '风险状况', '经营风险']
+            if any(keyword in question for keyword in special_analysis_keywords):
+                # 这些应该路由到 Financial Agent，不应该在 COMPLEX 处理
+                return []
+            
+            # 其他分析查询，尝试分解
+            entities = routing.get('entities', [])
+            if entities and len(entities) > 0:
+                entity = entities[0]
+                # 生成更具体的子任务
+                subtasks.extend([
+                    {'question': f"{entity}的最新财务数据"},
+                    {'question': f"{entity}的年报摘要"}
+                ])
+            else:
+                # 没有实体信息，无法有效分解
+                return []
         
-        return subtasks if subtasks else [{'question': question}]
+        # 处理"对比"、"比较"查询
+        elif '对比' in question or '比较' in question or ' vs ' in question.lower():
+            # 这类查询应该路由到 PARALLEL，不应该在 COMPLEX 处理
+            return []
+        
+        # 处理"评估"查询
+        elif '评估' in question:
+            # 评估类查询通常需要专业分析
+            return []
+        
+        # 如果没有生成有效的子任务，返回空列表
+        return subtasks if subtasks else []
     
     def _integrate_complex_results(self, question: str, results: List[Dict]) -> str:
         """整合复杂查询的多个结果"""

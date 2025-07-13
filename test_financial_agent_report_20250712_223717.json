@@ -1,0 +1,1323 @@
+{
+  "test_time": "2025-07-12 22:37:17",
+  "total_tests": 128,
+  "passed_tests": 64,
+  "failed_tests": 64,
+  "pass_rate": "50.0%",
+  "category_stats": {
+    "1.财务健康度分析": {
+      "total": 16,
+      "passed": 8
+    },
+    "2.杜邦分析": {
+      "total": 16,
+      "passed": 8
+    },
+    "3.现金流质量分析": {
+      "total": 16,
+      "passed": 8
+    },
+    "4.多期财务对比": {
+      "total": 16,
+      "passed": 8
+    },
+    "5.盈利能力分析": {
+      "total": 16,
+      "passed": 8
+    },
+    "6.偿债能力分析": {
+      "total": 16,
+      "passed": 8
+    },
+    "7.运营能力分析": {
+      "total": 16,
+      "passed": 8
+    },
+    "8.成长能力分析": {
+      "total": 16,
+      "passed": 8
+    }
+  },
+  "test_results": [
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "完整名称",
+      "query": "分析贵州茅台的财务健康度",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 49.90557384490967,
+      "error": null
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "完整名称",
+      "query": "分析贵州茅台的财务健康度",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 49.90557384490967,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "股票代码",
+      "query": "分析600519.SH的财务健康度",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.16219210624695,
+      "error": null
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "股票代码",
+      "query": "分析600519.SH的财务健康度",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 45.16219210624695,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "银行股",
+      "query": "分析平安银行的财务健康度",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 43.948583364486694,
+      "error": null
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "银行股",
+      "query": "分析平安银行的财务健康度",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 43.948583364486694,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "财务状况",
+      "query": "分析万科A的财务状况",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.73264479637146,
+      "error": null
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "财务状况",
+      "query": "分析万科A的财务状况",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 45.73364543914795,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "股票简称",
+      "query": "茅台的财务健康度",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "股票简称",
+      "query": "茅台的财务健康度",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "空查询",
+      "query": "",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "查询内容不能为空"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "空查询",
+      "query": "",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "错误代码",
+      "query": "12345的财务健康度",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0009992122650146484,
+      "error": "股票代码应为6位数字，您输入了5位"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "错误代码",
+      "query": "12345的财务健康度",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0009992122650146484,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "小写后缀",
+      "query": "600519.sh的财务健康度",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0012526512145996094,
+      "error": "证券代码后缀大小写错误，应为.SH"
+    },
+    {
+      "category": "1.财务健康度分析",
+      "test_name": "小写后缀",
+      "query": "600519.sh的财务健康度",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0012526512145996094,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "完整名称",
+      "query": "贵州茅台的杜邦分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 48.7536506652832,
+      "error": null
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "完整名称",
+      "query": "贵州茅台的杜邦分析",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 48.7536506652832,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "ROE分解",
+      "query": "平安银行ROE分解分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 41.035603284835815,
+      "error": null
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "ROE分解",
+      "query": "平安银行ROE分解分析",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 41.035603284835815,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "股票代码",
+      "query": "600519.SH的杜邦分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.16999626159668,
+      "error": null
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "股票代码",
+      "query": "600519.SH的杜邦分析",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 45.16999626159668,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "分析ROE",
+      "query": "分析万科A的ROE",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 44.97352361679077,
+      "error": null
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "分析ROE",
+      "query": "分析万科A的ROE",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 44.97352361679077,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "股票简称",
+      "query": "茅台的杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "股票简称",
+      "query": "茅台的杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "缺少股票",
+      "query": "杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0009992122650146484,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "缺少股票",
+      "query": "杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0009992122650146484,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "小写后缀",
+      "query": "600519.sz的杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0009996891021728516,
+      "error": "证券代码后缀大小写错误，应为.SZ"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "小写后缀",
+      "query": "600519.sz的杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0009996891021728516,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "无效股票",
+      "query": "不存在公司的杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "2.杜邦分析",
+      "test_name": "无效股票",
+      "query": "不存在公司的杜邦分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "完整名称",
+      "query": "分析万科A的现金流质量",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.64761805534363,
+      "error": null
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "完整名称",
+      "query": "分析万科A的现金流质量",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 45.64761805534363,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "股票代码",
+      "query": "分析000002.SZ的现金流质量",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 43.44547963142395,
+      "error": null
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "股票代码",
+      "query": "分析000002.SZ的现金流质量",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 43.44547963142395,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "评估",
+      "query": "评估平安银行的现金流",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 43.40043878555298,
+      "error": null
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "评估",
+      "query": "评估平安银行的现金流",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 43.40043878555298,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "含量比率",
+      "query": "贵州茅台的现金含量比率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 42.24144530296326,
+      "error": null
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "含量比率",
+      "query": "贵州茅台的现金含量比率",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 42.24144530296326,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "股票简称",
+      "query": "万科的现金流",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0010004043579101562,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "股票简称",
+      "query": "万科的现金流",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0010004043579101562,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "缺少股票",
+      "query": "现金流质量",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "缺少股票",
+      "query": "现金流质量",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "空白查询",
+      "query": "   ",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "查询内容不能为空"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "空白查询",
+      "query": "   ",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "错误后缀",
+      "query": "000002.SH的现金流",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0010027885437011719,
+      "error": "股票代码000002.SH不存在，请检查是否输入正确"
+    },
+    {
+      "category": "3.现金流质量分析",
+      "test_name": "错误后缀",
+      "query": "000002.SH的现金流",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0010027885437011719,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "指定期数",
+      "query": "贵州茅台最近3期财务对比",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 43.39070153236389,
+      "error": null
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "指定期数",
+      "query": "贵州茅台最近3期财务对比",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 43.39070153236389,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "财务变化",
+      "query": "600519.SH最近几期的财务变化",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.73414874076843,
+      "error": null
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "财务变化",
+      "query": "600519.SH最近几期的财务变化",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 45.73414874076843,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "财务趋势",
+      "query": "分析平安银行的财务趋势",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 42.547526359558105,
+      "error": null
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "财务趋势",
+      "query": "分析平安银行的财务趋势",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 42.547526359558105,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "季度对比",
+      "query": "万科A的季度财务对比分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 51.77471446990967,
+      "error": null
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "季度对比",
+      "query": "万科A的季度财务对比分析",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 51.77471446990967,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "股票简称",
+      "query": "茅台对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "股票简称",
+      "query": "茅台对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "缺少股票",
+      "query": "财务对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0009992122650146484,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "缺少股票",
+      "query": "财务对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0009992122650146484,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "无效代码",
+      "query": "123456最近的对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.005517482757568359,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "无效代码",
+      "query": "123456最近的对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.005517482757568359,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "小写后缀",
+      "query": "600519.sz财务对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.00099945068359375,
+      "error": "证券代码后缀大小写错误，应为.SZ"
+    },
+    {
+      "category": "4.多期财务对比",
+      "test_name": "小写后缀",
+      "query": "600519.sz财务对比",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.00099945068359375,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "完整名称",
+      "query": "分析比亚迪的盈利能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 51.961477756500244,
+      "error": null
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "完整名称",
+      "query": "分析比亚迪的盈利能力",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 51.961477756500244,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "股票代码",
+      "query": "分析002594.SZ的盈利能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 46.36195945739746,
+      "error": null
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "股票代码",
+      "query": "分析002594.SZ的盈利能力",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 46.36195945739746,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "毛利率",
+      "query": "万科A的毛利率分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 47.247658252716064,
+      "error": null
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "毛利率",
+      "query": "万科A的毛利率分析",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 47.247658252716064,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "ROE分析",
+      "query": "贵州茅台的净资产收益率分析",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 43.88671088218689,
+      "error": null
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "ROE分析",
+      "query": "贵州茅台的净资产收益率分析",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 43.88671088218689,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "歧义简称",
+      "query": "平安的盈利",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "歧义简称",
+      "query": "平安的盈利",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "缺少股票",
+      "query": "盈利能力",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0009999275207519531,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "缺少股票",
+      "query": "盈利能力",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0009999275207519531,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "小写后缀",
+      "query": "600000.sh盈利",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0009999275207519531,
+      "error": "证券代码后缀大小写错误，应为.SH"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "小写后缀",
+      "query": "600000.sh盈利",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0009999275207519531,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "非A股",
+      "query": "特斯拉的盈利能力",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "5.盈利能力分析",
+      "test_name": "非A股",
+      "query": "特斯拉的盈利能力",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "完整名称",
+      "query": "分析万科A的偿债能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 50.831626176834106,
+      "error": null
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "完整名称",
+      "query": "分析万科A的偿债能力",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 50.831626176834106,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "股票代码",
+      "query": "分析601939.SH的偿债能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 48.39067029953003,
+      "error": null
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "股票代码",
+      "query": "分析601939.SH的偿债能力",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 48.39067029953003,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "流动比率",
+      "query": "贵州茅台的流动比率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 43.727417945861816,
+      "error": null
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "流动比率",
+      "query": "贵州茅台的流动比率",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 43.727417945861816,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "负债率",
+      "query": "平安银行的资产负债率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 41.595800161361694,
+      "error": null
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "负债率",
+      "query": "平安银行的资产负债率",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 41.595800161361694,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "股票简称",
+      "query": "建行的偿债",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0009984970092773438,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "股票简称",
+      "query": "建行的偿债",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0009984970092773438,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "缺少股票",
+      "query": "偿债能力分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0009999275207519531,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "缺少股票",
+      "query": "偿债能力分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0009999275207519531,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "无效代码",
+      "query": "000000的偿债",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0060002803802490234,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "无效代码",
+      "query": "000000的偿债",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0060002803802490234,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "错误长度",
+      "query": "60051的偿债能力",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "股票代码应为6位数字，您输入了5位"
+    },
+    {
+      "category": "6.偿债能力分析",
+      "test_name": "错误长度",
+      "query": "60051的偿债能力",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "完整名称",
+      "query": "分析海尔智家的运营效率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.263593912124634,
+      "error": null
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "完整名称",
+      "query": "分析海尔智家的运营效率",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 45.263593912124634,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "股票代码",
+      "query": "分析600690.SH的运营能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.87536597251892,
+      "error": null
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "股票代码",
+      "query": "分析600690.SH的运营能力",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 45.87536597251892,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "存货周转",
+      "query": "万科A的存货周转率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 48.14847731590271,
+      "error": null
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "存货周转",
+      "query": "万科A的存货周转率",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 48.14847731590271,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "能力评价",
+      "query": "贵州茅台的运营能力评价",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 45.653968334198,
+      "error": null
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "能力评价",
+      "query": "贵州茅台的运营能力评价",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 45.653968334198,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "股票简称",
+      "query": "格力的运营",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0009942054748535156,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "股票简称",
+      "query": "格力的运营",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0009942054748535156,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "缺少股票",
+      "query": "运营效率",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0009992122650146484,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "缺少股票",
+      "query": "运营效率",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0009992122650146484,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "7位代码",
+      "query": "1234567运营",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0010006427764892578,
+      "error": "股票代码应为6位数字，您输入了7位"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "7位代码",
+      "query": "1234567运营",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0010006427764892578,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "错误后缀",
+      "query": "600690.BJ的运营",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "股票代码600690.BJ不存在，请检查是否输入正确"
+    },
+    {
+      "category": "7.运营能力分析",
+      "test_name": "错误后缀",
+      "query": "600690.BJ的运营",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "完整名称",
+      "query": "分析宁德时代的成长性",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 46.93962335586548,
+      "error": null
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "完整名称",
+      "query": "分析宁德时代的成长性",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 46.93962335586548,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "股票代码",
+      "query": "分析300750.SZ的成长能力",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 52.303624868392944,
+      "error": null
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "股票代码",
+      "query": "分析300750.SZ的成长能力",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 52.303624868392944,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "营收增长",
+      "query": "贵州茅台的营收增长率",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 51.536752462387085,
+      "error": null
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "营收增长",
+      "query": "贵州茅台的营收增长率",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 51.536752462387085,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "利润增长",
+      "query": "比亚迪的利润增长情况",
+      "expected_success": true,
+      "actual_success": true,
+      "passed": true,
+      "elapsed_time": 39.59254455566406,
+      "error": null
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "利润增长",
+      "query": "比亚迪的利润增长情况",
+      "expected_success": true,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 39.59254455566406,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "股票简称",
+      "query": "宁德的成长性",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "股票简称",
+      "query": "宁德的成长性",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "缺少股票",
+      "query": "成长性分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.001007080078125,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "缺少股票",
+      "query": "成长性分析",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.001007080078125,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "非A股",
+      "query": "特斯拉的成长",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0,
+      "error": "无法识别输入内容。请输入：1) 6位股票代码（如002047）2) 证券代码（如600519.SH）3) 股票名称（如贵州茅台）"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "非A股",
+      "query": "特斯拉的成长",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "错误后缀",
+      "query": "600519.SZ成长",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": true,
+      "elapsed_time": 0.0010001659393310547,
+      "error": "股票代码600519.SZ不存在，请检查是否输入正确"
+    },
+    {
+      "category": "8.成长能力分析",
+      "test_name": "错误后缀",
+      "query": "600519.SZ成长",
+      "expected_success": false,
+      "actual_success": false,
+      "passed": false,
+      "elapsed_time": 0.0010001659393310547,
+      "error": "Exception: 'gbk' codec can't encode character '\\u2705' in position 4: illegal multibyte sequence"
+    }
+  ]
+}
