@@ -603,6 +603,132 @@ class SQLTemplates:
         LIMIT :limit
     """
     
+    # ========== 技术指标查询模板 ==========
+    
+    # 均线查询模板
+    TECHNICAL_MA = """
+        SELECT 
+            ts_code,
+            trade_date,
+            close_price,
+            ma_5,
+            ma_10,
+            ma_20,
+            ma_30,
+            ma_60,
+            ma_120,
+            ma_250
+        FROM tu_technical_indicators
+        WHERE ts_code = :ts_code 
+          AND trade_date = :trade_date
+    """
+    
+    # MACD查询模板
+    TECHNICAL_MACD = """
+        SELECT 
+            ts_code,
+            trade_date,
+            close_price,
+            macd_dif,
+            macd_dea,
+            macd_histogram,
+            macd_cross_signal
+        FROM tu_technical_indicators
+        WHERE ts_code = :ts_code
+          AND trade_date >= :start_date
+        ORDER BY trade_date DESC
+        LIMIT :limit
+    """
+    
+    # KDJ查询模板
+    TECHNICAL_KDJ = """
+        SELECT 
+            ts_code,
+            trade_date,
+            close_price,
+            kdj_k,
+            kdj_d,
+            kdj_j,
+            kdj_signal
+        FROM tu_technical_indicators
+        WHERE ts_code = :ts_code
+          AND trade_date = :trade_date
+    """
+    
+    # RSI查询模板
+    TECHNICAL_RSI = """
+        SELECT 
+            ts_code,
+            trade_date,
+            close_price,
+            rsi_6,
+            rsi_12,
+            rsi_24,
+            rsi_signal
+        FROM tu_technical_indicators
+        WHERE ts_code = :ts_code
+          AND trade_date = :trade_date
+    """
+    
+    # 布林带查询模板
+    TECHNICAL_BOLL = """
+        SELECT 
+            ts_code,
+            trade_date,
+            close_price,
+            boll_upper,
+            boll_middle,
+            boll_lower,
+            boll_width,
+            boll_signal
+        FROM tu_technical_indicators
+        WHERE ts_code = :ts_code
+          AND trade_date = :trade_date
+    """
+    
+    # 交叉信号查询模板
+    TECHNICAL_CROSS = """
+        SELECT 
+            trade_date,
+            close_price,
+            ma_5,
+            ma_20,
+            macd_dif,
+            macd_dea,
+            ma_cross_signal,
+            macd_cross_signal
+        FROM tu_technical_indicators
+        WHERE ts_code = :ts_code
+          AND (ma_cross_signal IS NOT NULL OR macd_cross_signal IS NOT NULL)
+          AND trade_date >= :start_date
+        ORDER BY trade_date DESC
+        LIMIT 10
+    """
+    
+    # 技术指标综合查询模板
+    TECHNICAL_COMPREHENSIVE = """
+        SELECT 
+            t.*,
+            CASE 
+                WHEN t.rsi_6 > 70 THEN '超买'
+                WHEN t.rsi_6 < 30 THEN '超卖'
+                ELSE '正常'
+            END as rsi_status,
+            CASE
+                WHEN t.close_price > t.boll_upper THEN '突破上轨'
+                WHEN t.close_price < t.boll_lower THEN '突破下轨'
+                ELSE '轨道内'
+            END as boll_status,
+            CASE
+                WHEN t.kdj_j > 100 THEN '超买'
+                WHEN t.kdj_j < 0 THEN '超卖'
+                ELSE '正常'
+            END as kdj_status
+        FROM tu_technical_indicators t
+        WHERE t.ts_code = :ts_code
+          AND t.trade_date = :trade_date
+    """
+    
     @staticmethod
     def format_stock_price_result(data: Dict[str, Any], stock_name: str = None) -> str:
         """格式化股价查询结果"""
@@ -983,6 +1109,13 @@ class SQLTemplates:
             'PB排名': SQLTemplates.PB_RANKING,
             '净利润排名': SQLTemplates.PROFIT_RANKING,
             '营收排名': SQLTemplates.REVENUE_RANKING,
-            'ROE排名': SQLTemplates.ROE_RANKING
+            'ROE排名': SQLTemplates.ROE_RANKING,
+            '技术均线': SQLTemplates.TECHNICAL_MA,
+            'MACD指标': SQLTemplates.TECHNICAL_MACD,
+            'KDJ指标': SQLTemplates.TECHNICAL_KDJ,
+            'RSI指标': SQLTemplates.TECHNICAL_RSI,
+            '布林带': SQLTemplates.TECHNICAL_BOLL,
+            '交叉信号': SQLTemplates.TECHNICAL_CROSS,
+            '技术综合': SQLTemplates.TECHNICAL_COMPREHENSIVE
         }
         return templates.get(query_type)

@@ -989,7 +989,7 @@ class ContentFilter:
                 'strict': True
             },
             '半年度报告': {
-                'include_keywords': [('半年度报告', '半年报', '中期报告')],
+                'include_keywords': [('半年度报告', '半年度','半年报', '中期报告')],
                 'exclude_keywords': ['摘要', '英文版', '更正', '关于', '提示性', '基金'],
                 'strict': True
             },
@@ -1138,14 +1138,15 @@ def main():
             "1. 查看统计信息",
             "2. 处理未处理的年度报告",
             "3. 处理未处理的季度报告",
-            "4. 处理最近的公告（带过滤）",
-            "5. 处理最近的公告（无过滤）",
-            "6. 自定义处理",
-            "7. 查看需要OCR的文件",
-            "8. 导出性能数据",
-            "9. 性能模式设置",
-            "10. 强制同步Milvus数据",  # V5.3新增
-            "11. Milvus数据调试",  # V5.3调试功能
+            "4. 处理业绩预告和业绩快报",  # 新增专门选项
+            "5. 处理最近的公告（带过滤）",
+            "6. 处理最近的公告（无过滤）",
+            "7. 自定义处理",
+            "8. 查看需要OCR的文件",
+            "9. 导出性能数据",
+            "10. 性能模式设置",
+            "11. 强制同步Milvus数据",  # V5.3新增
+            "12. Milvus数据调试",  # V5.3调试功能
             "0. 退出"
         ]
         
@@ -1207,6 +1208,40 @@ def main():
             )
             
         elif choice == '4':
+            # 处理业绩预告和业绩快报
+            date_input = input(f"{Fore.YELLOW}日期 (YYYYMMDD 或 YYYYMMDD-YYYYMMDD, 默认最近30天):{Style.RESET_ALL} ")
+            
+            if not date_input:
+                # 默认处理最近30天
+                end_date = datetime.now()
+                start_date = end_date - timedelta(days=30)
+                start_date_str = start_date.strftime('%Y%m%d')
+                end_date_str = end_date.strftime('%Y%m%d')
+                console.print_info(f"将处理最近30天的业绩预告和快报: {start_date_str} 至 {end_date_str}")
+            else:
+                try:
+                    start_date_str, end_date_str = DateHelper.parse_date_input(date_input)
+                    if start_date_str != end_date_str:
+                        console.print_info(f"将处理日期范围: {start_date_str} 至 {end_date_str}")
+                except ValueError as e:
+                    console.print_error(f"日期格式错误: {e}")
+                    continue
+                    
+            count = int(input(f"{Fore.YELLOW}处理数量 (默认100):{Style.RESET_ALL} ") or "100")
+            
+            # 设置只处理业绩预告和业绩快报
+            processor.content_filter.enabled_core_types = ['业绩预告', '业绩快报']
+            processor.content_filter.enabled_extended_types = []
+            
+            processor.process_unprocessed_announcements(
+                start_date=start_date_str,
+                end_date=end_date_str,
+                use_content_filter=True,
+                max_count=count,
+                task_type="业绩预告和快报处理"
+            )
+            
+        elif choice == '5':
             days = int(input(f"{Fore.YELLOW}最近几天 (默认7):{Style.RESET_ALL} ") or "7")
             end_date = datetime.now()
             start_date = end_date - timedelta(days=days)
@@ -1219,7 +1254,7 @@ def main():
                 task_type="最近公告处理(带过滤)"
             )
             
-        elif choice == '5':
+        elif choice == '6':
             days = int(input(f"{Fore.YELLOW}最近几天 (默认7):{Style.RESET_ALL} ") or "7")
             end_date = datetime.now()
             start_date = end_date - timedelta(days=days)
@@ -1232,7 +1267,7 @@ def main():
                 task_type="最近公告处理(无过滤)"
             )
             
-        elif choice == '6':
+        elif choice == '7':
             start_input = input(f"{Fore.YELLOW}开始日期 (YYYYMMDD 或 YYYYMMDD-YYYYMMDD):{Style.RESET_ALL} ")
             
             try:
@@ -1260,7 +1295,7 @@ def main():
                 use_cache=use_cache  # V5.3新增参数
             )
             
-        elif choice == '7':
+        elif choice == '8':
             console.print_header(f"需要OCR的文件 (共{len(processor.ocr_failed_list)}个)")
             
             for i, record in enumerate(processor.ocr_failed_list[-10:]):
@@ -1272,10 +1307,10 @@ def main():
             if len(processor.ocr_failed_list) > 10:
                 console.print_info(f"... 还有 {len(processor.ocr_failed_list) - 10} 个")
                 
-        elif choice == '8':
+        elif choice == '9':
             processor.export_performance_data()
             
-        elif choice == '9':
+        elif choice == '10':
             console.print_header("性能模式设置")
             print(f"\n当前模式: {Fore.GREEN}{processor.performance_mode}{Style.RESET_ALL}")
             print("\n可选模式:")
@@ -1291,10 +1326,10 @@ def main():
             elif mode_choice == '3':
                 processor.set_performance_mode('conservative')
                 
-        elif choice == '10':  # V5.3新增功能
+        elif choice == '11':  # V5.3新增功能
             processor.force_sync_with_milvus()
             
-        elif choice == '11':  # 调试功能
+        elif choice == '12':  # 调试功能
             console.print_header("Milvus数据调试")
             
             # 查询最新的10条记录
