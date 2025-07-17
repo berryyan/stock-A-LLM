@@ -189,7 +189,7 @@ class ConceptDataCollector:
                     ts_code,
                     name,
                     leading_code,
-                    leading
+                    `leading`
                 FROM tu_dc_index
                 WHERE trade_date = :latest_date
                 AND (:concept_filter)
@@ -291,9 +291,11 @@ class ConceptDataCollector:
             
             # 复用概念过滤条件
             concept_conditions = []
+            # 为概念查询添加参数
             for i, concept in enumerate(concepts):
                 param_name = f"concept_{i}"
                 concept_conditions.append(f"name LIKE :{param_name}")
+                params[param_name] = f"%{concept}%"  # 添加concept参数到params
             
             query_str = str(limit_query).replace(
                 ":concept_filter", 

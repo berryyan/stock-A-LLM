@@ -86,39 +86,33 @@ class ConceptScorer:
         """
         计算概念关联度得分（满分40）
         
-        评分规则：
-        - 在成分股表中: 10分
-        - 板块率先涨停: 10分（最近5天前3个）
-        - 财报提及: 5分
-        - 互动平台提及: 5分
-        - 公告提及: 5分
-        - 板块活跃度: 5分（涨幅前20%）
+        评分规则（优化版）：
+        - 在成分股表中: 20分（提高基础分）
+        - 多数据源验证: 10分（2个以上数据源）
+        - 板块率先涨停: 5分
+        - 财报/公告/互动平台: 5分（有任意一个即可）
         """
         score = 0
         
-        # 1. 在成分股表中（基础分）
+        # 1. 在成分股表中（基础分，提高到20分）
         if stock.get('data_source'):
-            score += 10
+            score += 20
         
-        # 2. 板块率先涨停
+        # 2. 多数据源验证（新增）
+        data_sources = stock.get('data_source', [])
+        if len(data_sources) >= 2:
+            score += 10
+        elif len(data_sources) >= 1:
+            score += 5
+        
+        # 3. 板块率先涨停
         if stock.get('first_limit_date'):
-            # TODO: 判断是否在板块前3个涨停
-            score += 10
-        
-        # 3. 财报提及
-        if stock.get('financial_report_mention'):
             score += 5
         
-        # 4. 互动平台提及
-        if stock.get('interaction_mention'):
-            score += 5
-        
-        # 5. 公告提及
-        if stock.get('announcement_mention'):
-            score += 5
-        
-        # 6. 板块活跃度
-        if stock.get('sector_rank_pct', 1.0) <= 0.2:
+        # 4. 财报/公告/互动平台（合并处理）
+        if (stock.get('financial_report_mention') or 
+            stock.get('interaction_mention') or 
+            stock.get('announcement_mention')):
             score += 5
         
         return min(score, 40)  # 确保不超过40分
@@ -127,42 +121,48 @@ class ConceptScorer:
         """
         计算资金流向得分（满分30）
         
-        评分规则：
-        - 日周双净流入: 10分（日5分+周5分）
-        - 净流入排名: 10分（前10%:10分, 前30%:7分, 前50%:5分）
-        - 板块资金表现: 5分
-        - 连续净流入: 5分（5天:5分, 3天:3分）
+        评分规则（优化版）：
+        - 基础分: 10分（有数据即得）
+        - 日净流入: 5分（正值5分，负值2分）
+        - 周净流入: 5分（正值5分，负值2分）
+        - 净流入排名: 5分
+        - 连续净流入: 5分
         """
         score = 0
         
         if not money_data:
             return score
         
-        # 1. 日周双净流入
+        # 1. 基础分（有数据即得）
+        score += 10
+        
+        # 2. 日净流入（调整评分）
         if money_data.get('daily_net_inflow', 0) > 0:
             score += 5
+        else:
+            score += 2  # 流出也给2分
+            
+        # 3. 周净流入（调整评分）
         if money_data.get('weekly_net_inflow', 0) > 0:
             score += 5
+        else:
+            score += 2  # 流出也给2分
         
-        # 2. 净流入排名
+        # 4. 净流入排名（调整分值）
         net_inflow_pct = money_data.get('net_inflow_pct', 0)
-        if net_inflow_pct >= 0.9:  # 前10%
-            score += 10
-        elif net_inflow_pct >= 0.7:  # 前30%
-            score += 7
-        elif net_inflow_pct >= 0.5:  # 前50%
+        if net_inflow_pct >= 0.8:  # 前20%
             score += 5
-        
-        # 3. 板块资金表现
-        # TODO: 需要板块整体资金数据
-        score += 2.5  # 暂时给中间分
-        
-        # 4. 连续净流入
-        continuous_days = money_data.get('continuous_inflow_days', 0)
-        if continuous_days >= 5:
-            score += 5
-        elif continuous_days >= 3:
+        elif net_inflow_pct >= 0.6:  # 前40%
             score += 3
+        elif net_inflow_pct >= 0.4:  # 前60%
+            score += 1
+        
+        # 5. 连续净流入
+        continuous_days = money_data.get('continuous_inflow_days', 0)
+        if continuous_days >= 3:
+            score += 5
+        elif continuous_days >= 1:
+            score += 2
         
         return min(score, 30)  # 确保不超过30分
     
@@ -170,37 +170,41 @@ class ConceptScorer:
         """
         计算技术形态得分（满分30）
         
-        评分规则：
-        - MACD状态: 15分
-          - MACD水上红柱(MACD>0 AND DIF>0): 10分
-          - 板块内率先水上(最近2天): 5分
-        - 均线排列: 15分
-          - MA5>MA10: 15分
+        评分规则（优化版）：
+        - 基础分: 10分（有数据即得）
+        - MACD状态: 10分
+          - MACD>0或DIF>0: 10分
+          - MACD<0但DIF上升: 5分
+        - 均线排列: 10分
+          - MA5>MA10: 10分
+          - MA5接近MA10: 5分
         """
         score = 0
         
         if not tech_data:
             return score
         
-        # 1. MACD状态
+        # 1. 基础分（有数据即得）
+        score += 10
+        
+        # 2. MACD状态（放宽条件）
         macd = tech_data.get('latest_macd', 0)
         dif = tech_data.get('latest_dif', 0)
         
-        # MACD水上红柱
-        if macd > 0 and dif > 0:
+        if macd > 0 or dif > 0:
             score += 10
+        elif dif > tech_data.get('latest_dea', 0):
+            score += 5  # DIF在DEA上方也给分
         
-        # 板块内率先水上
-        if tech_data.get('macd_above_water_date'):
-            # TODO: 判断是否最近2天内
-            score += 5
-        
-        # 2. 均线排列
+        # 3. 均线排列（放宽条件）
         ma5 = tech_data.get('ma5', 0)
         ma10 = tech_data.get('ma10', 0)
         
-        if ma5 > ma10 and ma5 > 0 and ma10 > 0:
-            score += 15
+        if ma5 > 0 and ma10 > 0:
+            if ma5 > ma10:
+                score += 10
+            elif ma5 / ma10 > 0.98:  # MA5接近MA10（2%以内）
+                score += 5
         
         return min(score, 30)  # 确保不超过30分
     
