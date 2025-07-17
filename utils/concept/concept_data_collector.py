@@ -83,7 +83,11 @@ class ConceptDataCollector:
                         "name": stock['name'],
                         "concepts": set(),
                         "data_source": set(),
-                        "first_limit_date": None
+                        "first_limit_date": None,
+                        "financial_report_mention": False,  # TODO: 从财报数据获取
+                        "interaction_mention": False,        # TODO: 从互动平台数据获取
+                        "announcement_mention": False,       # TODO: 从公告数据获取
+                        "sector_rank_pct": 0.5              # TODO: 计算板块排名百分位
                     }
                 
                 # 添加概念和数据源

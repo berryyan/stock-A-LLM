@@ -34,6 +34,8 @@ from utils.concept.concept_matcher import ConceptMatcher
 from utils.concept.concept_data_access import ConceptDataAccess
 from utils.concept.concept_scorer import ConceptScorer
 from utils.concept.scoring_config import ScoringConfig
+from utils.concept.technical_collector import TechnicalCollector
+from utils.concept.money_flow_collector import MoneyFlowCollector
 
 # LangChain
 from langchain_openai import ChatOpenAI
@@ -66,6 +68,10 @@ class ConceptAgent:
         self.data_access = ConceptDataAccess()
         self.concept_scorer = ConceptScorer()
         self.scoring_config = ScoringConfig()
+        
+        # 初始化数据采集器
+        self.technical_collector = TechnicalCollector()
+        self.money_flow_collector = MoneyFlowCollector()
         
         # 初始化LLM
         self._init_llm()
@@ -131,9 +137,27 @@ class ConceptAgent:
             
             logger.info(f"找到 {len(concept_stocks)} 只相关概念股")
             
-            # 3.2 获取技术指标和资金流向数据（暂时使用简化版本）
-            technical_data = {}  # TODO: Day 3实现
-            money_flow_data = {}  # TODO: Day 3实现
+            # 3.2 获取技术指标和资金流向数据
+            logger.info(f"开始采集 {len(concept_stocks)} 只股票的技术指标和资金流向数据")
+            
+            # 提取股票代码列表
+            stock_codes = [stock['ts_code'] for stock in concept_stocks]
+            
+            # 获取技术指标数据
+            try:
+                technical_data = self.technical_collector.get_latest_technical_indicators(stock_codes)
+                logger.info(f"成功获取 {len(technical_data)} 只股票的技术指标数据")
+            except Exception as e:
+                logger.error(f"获取技术指标数据失败: {str(e)}")
+                technical_data = {}
+            
+            # 获取资金流向数据
+            try:
+                money_flow_data = self.money_flow_collector.get_batch_money_flow(stock_codes, days=5)
+                logger.info(f"成功获取 {len(money_flow_data)} 只股票的资金流向数据")
+            except Exception as e:
+                logger.error(f"获取资金流向数据失败: {str(e)}")
+                money_flow_data = {}
             
             # 4. 评分计算
             scored_stocks = self.concept_scorer.calculate_scores(
