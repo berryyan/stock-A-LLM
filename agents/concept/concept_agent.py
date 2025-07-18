@@ -32,7 +32,7 @@ from utils.result_formatter import ResultFormatter
 # 概念专用模块
 from utils.concept.concept_matcher_v2 import ConceptMatcherV2
 from utils.concept.concept_data_collector import ConceptDataCollector
-from utils.concept.concept_scorer import ConceptScorer
+from utils.concept.concept_scorer_v2 import ConceptScorerV2  # 使用V2版本
 from utils.concept.scoring_config import ScoringConfig
 from utils.concept.technical_collector import TechnicalCollector
 from utils.concept.money_flow_collector import MoneyFlowCollector
@@ -66,7 +66,7 @@ class ConceptAgent:
         # 初始化概念专用组件
         self.concept_matcher = ConceptMatcherV2()
         self.data_collector = ConceptDataCollector()
-        self.concept_scorer = ConceptScorer()
+        self.concept_scorer = ConceptScorerV2()  # 使用V2版本
         self.scoring_config = ScoringConfig()
         
         # 初始化数据采集器
@@ -160,12 +160,12 @@ class ConceptAgent:
                 logger.error(f"获取资金流向数据失败: {str(e)}")
                 money_flow_data = {}
             
-            # 4. 评分计算
-            scored_stocks = self.concept_scorer.calculate_scores(
+            # 4. 评分计算（使用新的证据系统）
+            scored_stocks = self.concept_scorer.calculate_scores_with_evidence(
                 concept_stocks,
                 technical_data,
                 money_flow_data,
-                self.scoring_config.get_weights()
+                weights={'evidence': 1.0, 'technical': 0.0, 'money_flow': 0.0}  # 完全基于证据
             )
             
             # 5. 生成分析报告
@@ -417,20 +417,22 @@ class ConceptAgent:
         return '\n'.join(lines)
     
     def _format_result(self, scored_stocks: List[Dict], report: str) -> str:
-        """格式化最终输出结果"""
+        """格式化最终输出结果（包含证据）"""
         # 生成股票评分表格
-        headers = ["股票代码", "股票名称", "总分", "概念关联度", "资金流向", "技术形态", "所属概念"]
+        headers = ["股票代码", "股票名称", "关联强度", "总分", "软件收录", "财报证据", "互动平台", "公告证据"]
         rows = []
         
         for stock in scored_stocks[:30]:  # 显示前30只
+            evidence_scores = stock.get('evidence_scores', {})
             rows.append([
                 stock['ts_code'],
                 stock['name'],
-                f"{stock['total_score']:.1f}",
-                f"{stock['concept_score']:.1f}/40",
-                f"{stock['money_score']:.1f}/30",
-                f"{stock['technical_score']:.1f}/30",
-                ', '.join(stock.get('concepts', []))[:30]
+                stock.get('relevance_level', ''),
+                f"{stock['total_score']:.0f}/100",
+                f"{evidence_scores.get('software', 0):.0f}/40",
+                f"{evidence_scores.get('report', 0):.0f}/30",
+                f"{evidence_scores.get('interaction', 0):.0f}/20",
+                f"{evidence_scores.get('announcement', 0):.0f}/10"
             ])
         
         # 使用result_formatter生成表格
@@ -438,13 +440,24 @@ class ConceptAgent:
             table = self.result_formatter.format_table(
                 headers,
                 rows,
-                title="概念股评分排名（前30）"
+                title="概念股关联度评分（基于事实证据）"
             )
         else:
             table = "暂无数据"
         
+        # 添加前5只股票的详细证据
+        evidence_details = []
+        for stock in scored_stocks[:5]:
+            if stock.get('evidence_list'):
+                evidence_report = self.concept_scorer.format_evidence_report(stock)
+                evidence_details.append(evidence_report)
+        
         # 组合最终结果
-        result = f"{report}\n\n{table}"
+        if evidence_details:
+            evidence_section = "\n\n## 详细证据分析（前5只）\n\n" + "\n\n---\n\n".join(evidence_details)
+            result = f"{report}\n\n{table}\n{evidence_section}"
+        else:
+            result = f"{report}\n\n{table}"
         
         return result
     
