@@ -155,6 +155,7 @@ MAX_WORKERS = 3              # 并发线程数
 2. **表结构差异处理**：不同数据源的表结构需要分别处理
 3. **性能优化策略**：限制+并发+缓存的组合效果最好
 4. **测试驱动开发**：先写测试，再改代码，效率更高
+5. **LLM集成价值**：虽增加时间成本，但显著提升系统智能化水平
 
 ## 📝 备注
 
@@ -162,5 +163,17 @@ Day 5成功完成了所有计划任务，特别是：
 - 彻底解决了数据源查询问题
 - 实现了有效的性能优化
 - 建立了完整的测试体系
+- 验证了LLM扩展的必要性
 
 整体进度符合预期，为Day 6-7的最终优化和测试打下了良好基础。
+
+## 🔑 关键代码文件清单
+
+Day 5新增/修改的核心文件：
+1. `utils/concept/concept_matcher_v2.py` - LLM三次介入的核心实现
+2. `utils/concept/concept_data_collector.py` - 修复数据源查询
+3. `utils/concept/concept_data_collector_optimized.py` - 性能优化版本
+4. `test_data_source_investigation.py` - 数据源调查脚本
+5. `test_fixed_data_source.py` - 修复验证脚本
+6. `test_llm_expansion_comparison.py` - LLM扩展对比测试
+7. `llm_expansion_analysis_report.md` - LLM扩展分析报告
