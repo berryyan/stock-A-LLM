@@ -1,0 +1,175 @@
+{
+  "test_time": "2025-07-18",
+  "results": [
+    {
+      "concept": "英伟达概念",
+      "total_stocks": 65,
+      "data_sources": {
+        "THS": 65
+      },
+      "success": true,
+      "missing_sources": [
+        "DC",
+        "KPL"
+      ]
+    },
+    {
+      "concept": "DeepSeek概念",
+      "total_stocks": 712,
+      "data_sources": {
+        "THS": 712
+      },
+      "success": true,
+      "missing_sources": [
+        "DC",
+        "KPL"
+      ]
+    },
+    {
+      "concept": "智能电网",
+      "total_stocks": 241,
+      "data_sources": {
+        "THS": 241
+      },
+      "success": true,
+      "missing_sources": [
+        "DC",
+        "KPL"
+      ]
+    },
+    {
+      "concept": "宠物经济",
+      "total_stocks": 102,
+      "data_sources": {
+        "THS": 102
+      },
+      "success": true,
+      "missing_sources": [
+        "DC",
+        "KPL"
+      ]
+    },
+    {
+      "concept": "西部大开发",
+      "total_stocks": 626,
+      "data_sources": {
+        "THS": 626
+      },
+      "success": true,
+      "missing_sources": [
+        "DC",
+        "KPL"
+      ]
+    },
+    {
+      "concept": "职业教育",
+      "total_stocks": 135,
+      "data_sources": {
+        "THS": 135
+      },
+      "success": true,
+      "missing_sources": [
+        "DC"
+      ]
+    },
+    {
+      "concept": "液冷服务器",
+      "total_stocks": 91,
+      "data_sources": {
+        "THS": 91
+      },
+      "success": true,
+      "missing_sources": [
+        "KPL"
+      ]
+    },
+    {
+      "concept": "影视概念",
+      "total_stocks": 0,
+      "data_sources": {},
+      "success": true,
+      "missing_sources": [
+        "DC",
+        "KPL"
+      ]
+    },
+    {
+      "concept": "华为海思概念股",
+      "total_stocks": 50,
+      "data_sources": {
+        "THS": 50
+      },
+      "success": true
+    },
+    {
+      "concept": "贵金属",
+      "total_stocks": 0,
+      "data_sources": {},
+      "success": true,
+      "missing_sources": [
+        "DC"
+      ]
+    },
+    {
+      "concept": "AI算力基建",
+      "total_stocks": 0,
+      "data_sources": {},
+      "success": true,
+      "missing_sources": [
+        "KPL"
+      ]
+    },
+    {
+      "type": "naming_variation",
+      "test": "储能 vs 储能概念",
+      "results": {
+        "储能": {
+          "count": 606,
+          "sources": {
+            "THS": 606
+          }
+        },
+        "储能概念": {
+          "count": 0,
+          "sources": {}
+        }
+      }
+    },
+    {
+      "type": "naming_variation",
+      "test": "新能源 vs 新能源汽车",
+      "results": {
+        "新能源": {
+          "count": 928,
+          "sources": {
+            "THS": 928
+          }
+        },
+        "新能源汽车": {
+          "count": 928,
+          "sources": {
+            "THS": 928
+          }
+        }
+      }
+    },
+    {
+      "type": "naming_variation",
+      "test": "光伏 vs 光伏概念",
+      "results": {
+        "光伏": {
+          "count": 623,
+          "sources": {
+            "THS": 623
+          }
+        },
+        "光伏概念": {
+          "count": 575,
+          "sources": {
+            "THS": 575
+          }
+        }
+      }
+    }
+  ]
+}

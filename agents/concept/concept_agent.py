@@ -30,8 +30,8 @@ from utils.error_handler import ErrorHandler
 from utils.result_formatter import ResultFormatter
 
 # 概念专用模块
-from utils.concept.concept_matcher import ConceptMatcher
-from utils.concept.concept_data_access import ConceptDataAccess
+from utils.concept.concept_matcher_v2 import ConceptMatcherV2
+from utils.concept.concept_data_collector import ConceptDataCollector
 from utils.concept.concept_scorer import ConceptScorer
 from utils.concept.scoring_config import ScoringConfig
 from utils.concept.technical_collector import TechnicalCollector
@@ -64,8 +64,8 @@ class ConceptAgent:
         self.result_formatter = ResultFormatter()
         
         # 初始化概念专用组件
-        self.concept_matcher = ConceptMatcher()
-        self.data_access = ConceptDataAccess()
+        self.concept_matcher = ConceptMatcherV2()
+        self.data_collector = ConceptDataCollector()
         self.concept_scorer = ConceptScorer()
         self.scoring_config = ScoringConfig()
         
@@ -122,6 +122,7 @@ class ConceptAgent:
             logger.info(f"识别到查询类型: {query_type}, 概念关键词: {concepts}")
             
             # 2. 概念扩展（通过LLM）
+            # 这是LLM的另一次介入：扩展相关概念
             expanded_concepts = self.concept_matcher.expand_concepts(concepts)
             logger.info(f"扩展后的概念: {expanded_concepts}")
             
@@ -231,13 +232,9 @@ class ConceptAgent:
             # 简单关键词
             query_type = 'keyword'
         
-        # 提取概念关键词
-        if query_type == 'news':
-            # 新闻文本需要LLM提取关键概念
-            concepts = self._extract_concepts_from_news(cleaned_query)
-        else:
-            # 简单提取（后续会通过concept_matcher扩展）
-            concepts = self._simple_concept_extraction(cleaned_query)
+        # 提取概念关键词 - 使用ConceptMatcherV2
+        # 这是LLM第一次介入的地方
+        concepts = self.concept_matcher.extract_concepts(cleaned_query)
         
         return query_type, concepts
     
@@ -282,55 +279,44 @@ class ConceptAgent:
     def _get_concept_stocks(self, concepts: List[str]) -> List[Dict[str, Any]]:
         """
         获取概念相关的股票
+        使用ConceptMatcherV2进行智能概念匹配
         
         Args:
             concepts: 概念关键词列表
             
         Returns:
-            股票列表 [{"ts_code": "xxx", "name": "xxx", "concepts": ["概念1", "概念2"]}, ...]
+            股票列表
         """
-        # 1. 先搜索匹配的概念
-        all_matched_concepts = []
-        for concept in concepts:
-            matched = self.data_access.search_concepts(concept)
-            all_matched_concepts.extend(matched)
+        # 1. 使用ConceptMatcherV2进行概念匹配
+        # 这是LLM第二次介入：将用户概念匹配到三大数据源的实际概念
+        matched_concepts = self.concept_matcher.match_concepts(concepts)
         
-        # 去重
-        seen = set()
-        unique_concepts = []
-        for c in all_matched_concepts:
-            if c['ts_code'] not in seen:
-                seen.add(c['ts_code'])
-                unique_concepts.append(c)
+        logger.info(f"概念匹配结果: 同花顺{len(matched_concepts['THS'])}个, "
+                   f"东财{len(matched_concepts['DC'])}个, 开盘啦{len(matched_concepts['KPL'])}个")
         
-        logger.info(f"匹配到 {len(unique_concepts)} 个数据库概念")
+        # 2. 收集所有匹配的概念名称
+        all_matched_names = []
+        all_matched_names.extend(matched_concepts['THS'])
+        all_matched_names.extend(matched_concepts['DC'])
+        all_matched_names.extend(matched_concepts['KPL'])
         
-        # 2. 获取所有概念的成分股
-        stock_dict = {}  # ts_code -> stock_info
+        if not all_matched_names:
+            logger.warning(f"未找到匹配的概念: {concepts}")
+            return []
         
-        for concept in unique_concepts:
-            members = self.data_access.get_concept_members(concept['ts_code'])
-            
-            for member in members:
-                ts_code = member['ts_code']
-                
-                if ts_code not in stock_dict:
-                    stock_dict[ts_code] = {
-                        'ts_code': ts_code,
-                        'name': member['name'],
-                        'concepts': [concept['name']],
-                        'concept_codes': [concept['ts_code']]
-                    }
-                else:
-                    # 添加到已有股票的概念列表
-                    stock_dict[ts_code]['concepts'].append(concept['name'])
-                    stock_dict[ts_code]['concept_codes'].append(concept['ts_code'])
+        # 3. 使用DataCollector获取概念股
+        # 这会自动从三大数据源获取数据并合并
+        concept_stocks = self.data_collector.get_concept_stocks(all_matched_names)
         
-        # 转换为列表
-        concept_stocks = list(stock_dict.values())
+        logger.info(f"获取到 {len(concept_stocks)} 只概念相关股票")
         
-        # 按概念数量排序（属于多个相关概念的股票优先）
-        concept_stocks.sort(key=lambda x: len(x['concepts']), reverse=True)
+        # 4. 添加匹配来源信息
+        for stock in concept_stocks:
+            stock['matched_sources'] = {
+                'THS': any(c in stock.get('concepts', []) for c in matched_concepts['THS']),
+                'DC': any(c in stock.get('concepts', []) for c in matched_concepts['DC']),
+                'KPL': any(c in stock.get('concepts', []) for c in matched_concepts['KPL'])
+            }
         
         return concept_stocks
     
