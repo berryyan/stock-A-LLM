@@ -228,10 +228,10 @@ class EvidenceCollector:
             query = f"{stock_name} {concept} 年报 业务 收入"
             
             try:
-                result = self.rag_agent.process_query(query)
+                result = self.rag_agent.query(query)
                 
-                if isinstance(result, AgentResponse) and result.success and result.data:
-                    content = result.data
+                if isinstance(result, dict) and result.get('success') and result.get('result'):
+                    content = result['result']
                     
                     # 检查是否包含年报相关内容
                     if '年报' in content and concept in content:
@@ -290,10 +290,10 @@ class EvidenceCollector:
             query = f"{stock_name} {concept} 公告"
             
             try:
-                result = self.rag_agent.process_query(query)
+                result = self.rag_agent.query(query)
                 
-                if isinstance(result, AgentResponse) and result.success and result.data:
-                    content = result.data
+                if isinstance(result, dict) and result.get('success') and result.get('result'):
+                    content = result['result']
                     
                     # 检查是否包含公告相关内容
                     if '公告' in content and concept in content:

@@ -263,15 +263,15 @@ class EvidenceCollectorOptimized:
             try:
                 # 设置超时
                 start = time.time()
-                result = self.rag_agent.process_query(query)
+                result = self.rag_agent.query(query)
                 
                 # 检查超时
                 if time.time() - start > 8:  # 8秒超时
                     logger.warning(f"RAG查询接近超时: {query}")
                     break
                 
-                if isinstance(result, AgentResponse) and result.success and result.data:
-                    content = result.data
+                if isinstance(result, dict) and result.get('success') and result.get('result'):
+                    content = result['result']
                     
                     # 分析内容
                     for concept in concepts:
@@ -338,10 +338,10 @@ class EvidenceCollectorOptimized:
             
             try:
                 # 快速查询
-                result = self.rag_agent.process_query(query)
+                result = self.rag_agent.query(query)
                 
-                if isinstance(result, AgentResponse) and result.success and result.data:
-                    content = result.data
+                if isinstance(result, dict) and result.get('success') and result.get('result'):
+                    content = result['result']
                     
                     # 检查是否包含公告相关内容
                     if '公告' in content and concept in content:
